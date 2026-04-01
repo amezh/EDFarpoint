@@ -1,14 +1,35 @@
 <script lang="ts">
   import { systemStore, type Body } from "$lib/stores/system.svelte";
+  import { configStore } from "$lib/stores/config.svelte";
   import { estimateCartoValue } from "$lib/utils/valueCalc";
+  import { formatCredits } from "$lib/utils/bioPredict";
 
   const system = $derived(systemStore.current);
+  const bioThreshold = $derived(configStore.current?.bio.value_threshold ?? 0);
+  const dimBelowThreshold = $derived(configStore.current?.bio.dim_below_threshold ?? false);
 
-  // Split bodies into action categories
-  const valuableBio = $derived(
+  // All bio bodies not yet completed
+  const allBio = $derived(
     system?.bodies
       .filter((b) => b.bioSignals > 0 && b.personalStatus !== "bio_complete")
-      .sort((a, b) => (b.bioSignals) - (a.bioSignals)) ?? []
+      .sort((a, b) => {
+        const va = b.bioValueMax ?? 0;
+        const vb = a.bioValueMax ?? 0;
+        if (va !== vb) return va - vb;
+        return b.bioSignals - a.bioSignals;
+      }) ?? []
+  );
+
+  // Split bio bodies: above threshold (or unknown value) vs below
+  const valuableBio = $derived(
+    bioThreshold > 0
+      ? allBio.filter((b) => b.bioValueMax == null || b.bioValueMax >= bioThreshold)
+      : allBio
+  );
+  const lowValueBio = $derived(
+    bioThreshold > 0
+      ? allBio.filter((b) => b.bioValueMax != null && b.bioValueMax < bioThreshold)
+      : []
   );
 
   const valuableCarto = $derived(
@@ -119,23 +140,69 @@
     {#if valuableBio.length > 0}
       <div class="mt-1">
         <div class="text-xs text-ed-green font-bold uppercase tracking-wider px-1 mb-1">
-          Bio targets — scan these
+          Bio targets — land &amp; scan
         </div>
         {#each valuableBio as body (body.bodyId)}
-          <div
-            class="flex items-center gap-2 px-3 py-1.5 rounded mb-0.5 bg-ed-surface/80 border-l-2 border-ed-green"
-          >
-            <span class="text-xs w-3 {statusColor(body)}">{statusIcon(body)}</span>
-            <span class="font-mono text-sm flex-1 truncate">{body.shortName}</span>
-            <span class="text-xs text-ed-text-muted">{typeShort(body.type)}</span>
-            <span class="text-xs text-ed-text-muted">{body.gravity?.toFixed(1)}g</span>
-            <span class="text-xs font-mono text-ed-green font-bold">{body.bioSignals} bio</span>
-            {#if !body.mapped}
-              <span class="text-[10px] bg-ed-green/20 text-ed-green px-1 rounded">DSS</span>
+          <div class="rounded mb-1 bg-ed-surface/80 border-l-2 border-ed-green">
+            <!-- Header row -->
+            <div class="flex items-center gap-2 px-3 py-1.5">
+              <span class="text-xs w-3 {statusColor(body)}">{statusIcon(body)}</span>
+              <span class="font-mono text-sm flex-1 truncate">{body.shortName}</span>
+              <span class="text-xs text-ed-text-muted">{typeShort(body.type)}</span>
+              <span class="text-xs text-ed-text-muted">{body.gravity?.toFixed(1)}g</span>
+              <span class="text-xs font-mono text-ed-green font-bold">{body.bioSignals} bio</span>
+              {#if !body.mapped}
+                <span class="text-[10px] bg-ed-green/20 text-ed-green px-1 rounded">DSS</span>
+              {/if}
+              {#if body.personalStatus !== "landed"}
+                <span class="text-[10px] bg-ed-amber/20 text-ed-amber px-1 rounded">LAND</span>
+              {/if}
+            </div>
+            <!-- Bio value range -->
+            {#if body.bioValueMin != null && body.bioValueMax != null}
+              <div class="px-3 pb-1 text-xs text-ed-green/80 font-mono">
+                ~{formatCredits(body.bioValueMin)} – {formatCredits(body.bioValueMax)} Cr
+                {#if !body.wasDiscovered}
+                  <span class="text-ed-amber ml-1">(5x first discovery)</span>
+                {/if}
+              </div>
+            {:else if body.bioSignals > 0}
+              <div class="px-3 pb-1 text-xs text-ed-text-muted italic">predicting...</div>
+            {/if}
+            <!-- Predicted species list -->
+            {#if body.bioSpeciesPredicted.length > 0}
+              <div class="px-3 pb-2 flex flex-col gap-0.5">
+                {#each body.bioSpeciesPredicted as species}
+                  <div class="flex items-center gap-2 pl-5 text-xs">
+                    <span class="text-ed-text truncate flex-1">{species.name}</span>
+                    <span class="font-mono text-ed-green/70">{formatCredits(species.value)}</span>
+                    <span class="text-ed-text-muted">{species.clonal_range}m</span>
+                  </div>
+                {/each}
+              </div>
             {/if}
           </div>
         {/each}
       </div>
+    {/if}
+
+    <!-- Low-value bio (below threshold, shown dimmed or collapsed) -->
+    {#if lowValueBio.length > 0 && dimBelowThreshold}
+      <details class="mt-1">
+        <summary class="text-xs text-ed-text-muted cursor-pointer px-1 py-1 hover:text-ed-text">
+          {lowValueBio.length} low-value bio {lowValueBio.length === 1 ? "body" : "bodies"} (below {fmt(bioThreshold)} Cr)
+        </summary>
+        {#each lowValueBio as body (body.bodyId)}
+          <div class="flex items-center gap-2 px-3 py-1 rounded mb-0.5 text-ed-text-muted text-xs">
+            <span class="font-mono flex-1 truncate">{body.shortName}</span>
+            <span>{typeShort(body.type)}</span>
+            <span class="font-mono">{body.bioSignals} bio</span>
+            {#if body.bioValueMax != null}
+              <span class="font-mono">~{formatCredits(body.bioValueMax)}</span>
+            {/if}
+          </div>
+        {/each}
+      </details>
     {/if}
 
     <!-- ACTION: Valuable carto targets -->
@@ -190,6 +257,9 @@
             <span class="font-mono flex-1 truncate">{body.shortName}</span>
             <span>{typeShort(body.type)}</span>
             <span>{body.distanceLs?.toFixed(0)} LS</span>
+            {#if bodyValue(body) > 0}
+              <span class="font-mono">~{fmt(bodyValue(body))}</span>
+            {/if}
             {#if body.landable}
               <span class="text-ed-dim">land</span>
             {/if}

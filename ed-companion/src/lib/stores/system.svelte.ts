@@ -1,4 +1,5 @@
 // System store — tracks current system + body list
+import type { PredictedSpecies, BioPrediction } from "$lib/utils/bioPredict";
 
 export interface Body {
   bodyId: number;
@@ -19,7 +20,7 @@ export interface Body {
   mapped: boolean;
   bioSignals: number;
   geoSignals: number;
-  bioSpeciesPredicted: string[];
+  bioSpeciesPredicted: PredictedSpecies[];
   bioValueMin: number | null;
   bioValueMax: number | null;
   estimatedValue: number | null;
@@ -40,6 +41,7 @@ export interface SystemState {
   distanceFromSol: number | null;
   bodies: Body[];
   firstDiscovery: boolean;
+  stars: Map<number, string>; // bodyId → starType (e.g. "M", "K", "F")
 }
 
 function distFromSol(pos: [number, number, number]): number {
@@ -76,6 +78,7 @@ function createSystemStore() {
         distanceFromSol: distFromSol(starPos),
         bodies: [],
         firstDiscovery: false,
+        stars: new Map(),
       };
     },
 
@@ -134,8 +137,42 @@ function createSystemStore() {
       const bodyId = data.BodyID as number;
       const signals = data.Signals as Array<{ Type: string; Count: number }>;
 
-      const body = state.bodies.find((b) => b.bodyId === bodyId);
-      if (!body) return;
+      let body = state.bodies.find((b) => b.bodyId === bodyId);
+
+      // FSSBodySignals can arrive before Scan — create a stub so signals
+      // are preserved when addBody later merges into the existing entry.
+      if (!body) {
+        const bodyName = (data.BodyName as string) ?? `Body ${bodyId}`;
+        body = {
+          bodyId,
+          name: bodyName,
+          shortName: shortBodyName(bodyName, state.name),
+          type: "Unknown",
+          planetClass: "",
+          starType: null,
+          distanceLs: null,
+          radius: null,
+          gravity: null,
+          atmosphere: "",
+          atmosphereType: "",
+          temperature: null,
+          volcanism: "",
+          landable: false,
+          terraformable: false,
+          mapped: false,
+          bioSignals: 0,
+          geoSignals: 0,
+          bioSpeciesPredicted: [],
+          bioValueMin: null,
+          bioValueMax: null,
+          estimatedValue: null,
+          wasDiscovered: false,
+          wasMapped: false,
+          personalStatus: "fss",
+          parents: [],
+        };
+        state.bodies = [...state.bodies, body];
+      }
 
       for (const sig of signals ?? []) {
         if (sig.Type.includes("Biological")) {
@@ -152,6 +189,37 @@ function createSystemStore() {
       if (body) {
         body.mapped = true;
         body.personalStatus = "dss";
+      }
+    },
+
+    addStar(bodyId: number, starType: string) {
+      if (!state) return;
+      state.stars.set(bodyId, starType);
+    },
+
+    getParentStarType(body: Body): string {
+      if (!state) return "";
+      // Walk parents to find the nearest Star reference
+      for (const parent of body.parents) {
+        if ("Star" in parent) {
+          const starId = parent.Star;
+          return state.stars.get(starId) ?? "";
+        }
+      }
+      // Fallback: use first star in the system (the primary)
+      if (state.stars.size > 0) {
+        return state.stars.values().next().value ?? "";
+      }
+      return "";
+    },
+
+    updateBioPrediction(bodyId: number, prediction: BioPrediction) {
+      if (!state) return;
+      const body = state.bodies.find((b) => b.bodyId === bodyId);
+      if (body) {
+        body.bioSpeciesPredicted = prediction.species;
+        body.bioValueMin = prediction.min_value;
+        body.bioValueMax = prediction.max_value;
       }
     },
   };

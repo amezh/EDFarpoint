@@ -1,29 +1,15 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { configStore, type AppConfig } from "$lib/stores/config.svelte";
 
-  interface Config {
-    paths: { journal_dir: string };
-    window: {
-      panel_enabled: boolean;
-      overlay_enabled: boolean;
-      panel_width: number;
-      panel_always_on_top: boolean;
-      overlay_opacity: number;
-      overlay_click_through: boolean;
-    };
-    remote: { enabled: boolean; port: number; auth_token: string };
-    bio: { value_threshold: number; highlight_color: string; dim_below_threshold: boolean };
-    autoswitch: { enabled: boolean; panel_autoswitch: boolean; overlay_autoswitch: boolean };
-    ui: { body_columns: string[] };
-    edsm: { api_key: string };
-  }
-
-  let config: Config | null = $state(null);
+  let config: AppConfig | null = $state(null);
   let saving = $state(false);
   let overlayOpen = $state(false);
 
-  async function loadConfig() {
-    config = (await invoke("get_config")) as Config;
+  async function loadSettings() {
+    // Copy from shared store (or load fresh if not yet loaded)
+    if (!configStore.current) await configStore.load();
+    config = configStore.current ? structuredClone($state.snapshot(configStore.current)) : null;
     overlayOpen = await invoke<boolean>("is_overlay_open");
   }
 
@@ -31,6 +17,7 @@
     if (!config) return;
     saving = true;
     await invoke("update_config", { config });
+    configStore.update(structuredClone(config));
     saving = false;
   }
 
@@ -52,7 +39,7 @@
   }
 
   $effect(() => {
-    loadConfig();
+    loadSettings();
   });
 </script>
 

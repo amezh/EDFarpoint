@@ -14,8 +14,11 @@
   import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
+  import { configStore } from "$lib/stores/config.svelte";
   import { getSpeciesValue } from "$lib/utils/bioValues";
+  import { predictBio } from "$lib/utils/bioPredict";
   import { estimateCartoValue, estimateStarValue } from "$lib/utils/valueCalc";
+  import type { Body } from "$lib/stores/system.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
@@ -40,6 +43,39 @@
 
   function bodyKey(systemAddr: number, bodyId: number) {
     return `${systemAddr}:${bodyId}`;
+  }
+
+  async function triggerBioPrediction(body: Body) {
+    if (body.bioSignals === 0 || body.bioSpeciesPredicted.length > 0) {
+      console.log(`[bio-predict] SKIP ${body.shortName}: signals=${body.bioSignals}, predicted=${body.bioSpeciesPredicted.length}`);
+      return;
+    }
+    if (!body.planetClass) {
+      console.log(`[bio-predict] SKIP ${body.shortName}: no planetClass (stub)`);
+      return;
+    }
+    const starType = systemStore.getParentStarType(body);
+    if (!starType) {
+      console.log(`[bio-predict] SKIP ${body.shortName}: no star type`);
+      return;
+    }
+    console.log(`[bio-predict] PREDICTING ${body.shortName}: class=${body.planetClass}, atmo=${body.atmosphereType}, g=${body.gravity}, T=${body.temperature}, star=${starType}`);
+    const result = await predictBio(
+      body.name,
+      body.bodyId,
+      body.bioSignals,
+      body.planetClass,
+      body.atmosphereType,
+      body.gravity ?? 0,
+      body.temperature ?? 0,
+      body.volcanism,
+      starType,
+      body.distanceLs ?? 0,
+    );
+    console.log(`[bio-predict] RESULT ${body.shortName}:`, result ? `${result.species.length} species, min=${result.min_value}, max=${result.max_value}` : 'null');
+    if (result) {
+      systemStore.updateBioPrediction(body.bodyId, result);
+    }
   }
 
   function handleJournalEvent(data: Record<string, unknown>) {
@@ -70,6 +106,17 @@
             !!(data.WasDiscovered),
           );
           tripStore.addStarScan(starValue);
+
+          // Track star type for bio predictions
+          const starBodyId = data.BodyID as number;
+          const starType = data.StarType as string;
+          if (starBodyId != null && starType) {
+            systemStore.addStar(starBodyId, starType);
+            // Re-trigger predictions for bio bodies that were waiting for star type
+            for (const body of systemStore.current?.bodies ?? []) {
+              triggerBioPrediction(body);
+            }
+          }
         } else {
           systemStore.addOrUpdateBody(data);
           const wasDiscovered = !!(data.WasDiscovered);
@@ -91,6 +138,12 @@
             withDSS: false,
           });
           tripStore.addBodyScan(isFirst, fssValue);
+
+          // Trigger bio prediction for this body
+          const scannedBody = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
+          if (scannedBody) {
+            triggerBioPrediction(scannedBody);
+          }
         }
         break;
       }
@@ -102,6 +155,17 @@
       case "FSSBodySignals":
       case "SAASignalsFound":
         systemStore.updateBodySignals(data);
+
+        // Trigger bio prediction when signals are first detected
+        if (event === "FSSBodySignals") {
+          const sigBody = systemStore.current?.bodies.find(
+            (b) => b.bodyId === (data.BodyID as number),
+          );
+          if (sigBody) {
+            triggerBioPrediction(sigBody);
+          }
+        }
+
         if (event === "SAASignalsFound") {
           const bodyId = data.BodyID as number;
           systemStore.markBodyMapped(bodyId);
@@ -255,6 +319,9 @@
   }
 
   onMount(() => {
+    // Load app config
+    configStore.load();
+
     // Pull structured history from Rust backend
     invoke<Record<string, unknown> | null>("get_journal_history").then((result) => {
       if (!result) {
@@ -275,6 +342,11 @@
         handleJournalEvent(allEvents[i]);
       }
       ready = true; // Show UI now with trip data
+
+      // Batch-trigger bio predictions for any bodies that loaded from history
+      for (const body of systemStore.current?.bodies ?? []) {
+        triggerBioPrediction(body);
+      }
 
       // Phase 2: Process ALL events for lifetime stats in background chunks
       statsProgress = `Processing lifetime stats (${allEvents.length} events)...`;
