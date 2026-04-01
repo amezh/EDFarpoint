@@ -3,12 +3,14 @@
   import { configStore } from "$lib/stores/config.svelte";
   import { estimateCartoValue } from "$lib/utils/valueCalc";
   import { formatCredits } from "$lib/utils/bioPredict";
+  import SystemMap from "./SystemMap.svelte";
+
+  let viewMode: "cards" | "map" = $state("cards");
 
   const system = $derived(systemStore.current);
   const bioThreshold = $derived(configStore.current?.bio.value_threshold ?? 0);
   const dimBelowThreshold = $derived(configStore.current?.bio.dim_below_threshold ?? false);
 
-  // All bio bodies not yet completed
   const allBio = $derived(
     system?.bodies
       .filter((b) => b.bioSignals > 0 && b.personalStatus !== "bio_complete")
@@ -20,8 +22,6 @@
       }) ?? []
   );
 
-  // Split bio bodies: above threshold (or unknown value) vs below
-  // Account for 5x first discovery bonus when comparing against threshold
   function effectiveMax(b: Body): number | null {
     if (b.bioValueMax == null) return null;
     return b.bioValueMax * (!b.wasDiscovered ? 5 : 1);
@@ -41,15 +41,11 @@
 
   function isPoiBody(b: Body): boolean {
     if (b.starType) return false;
-    // Always: ELW, WW, AW
     if (["Earthlike body", "Earth-like world", "Water world", "Ammonia world"].includes(b.type)) return true;
-    // Terraformable
     if (b.terraformable && (poi?.show_terraformable ?? true)) return true;
-    // Rings
     if (b.rings.length > 0 && (poi?.show_rings ?? true)) return true;
-    // Value threshold
     const val = estimateCartoValue({ bodyType: b.type, terraformable: b.terraformable, wasDiscovered: b.wasDiscovered, wasMapped: b.wasMapped, withDSS: true });
-    if (val >= (poi?.min_carto_value ?? 500000)) return true;
+    if (val >= (poi?.min_carto_value ?? 2000000)) return true;
     return false;
   }
 
@@ -69,15 +65,13 @@
 
   const otherBodies = $derived(
     system?.bodies.filter(
-      (b) =>
-        !b.starType &&
-        b.bioSignals === 0 &&
-        b.personalStatus !== "bio_complete" &&
-        !isPoiBody(b),
+      (b) => !b.starType && b.bioSignals === 0 && b.personalStatus !== "bio_complete" && !isPoiBody(b),
     ) ?? []
   );
 
   const fssScanned = $derived(system?.bodies.filter((b) => !b.starType).length ?? 0);
+  const totalBodies = $derived(system?.bodyCount ?? 0);
+  const explorationPct = $derived(totalBodies > 0 ? Math.round(((system?.bodies.length ?? 0) / totalBodies) * 100) : 0);
 
   function fmt(v: number): string {
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
@@ -86,13 +80,7 @@
   }
 
   function bodyValue(b: Body): number {
-    return estimateCartoValue({
-      bodyType: b.type,
-      terraformable: b.terraformable,
-      wasDiscovered: b.wasDiscovered,
-      wasMapped: b.wasMapped,
-      withDSS: !b.mapped,
-    });
+    return estimateCartoValue({ bodyType: b.type, terraformable: b.terraformable, wasDiscovered: b.wasDiscovered, wasMapped: b.wasMapped, withDSS: !b.mapped });
   }
 
   function statusIcon(b: Body): string {
@@ -109,12 +97,11 @@
     return "text-ed-dim";
   }
 
-  /** DSS mapping status color */
   function mapColor(b: Body): string {
-    if (b.mappedByUs) return "text-ed-green";     // first mapped by us
-    if (b.mapped) return "text-ed-blue";           // we mapped (but not first)
-    if (b.wasMapped) return "text-ed-text-muted";  // mapped by someone else
-    return "";                                      // unmapped
+    if (b.mappedByUs) return "text-ed-green";
+    if (b.mapped) return "text-ed-blue";
+    if (b.wasMapped) return "text-ed-text-muted";
+    return "";
   }
 
   function mapLabel(b: Body): string {
@@ -124,245 +111,180 @@
     return "";
   }
 
-  /** Format ring class from journal enum to readable */
-  function ringType(ringClass: string): string {
-    return ringClass
-      .replace("eRingClass_", "")
-      .replace(/([a-z])([A-Z])/g, "$1 $2");
-  }
-
-  // Exploration completion
-  const totalBodies = $derived(system?.bodyCount ?? 0);
-  const scannedBodies = $derived(system?.bodies.length ?? 0);
-  const explorationPct = $derived(
-    totalBodies > 0 ? Math.round((scannedBodies / totalBodies) * 100) : 0
-  );
-
   function typeShort(t: string): string {
     const map: Record<string, string> = {
-      "Earthlike body": "ELW",
-      "Earth-like world": "ELW",
-      "Water world": "WW",
-      "Ammonia world": "AW",
-      "High metal content body": "HMC",
-      "Metal rich body": "MR",
-      "Rocky body": "Rocky",
-      "Rocky ice body": "R-Ice",
-      "Icy body": "Icy",
+      "Earthlike body": "ELW", "Earth-like world": "ELW", "Water world": "WW",
+      "Ammonia world": "AW", "High metal content body": "HMC", "High metal content world": "HMC",
+      "Metal rich body": "MR", "Rocky body": "Rocky", "Rocky ice body": "R-Ice",
+      "Rocky Ice world": "R-Ice", "Icy body": "Icy",
     };
     return map[t] ?? t.replace(/ body$/i, "").replace(/Sudarsky class /i, "");
   }
 </script>
 
 {#if system}
-  <div class="flex flex-col gap-2">
-    <!-- System header -->
-    <div class="ed-card">
-      <div class="flex items-center justify-between">
-        <h2 class="text-ed-amber font-bold text-base">{system.name}</h2>
-        <span class="text-xs text-ed-text-muted">
-          {system.distanceFromSol?.toFixed(0)} LY
-        </span>
-      </div>
-      <div class="flex items-center gap-3 mt-1 text-xs text-ed-text-muted">
-        <span>FSS {fssScanned}/{system.bodyCount ?? "?"}</span>
-        {#if totalBodies > 0}
-          <span>{explorationPct}%</span>
-        {:else if system.fssProgress > 0 && system.fssProgress < 1}
-          <span>{(system.fssProgress * 100).toFixed(0)}%</span>
-        {/if}
-        {#if !system.firstDiscovery}
-          <span class="text-ed-amber">UNDISCOVERED</span>
-        {/if}
-      </div>
+  <div class="flex flex-col h-full">
+  <!-- System header with view toggle -->
+  <div class="flex items-center gap-3 mb-2 px-1 shrink-0">
+    <h2 class="text-ed-amber font-bold">{system.name}</h2>
+    <span class="text-[10px] text-ed-text-muted">{system.distanceFromSol?.toFixed(0)} LY</span>
+    <span class="text-[10px] text-ed-text-muted">FSS {fssScanned}/{system.bodyCount ?? "?"}</span>
+    {#if totalBodies > 0}
+      <span class="text-[10px] text-ed-text-muted">{explorationPct}%</span>
+    {/if}
+    {#if !system.firstDiscovery}
+      <span class="text-[10px] text-ed-amber font-bold">UNDISCOVERED</span>
+    {/if}
+    <div class="ml-auto flex gap-0.5">
+      <button class="text-[10px] px-1.5 py-0.5 rounded transition-colors"
+              class:bg-ed-amber={viewMode === "cards"} class:text-black={viewMode === "cards"}
+              class:text-ed-text-muted={viewMode !== "cards"}
+              onclick={() => viewMode = "cards"}>Cards</button>
+      <button class="text-[10px] px-1.5 py-0.5 rounded transition-colors"
+              class:bg-ed-amber={viewMode === "map"} class:text-black={viewMode === "map"}
+              class:text-ed-text-muted={viewMode !== "map"}
+              onclick={() => viewMode = "map"}>Map</button>
     </div>
+  </div>
 
-    <!-- ACTION: Bio targets (most important) -->
-    {#if valuableBio.length > 0}
-      <div class="mt-1">
-        <div class="text-xs text-ed-green font-bold uppercase tracking-wider px-1 mb-1">
-          Bio targets — land &amp; scan
-        </div>
-        {#each valuableBio as body (body.bodyId)}
-          <div class="rounded mb-1 bg-ed-surface/80 border-l-2 border-ed-green">
-            <!-- Header row -->
-            <div class="flex items-center gap-2 px-3 py-1.5">
-              <span class="text-xs w-3 {statusColor(body)}">{statusIcon(body)}</span>
-              <span class="font-mono text-sm flex-1 truncate">{body.shortName}</span>
-              <span class="text-xs text-ed-text-muted">{typeShort(body.type)}</span>
-              <span class="text-xs text-ed-text-muted">{body.gravity?.toFixed(1)}g</span>
-              <span class="text-xs font-mono text-ed-green font-bold">{body.bioSignals} bio</span>
-              {#if !body.mapped}
-                <span class="text-[10px] bg-ed-green/20 text-ed-green px-1 rounded">DSS</span>
-              {:else if mapLabel(body)}
-                <span class="text-[10px] {mapColor(body)}">{mapLabel(body)}</span>
-              {/if}
-              {#if body.personalStatus !== "landed"}
-                <span class="text-[10px] bg-ed-amber/20 text-ed-amber px-1 rounded">LAND</span>
-              {/if}
-            </div>
-            <!-- Detail row: distance, rings, discoverer -->
-            <div class="flex items-center gap-2 px-3 pb-1 text-[10px] text-ed-text-muted">
-              {#if body.distanceLs != null}
-                <span>{body.distanceLs.toFixed(0)} Ls</span>
-              {/if}
-              {#if !body.wasDiscovered}
-                <span class="text-ed-amber">1st</span>
-              {:else if body.edsmDiscoverer}
-                <span title="Discovered by {body.edsmDiscoverer}">{body.edsmDiscoverer}</span>
-              {/if}
-              {#if body.rings.length > 0}
-                <span class="text-ed-cyan">{body.rings.map(r => ringType(r.ringClass)).join(", ")} ring{body.rings.length > 1 ? "s" : ""}</span>
-              {/if}
-            </div>
-            <!-- Bio value range -->
-            {#if body.bioValueMin != null && body.bioValueMax != null}
-              {@const mult = !body.wasDiscovered ? 5 : 1}
-              <div class="px-3 pb-1 text-xs text-ed-green/80 font-mono">
-                ~{formatCredits(body.bioValueMin * mult)} – {formatCredits(body.bioValueMax * mult)} Cr
-                {#if !body.wasDiscovered}
-                  <span class="text-ed-amber ml-1">(5x first discovery)</span>
-                {/if}
-              </div>
-            {:else if body.bioSignals > 0}
-              <div class="px-3 pb-1 text-xs text-ed-text-muted italic">predicting...</div>
+  {#if viewMode === "map"}
+    <div class="flex-1 min-h-0">
+      <SystemMap />
+    </div>
+  {:else}
+  <div class="flex-1 min-h-0 overflow-y-auto">
+
+  <!-- BIO TARGETS — card grid -->
+  {#if valuableBio.length > 0 || lowValueBio.length > 0}
+    <div class="text-[10px] text-ed-green font-bold uppercase tracking-wider px-1 mb-1">
+      Bio targets — land &amp; scan
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-1.5 mb-3">
+      {#each [...valuableBio, ...lowValueBio] as body (body.bodyId)}
+        {@const mult = !body.wasDiscovered ? 5 : 1}
+        {@const isLow = lowValueBio.includes(body)}
+        <div class="rounded border border-ed-green/30 bg-ed-bg/80 p-2"
+             class:opacity-40={isLow && dimBelowThreshold}>
+          <!-- Name + type -->
+          <div class="flex items-center gap-1 mb-0.5">
+            <span class="{statusColor(body)} text-[10px]">{statusIcon(body)}</span>
+            <span class="font-mono font-bold text-xs">{body.shortName}</span>
+            <span class="text-[10px] text-ed-text-muted ml-auto">{typeShort(body.type)} {body.gravity?.toFixed(1)}g</span>
+          </div>
+          <!-- Tags -->
+          <div class="flex items-center gap-1 flex-wrap mb-0.5 text-[10px]">
+            <span class="text-ed-green font-bold">{body.bioSignals} bio</span>
+            {#if !body.wasDiscovered}<span class="text-ed-amber font-bold">1st</span>{/if}
+            <span class="text-ed-text-muted">{body.distanceLs?.toFixed(0)} Ls</span>
+            {#if !body.mapped}
+              <span class="bg-ed-green/20 text-ed-green px-0.5 rounded">DSS</span>
+            {:else if mapLabel(body)}
+              <span class="{mapColor(body)}">{mapLabel(body)}</span>
             {/if}
-            <!-- Predicted species list -->
-            {#if body.bioSpeciesPredicted.length > 0}
-              {@const mult = !body.wasDiscovered ? 5 : 1}
-              <div class="px-3 pb-2 flex flex-col gap-0.5">
-                {#each body.bioSpeciesPredicted as species}
-                  <div class="flex items-center gap-2 pl-5 text-xs" class:opacity-40={species.confidence === "low"}>
-                    <span class="text-ed-text truncate flex-1">{species.name}</span>
-                    <span class="font-mono text-ed-green/70">{formatCredits(species.value * mult)}</span>
-                    <span class="text-ed-text-muted">{species.clonal_range}m</span>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    <!-- Low-value bio (below threshold, shown dimmed or collapsed) -->
-    {#if lowValueBio.length > 0 && dimBelowThreshold}
-      <details class="mt-1">
-        <summary class="text-xs text-ed-text-muted cursor-pointer px-1 py-1 hover:text-ed-text">
-          {lowValueBio.length} low-value bio {lowValueBio.length === 1 ? "body" : "bodies"} (below {fmt(bioThreshold)} Cr)
-        </summary>
-        {#each lowValueBio as body (body.bodyId)}
-          {@const mult = !body.wasDiscovered ? 5 : 1}
-          <div class="rounded mb-0.5 bg-ed-surface/40">
-            <div class="flex items-center gap-2 px-3 py-1 text-ed-text-muted text-xs">
-              <span class="font-mono flex-1 truncate">{body.shortName}</span>
-              <span>{typeShort(body.type)}</span>
-              <span class="font-mono">{body.bioSignals} bio</span>
-              {#if body.bioValueMax != null}
-                <span class="font-mono">~{formatCredits(body.bioValueMax * mult)}</span>
-              {/if}
-            </div>
-            {#if body.bioSpeciesPredicted.length > 0}
-              <div class="px-3 pb-1.5 flex flex-col gap-0.5">
-                {#each body.bioSpeciesPredicted as species}
-                  <div class="flex items-center gap-2 pl-5 text-xs text-ed-text-muted" class:opacity-40={species.confidence === "low"}>
-                    <span class="truncate flex-1">{species.name}</span>
-                    <span class="font-mono text-ed-green/50">{formatCredits(species.value * mult)}</span>
-                    <span class="opacity-60">{species.clonal_range}m</span>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/each}
-      </details>
-    {/if}
-
-    <!-- ACTION: Valuable carto targets -->
-    {#if valuableCarto.length > 0}
-      <div class="mt-1">
-        <div class="text-xs text-ed-amber font-bold uppercase tracking-wider px-1 mb-1">
-          Map these — high value
-        </div>
-        {#each valuableCarto as body (body.bodyId)}
-          <div class="rounded mb-0.5 bg-ed-surface/80 border-l-2 border-ed-amber">
-            <div class="flex items-center gap-2 px-3 py-1.5">
-              <span class="text-xs w-3 {statusColor(body)}">{statusIcon(body)}</span>
-              <span class="font-mono text-sm flex-1 truncate">{body.shortName}</span>
-              <span class="text-xs text-ed-amber">{typeShort(body.type)}</span>
-              <span class="text-xs text-ed-text-muted">{body.distanceLs?.toFixed(0)} Ls</span>
-              <span class="text-xs font-mono text-ed-amber">~{fmt(bodyValue(body))} Cr</span>
-              {#if !body.mapped}
-                <span class="text-[10px] bg-ed-amber/20 text-ed-amber px-1 rounded">DSS</span>
-              {:else if mapLabel(body)}
-                <span class="text-[10px] {mapColor(body)}">{mapLabel(body)}</span>
-              {/if}
-            </div>
-            <div class="flex items-center gap-2 px-3 pb-1 text-[10px] text-ed-text-muted">
-              {#if !body.wasDiscovered}
-                <span class="text-ed-amber">1st discovery</span>
-              {:else if body.edsmDiscoverer}
-                <span>{body.edsmDiscoverer}</span>
-              {/if}
-              {#if body.rings.length > 0}
-                <span class="text-ed-cyan">{body.rings.map(r => ringType(r.ringClass)).join(", ")} ring{body.rings.length > 1 ? "s" : ""}</span>
-              {/if}
-              {#if body.terraformable}
-                <span class="text-ed-green">terraformable</span>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    <!-- DONE: Completed bio -->
-    {#if completedBio.length > 0}
-      <div class="mt-1">
-        <div class="text-xs text-ed-dim font-bold uppercase tracking-wider px-1 mb-1">
-          Completed
-        </div>
-        {#each completedBio as body (body.bodyId)}
-          <div class="flex items-center gap-2 px-3 py-1 rounded mb-0.5 text-ed-dim">
-            <span class="text-xs w-3">✓</span>
-            <span class="font-mono text-sm flex-1 truncate">{body.shortName}</span>
-            <span class="text-xs">{body.bioSignals} bio</span>
-          </div>
-        {/each}
-      </div>
-    {/if}
-
-    <!-- Other bodies (collapsed by default) -->
-    {#if otherBodies.length > 0}
-      <details class="mt-1">
-        <summary class="text-xs text-ed-text-muted cursor-pointer px-1 py-1 hover:text-ed-text">
-          {otherBodies.length} other bodies
-        </summary>
-        {#each otherBodies as body (body.bodyId)}
-          <div class="flex items-center gap-2 px-3 py-1 rounded mb-0.5 text-ed-text-muted text-xs">
-            <span class="font-mono flex-1 truncate">{body.shortName}</span>
-            <span>{typeShort(body.type)}</span>
-            <span>{body.distanceLs?.toFixed(0)} Ls</span>
-            {#if !body.wasDiscovered}
-              <span class="text-ed-amber">1st</span>
+            {#if body.personalStatus !== "landed" && body.personalStatus !== "dss"}
+              <span class="bg-ed-amber/20 text-ed-amber px-0.5 rounded">LAND</span>
             {/if}
             {#if body.rings.length > 0}
               <span class="text-ed-cyan">{body.rings.length}R</span>
             {/if}
-            {#if bodyValue(body) > 0}
-              <span class="font-mono">~{fmt(bodyValue(body))}</span>
-            {/if}
-            {#if body.mapped}
+          </div>
+          <!-- Value -->
+          {#if body.bioValueMin != null && body.bioValueMax != null}
+            <div class="text-[10px] text-ed-green/70 font-mono mb-0.5">
+              ~{formatCredits(body.bioValueMin * mult)} – {formatCredits(body.bioValueMax * mult)} Cr
+              {#if !body.wasDiscovered}<span class="text-ed-amber">(5x)</span>{/if}
+            </div>
+          {:else}
+            <div class="text-[10px] text-ed-text-muted italic mb-0.5">predicting...</div>
+          {/if}
+          <!-- Species -->
+          {#if body.bioSpeciesPredicted.length > 0}
+            {#each body.bioSpeciesPredicted as species}
+              <div class="flex items-center gap-1 text-[10px] leading-tight" class:opacity-40={species.confidence === "low"}>
+                <span class="truncate flex-1">{species.name}</span>
+                <span class="font-mono text-ed-green/50 shrink-0">{formatCredits(species.value * mult)}</span>
+                <span class="text-ed-text-muted shrink-0">{species.clonal_range}m</span>
+              </div>
+            {/each}
+          {/if}
+          <!-- Discoverer -->
+          {#if body.edsmDiscoverer}
+            <div class="text-[9px] text-ed-text-muted mt-0.5 truncate">{body.edsmDiscoverer}</div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- CARTO TARGETS — card grid -->
+  {#if valuableCarto.length > 0}
+    <div class="text-[10px] text-ed-amber font-bold uppercase tracking-wider px-1 mb-1">
+      Map these — high value
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-1.5 mb-3">
+      {#each valuableCarto as body (body.bodyId)}
+        <div class="rounded border border-ed-amber/30 bg-ed-bg/80 p-2">
+          <div class="flex items-center gap-1 mb-0.5">
+            <span class="{statusColor(body)} text-[10px]">{statusIcon(body)}</span>
+            <span class="font-mono font-bold text-xs">{body.shortName}</span>
+            <span class="text-[10px] text-ed-amber ml-auto">{typeShort(body.type)}</span>
+          </div>
+          <div class="flex items-center gap-1 flex-wrap text-[10px]">
+            <span class="font-mono text-ed-amber font-bold">~{fmt(bodyValue(body))} Cr</span>
+            <span class="text-ed-text-muted">{body.distanceLs?.toFixed(0)} Ls</span>
+            {#if !body.wasDiscovered}<span class="text-ed-amber">1st</span>{/if}
+            {#if body.terraformable}<span class="text-ed-green">terra</span>{/if}
+            {#if body.rings.length > 0}<span class="text-ed-cyan">{body.rings.length}R</span>{/if}
+            {#if !body.mapped}
+              <span class="bg-ed-amber/20 text-ed-amber px-0.5 rounded">DSS</span>
+            {:else if mapLabel(body)}
               <span class="{mapColor(body)}">{mapLabel(body)}</span>
             {/if}
           </div>
-        {/each}
-      </details>
-    {/if}
-  </div>
+          {#if body.edsmDiscoverer}
+            <div class="text-[9px] text-ed-text-muted mt-0.5 truncate">{body.edsmDiscoverer}</div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- COMPLETED — compact chips -->
+  {#if completedBio.length > 0}
+    <div class="text-[10px] text-ed-dim font-bold uppercase tracking-wider px-1 mb-1">Completed</div>
+    <div class="flex flex-wrap gap-1 mb-2">
+      {#each completedBio as body (body.bodyId)}
+        <span class="text-[10px] text-ed-dim bg-ed-surface/40 px-1.5 py-0.5 rounded">
+          ✓ {body.shortName} · {body.bioSignals} bio
+        </span>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- OTHER BODIES — always open, compact card grid -->
+  {#if otherBodies.length > 0}
+    <div class="text-[10px] text-ed-text-muted font-bold uppercase tracking-wider px-1 mb-1">
+      {otherBodies.length} other bodies
+    </div>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-1">
+      {#each otherBodies as body (body.bodyId)}
+        <div class="text-[10px] text-ed-text-muted bg-ed-bg/40 rounded px-2 py-1 flex items-center gap-1">
+          <span class="font-mono truncate flex-1">{body.shortName}</span>
+          <span>{typeShort(body.type)}</span>
+          {#if !body.wasDiscovered}<span class="text-ed-amber">1st</span>{/if}
+          {#if body.rings.length > 0}<span class="text-ed-cyan">{body.rings.length}R</span>{/if}
+          {#if bodyValue(body) > 0}<span class="font-mono">~{fmt(bodyValue(body))}</span>{/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  </div><!-- end cards scroll container -->
+  {/if}<!-- end cards/map toggle -->
+  </div><!-- end flex column -->
 {:else}
-  <div class="ed-card text-ed-text-muted text-center py-8">
+  <div class="text-ed-text-muted text-center py-8">
     <p>Waiting for system data...</p>
-    <p class="text-xs mt-2">Jump to a system or start the game</p>
+    <p class="text-xs mt-2">Jump to a system or load into the game</p>
   </div>
 {/if}

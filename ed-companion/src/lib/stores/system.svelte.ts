@@ -43,6 +43,10 @@ export interface Body {
   personalStatus: "unvisited" | "fss" | "dss" | "landed" | "bio_complete";
   parents: Array<Record<string, number>>;
   rings: RingInfo[];
+  semiMajorAxis: number | null;  // meters
+  eccentricity: number | null;
+  orbitalInclination: number | null; // degrees
+  orbitalPeriod: number | null;  // seconds
   edsmDiscoverer: string | null;
   edsmDiscoveryDate: string | null;
 }
@@ -155,6 +159,10 @@ function createSystemStore() {
         personalStatus: existing >= 0 ? state.bodies[existing].personalStatus : "fss",
         parents: (scan.Parents as Array<Record<string, number>>) ?? [],
         rings,
+        semiMajorAxis: (scan.SemiMajorAxis as number) ?? null,
+        eccentricity: (scan.Eccentricity as number) ?? null,
+        orbitalInclination: (scan.OrbitalInclination as number) ?? null,
+        orbitalPeriod: (scan.OrbitalPeriod as number) ?? null,
         edsmDiscoverer: existing >= 0 ? state.bodies[existing].edsmDiscoverer : null,
         edsmDiscoveryDate: existing >= 0 ? state.bodies[existing].edsmDiscoveryDate : null,
       };
@@ -213,6 +221,10 @@ function createSystemStore() {
           personalStatus: "fss",
           parents: [],
           rings: [],
+          semiMajorAxis: null,
+          eccentricity: null,
+          orbitalInclination: null,
+          orbitalPeriod: null,
           edsmDiscoverer: null,
           edsmDiscoveryDate: null,
         };

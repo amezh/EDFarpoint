@@ -1,10 +1,7 @@
 <script lang="ts">
   import BioTracker from "$lib/components/BioTracker/BioTracker.svelte";
-  import Header from "$lib/components/Header.svelte";
-  import LifetimeStats from "$lib/components/LifetimeStats/LifetimeStats.svelte";
   import RouteView from "$lib/components/RouteView/RouteView.svelte";
   import Settings from "$lib/components/Settings/Settings.svelte";
-  import StatusBar from "$lib/components/StatusBar.svelte";
   import SystemView from "$lib/components/SystemView.svelte";
   import TripStats from "$lib/components/TripStats/TripStats.svelte";
   import { bioStore } from "$lib/stores/bio.svelte";
@@ -25,20 +22,18 @@
   import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
 
-  type TabId = "system" | "route" | "bio" | "stats" | "settings";
-  let activeTab: TabId = $state("system");
   let ready = $state(false);
+  let showSettings = $state(false);
   let statsLoading = $state(true);
   let statsProgress = $state("");
   let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
 
-  const tabs: { id: TabId; label: string }[] = [
-    { id: "route", label: "Route" },
-    { id: "system", label: "Discovery" },
-    { id: "bio", label: "Bio" },
-    { id: "stats", label: "Stats" },
-    { id: "settings", label: "Settings" },
-  ];
+  function fmtCr(v: number): string {
+    if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
+    if (v >= 1_000) return (v / 1_000).toFixed(1) + "K";
+    return v.toString();
+  }
 
   // Push state to remote WebSocket server when stores change
   $effect(() => { pushRemoteState("system", systemStore.current); });
@@ -110,6 +105,9 @@
 
       case "Scan": {
         const isStar = !!(data.StarType);
+        // Always add to bodies list (for system map)
+        systemStore.addOrUpdateBody(data);
+
         if (isStar) {
           const starValue = estimateStarValue(
             data.StarType as string,
@@ -444,53 +442,75 @@
   </div>
 {:else}
   <div class="h-screen flex flex-col bg-ed-bg text-ed-text overflow-hidden select-none">
-    <Header />
-    <StatusBar />
-
-    <nav class="flex border-b border-ed-border bg-ed-panel px-2">
-      {#each tabs as tab}
-        <button
-          class="px-4 py-2 text-sm transition-colors border-b-2"
-          class:border-ed-orange={activeTab === tab.id}
-          class:text-ed-orange={activeTab === tab.id}
-          class:border-transparent={activeTab !== tab.id}
-          class:text-ed-text-muted={activeTab !== tab.id}
-          class:hover:text-ed-text={activeTab !== tab.id}
-          onclick={() => (activeTab = tab.id)}
-        >
-          {tab.label}
-        </button>
-      {/each}
-    </nav>
-
-    <main class="flex-1 overflow-y-auto p-3">
-      {#if activeTab === "system"}
-        <SystemView />
-      {:else if activeTab === "route"}
-        <RouteView />
-      {:else if activeTab === "bio"}
-        <BioTracker />
-      {:else if activeTab === "stats"}
-        <div class="flex flex-col gap-4">
-          {#if lastDockInfo}
-            <div class="text-xs text-ed-text-muted px-1">
-              Last docked: {lastDockInfo.station} · {lastDockInfo.timestamp}
-            </div>
-          {:else}
-            <div class="text-xs text-ed-amber px-1">Never docked — entire history is one trip</div>
-          {/if}
-          <TripStats />
-          {#if statsLoading}
-            <div class="ed-card text-center text-ed-text-muted text-sm py-4">
-              <p>{statsProgress}</p>
-            </div>
-          {:else}
-            <LifetimeStats />
-          {/if}
-        </div>
-      {:else if activeTab === "settings"}
-        <Settings />
+    <!-- Top bar: system + CMDR + trip value + settings toggle -->
+    <header class="flex items-center gap-4 px-4 py-1.5 bg-ed-panel border-b border-ed-border">
+      <span class="text-ed-orange font-bold tracking-wide">ED Farpoint</span>
+      {#if journalStore.commander}
+        <span class="text-ed-text-muted text-xs">CMDR {journalStore.commander}</span>
       {/if}
-    </main>
+      {#if systemStore.current}
+        <span class="text-ed-amber text-sm font-bold">{systemStore.current.name}</span>
+        <span class="text-ed-text-muted text-xs">{systemStore.current.distanceFromSol?.toFixed(0)} LY</span>
+      {/if}
+      <div class="ml-auto flex items-center gap-4 text-xs font-mono">
+        <span>
+          <span class="text-ed-text-muted">CARTO</span>
+          <span class="text-ed-amber ml-1">{fmtCr(tripStore.current.cartoFSSValue + tripStore.current.cartoDSSValue)}</span>
+        </span>
+        <span>
+          <span class="text-ed-text-muted">BIO</span>
+          <span class="text-ed-green ml-1">{fmtCr(tripStore.current.bioValueBase + tripStore.current.bioValueBonus)}</span>
+        </span>
+        <span>
+          <span class="text-ed-text-muted">TOTAL</span>
+          <span class="text-ed-orange font-bold ml-1">{fmtCr(tripStore.current.cartoFSSValue + tripStore.current.cartoDSSValue + tripStore.current.bioValueBase + tripStore.current.bioValueBonus)}</span>
+        </span>
+        <span class="text-ed-text-muted">
+          {tripStore.current.systemsVisited} sys | {tripStore.current.bodiesScanned} scn | {tripStore.current.bioSpeciesAnalysed} bio
+          {#if statsLoading}
+            <span class="text-ed-dim ml-1" title={statsProgress}>...</span>
+          {/if}
+          {#if lastDockInfo}
+            <span class="ml-1" title="Last dock: {lastDockInfo.station}">| {lastDockInfo.station}</span>
+          {/if}
+        </span>
+        <button class="text-ed-text-muted hover:text-ed-text transition-colors"
+                onclick={() => showSettings = !showSettings}
+                title="Settings">
+          {showSettings ? "✕" : "⚙"}
+        </button>
+      </div>
+    </header>
+
+    <!-- Main dashboard: card grid -->
+    {#if showSettings}
+      <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full">
+        <Settings />
+      </main>
+    {:else}
+      <main class="flex-1 overflow-y-auto p-2">
+        <div class="grid grid-cols-[minmax(200px,1fr)_minmax(400px,3fr)_minmax(240px,1fr)] gap-2 h-full">
+          <!-- Left card: Route -->
+          <div class="bg-ed-surface/60 rounded-lg border border-ed-border/50 overflow-y-auto p-2">
+            <RouteView />
+          </div>
+
+          <!-- Center card: System discovery -->
+          <div class="bg-ed-surface/60 rounded-lg border border-ed-border/50 overflow-y-auto p-3">
+            <SystemView />
+          </div>
+
+          <!-- Right card: Bio tracker + stats -->
+          <div class="bg-ed-surface/60 rounded-lg border border-ed-border/50 overflow-y-auto p-2">
+            <BioTracker />
+            {#if !bioStore.currentPlanet || bioStore.currentPlanet.species.length === 0}
+              <div class="mt-2 pt-2 border-t border-ed-border/30">
+                <TripStats />
+              </div>
+            {/if}
+          </div>
+        </div>
+      </main>
+    {/if}
   </div>
 {/if}

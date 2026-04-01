@@ -14,13 +14,14 @@
       {
         "label": "main",
         "title": "ED Farpoint",
-        "width": 460,
+        "width": 1280,
         "height": 800,
-        "minWidth": 380,
-        "minHeight": 600,
+        "minWidth": 800,
+        "minHeight": 500,
         "resizable": true,
         "fullscreen": false,
-        "alwaysOnTop": true,
+        "maximizable": true,
+        "alwaysOnTop": false,
         "decorations": true,
         "transparent": false
       }
