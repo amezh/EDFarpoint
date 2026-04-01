@@ -1,6 +1,14 @@
 // System store — tracks current system + body list
 import type { PredictedSpecies, BioPrediction } from "$lib/utils/bioPredict";
 
+export interface RingInfo {
+  name: string;
+  ringClass: string;   // e.g. "eRingClass_Rocky", "eRingClass_Icy"
+  massMT: number;      // mass in megatons
+  innerRad: number;    // inner radius in meters
+  outerRad: number;    // outer radius in meters
+}
+
 export interface Body {
   bodyId: number;
   name: string;
@@ -8,16 +16,21 @@ export interface Body {
   type: string;
   planetClass: string;
   starType: string | null;
+  starSubclass: number | null;
+  stellarMass: number | null;
+  luminosity: string | null;
   distanceLs: number | null;
   radius: number | null;
   gravity: number | null;
   atmosphere: string;
   atmosphereType: string;
+  surfacePressure: number | null; // in Atmospheres (journal value / 101325)
   temperature: number | null;
   volcanism: string;
   landable: boolean;
   terraformable: boolean;
-  mapped: boolean;
+  mapped: boolean;        // we DSS'd this body
+  mappedByUs: boolean;    // we were first to map it (journal wasMapped=false when we DSS)
   bioSignals: number;
   geoSignals: number;
   bioSpeciesPredicted: PredictedSpecies[];
@@ -25,9 +38,13 @@ export interface Body {
   bioValueMax: number | null;
   estimatedValue: number | null;
   wasDiscovered: boolean;
-  wasMapped: boolean;
+  wasMapped: boolean;     // someone else mapped before us (from journal)
+  wasFootfalled: boolean;
   personalStatus: "unvisited" | "fss" | "dss" | "landed" | "bio_complete";
   parents: Array<Record<string, number>>;
+  rings: RingInfo[];
+  edsmDiscoverer: string | null;
+  edsmDiscoveryDate: string | null;
 }
 
 export interface SystemState {
@@ -94,6 +111,16 @@ function createSystemStore() {
       const bodyId = scan.BodyID as number;
       const existing = state.bodies.findIndex((b) => b.bodyId === bodyId);
 
+      // Parse rings if present
+      const rawRings = scan.Rings as Array<Record<string, unknown>> | undefined;
+      const rings: RingInfo[] = rawRings?.map((r) => ({
+        name: (r.Name as string) ?? "",
+        ringClass: (r.RingClass as string) ?? "",
+        massMT: (r.MassMT as number) ?? 0,
+        innerRad: (r.InnerRad as number) ?? 0,
+        outerRad: (r.OuterRad as number) ?? 0,
+      })) ?? [];
+
       const body: Body = {
         bodyId,
         name: scan.BodyName as string,
@@ -101,16 +128,21 @@ function createSystemStore() {
         type: (scan.StarType as string) ? "Star" : (scan.PlanetClass as string) ?? "Unknown",
         planetClass: (scan.PlanetClass as string) ?? "",
         starType: (scan.StarType as string) ?? null,
+        starSubclass: (scan.Subclass as number) ?? null,
+        stellarMass: (scan.StellarMass as number) ?? null,
+        luminosity: (scan.Luminosity as string) ?? null,
         distanceLs: (scan.DistanceFromArrivalLS as number) ?? null,
         radius: scan.Radius != null ? (scan.Radius as number) / 1000 : null,
         gravity: scan.SurfaceGravity != null ? (scan.SurfaceGravity as number) / 9.81 : null,
         atmosphere: (scan.Atmosphere as string) ?? "",
         atmosphereType: (scan.AtmosphereType as string) ?? "",
+        surfacePressure: scan.SurfacePressure != null ? (scan.SurfacePressure as number) / 101325 : null,
         temperature: (scan.SurfaceTemperature as number) ?? null,
         volcanism: (scan.Volcanism as string) ?? "",
         landable: (scan.Landable as boolean) ?? false,
         terraformable: (scan.TerraformState as string) === "Terraformable",
-        mapped: false,
+        mapped: existing >= 0 ? state.bodies[existing].mapped : false,
+        mappedByUs: false,
         bioSignals: existing >= 0 ? state.bodies[existing].bioSignals : 0,
         geoSignals: existing >= 0 ? state.bodies[existing].geoSignals : 0,
         bioSpeciesPredicted: existing >= 0 ? state.bodies[existing].bioSpeciesPredicted : [],
@@ -119,8 +151,12 @@ function createSystemStore() {
         estimatedValue: null,
         wasDiscovered: (scan.WasDiscovered as boolean) ?? false,
         wasMapped: (scan.WasMapped as boolean) ?? false,
-        personalStatus: "fss",
+        wasFootfalled: (scan.WasFootfalled as boolean) ?? false,
+        personalStatus: existing >= 0 ? state.bodies[existing].personalStatus : "fss",
         parents: (scan.Parents as Array<Record<string, number>>) ?? [],
+        rings,
+        edsmDiscoverer: existing >= 0 ? state.bodies[existing].edsmDiscoverer : null,
+        edsmDiscoveryDate: existing >= 0 ? state.bodies[existing].edsmDiscoveryDate : null,
       };
 
       if (existing >= 0) {
@@ -150,16 +186,21 @@ function createSystemStore() {
           type: "Unknown",
           planetClass: "",
           starType: null,
+          starSubclass: null,
+          stellarMass: null,
+          luminosity: null,
           distanceLs: null,
           radius: null,
           gravity: null,
           atmosphere: "",
           atmosphereType: "",
+          surfacePressure: null,
           temperature: null,
           volcanism: "",
           landable: false,
           terraformable: false,
           mapped: false,
+          mappedByUs: false,
           bioSignals: 0,
           geoSignals: 0,
           bioSpeciesPredicted: [],
@@ -168,8 +209,12 @@ function createSystemStore() {
           estimatedValue: null,
           wasDiscovered: false,
           wasMapped: false,
+          wasFootfalled: false,
           personalStatus: "fss",
           parents: [],
+          rings: [],
+          edsmDiscoverer: null,
+          edsmDiscoveryDate: null,
         };
         state.bodies = [...state.bodies, body];
       }
@@ -188,6 +233,10 @@ function createSystemStore() {
       const body = state.bodies.find((b) => b.bodyId === bodyId);
       if (body) {
         body.mapped = true;
+        // If wasMapped was false when we scanned, we're the first mapper
+        if (!body.wasMapped) {
+          body.mappedByUs = true;
+        }
         body.personalStatus = "dss";
       }
     },
@@ -220,6 +269,19 @@ function createSystemStore() {
         body.bioSpeciesPredicted = prediction.species;
         body.bioValueMin = prediction.min_value;
         body.bioValueMax = prediction.max_value;
+      }
+    },
+
+    /** Apply EDSM discovery data to matching bodies */
+    applyEdsmBodies(edsmBodies: Array<{ body_id?: number; name?: string; discovery?: { commander?: string; date?: string } }>) {
+      if (!state) return;
+      for (const eb of edsmBodies) {
+        if (eb.body_id == null || !eb.discovery?.commander) continue;
+        const body = state.bodies.find((b) => b.bodyId === eb.body_id);
+        if (body) {
+          body.edsmDiscoverer = eb.discovery.commander;
+          body.edsmDiscoveryDate = eb.discovery.date ?? null;
+        }
       }
     },
   };

@@ -6,6 +6,7 @@ pub struct AppConfig {
     pub window: WindowConfig,
     pub remote: RemoteConfig,
     pub bio: BioConfig,
+    pub poi: PoiConfig,
     pub autoswitch: AutoswitchConfig,
     pub ui: UiConfig,
     pub edsm: EdsmConfig,
@@ -38,6 +39,15 @@ pub struct BioConfig {
     pub value_threshold: u64,
     pub highlight_color: String,
     pub dim_below_threshold: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PoiConfig {
+    pub min_carto_value: u64,    // highlight bodies worth at least this much (Cr)
+    pub show_rings: bool,        // highlight bodies with rings
+    pub show_landable: bool,     // highlight landable bodies
+    pub max_gravity: f64,        // only show landable bodies below this gravity (g)
+    pub show_terraformable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,6 +90,13 @@ impl Default for AppConfig {
                 value_threshold: 8_000_000,
                 highlight_color: "#e88c00".to_string(),
                 dim_below_threshold: true,
+            },
+            poi: PoiConfig {
+                min_carto_value: 2_000_000,
+                show_rings: true,
+                show_landable: false,
+                max_gravity: 3.0,
+                show_terraformable: true,
             },
             autoswitch: AutoswitchConfig {
                 enabled: true,

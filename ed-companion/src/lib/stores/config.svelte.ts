@@ -1,4 +1,4 @@
-// Config store — loads app config from Rust and exposes it reactively
+// Config store — loads app config from Rust, auto-saves on change
 import { invoke } from "@tauri-apps/api/core";
 
 export interface AppConfig {
@@ -13,12 +13,23 @@ export interface AppConfig {
   };
   remote: { enabled: boolean; port: number; auth_token: string };
   bio: { value_threshold: number; highlight_color: string; dim_below_threshold: boolean };
+  poi: { min_carto_value: number; show_rings: boolean; show_landable: boolean; max_gravity: number; show_terraformable: boolean };
   autoswitch: { enabled: boolean; panel_autoswitch: boolean; overlay_autoswitch: boolean };
   ui: { body_columns: string[] };
   edsm: { api_key: string };
 }
 
 let config = $state<AppConfig | null>(null);
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function debouncedSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    if (config) {
+      invoke("update_config", { config }).catch(() => {});
+    }
+  }, 300);
+}
 
 export const configStore = {
   get current() {
@@ -29,12 +40,10 @@ export const configStore = {
     config = (await invoke("get_config")) as AppConfig;
   },
 
-  async save() {
+  /** Update a config section and auto-save */
+  patch(fn: (c: AppConfig) => void) {
     if (!config) return;
-    await invoke("save_config", { config });
-  },
-
-  update(newConfig: AppConfig) {
-    config = newConfig;
+    fn(config);
+    debouncedSave();
   },
 };

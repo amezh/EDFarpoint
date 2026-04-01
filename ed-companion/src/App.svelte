@@ -54,6 +54,15 @@
     return `${systemAddr}:${bodyId}`;
   }
 
+  async function fetchEdsmBodies(systemName: string) {
+    try {
+      const result = await invoke<Array<Record<string, unknown>> | null>("fetch_edsm_bodies", { systemName });
+      if (result) {
+        systemStore.applyEdsmBodies(result as Array<{ body_id?: number; name?: string; discovery?: { commander?: string; date?: string } }>);
+      }
+    } catch { /* EDSM may be unreachable — silently ignore */ }
+  }
+
   async function triggerBioPrediction(body: Body) {
     if (body.bioSignals === 0 || body.bioSpeciesPredicted.length > 0) return;
     if (!body.planetClass) return; // stub from FSSBodySignals — wait for Scan
@@ -88,6 +97,8 @@
       case "Location":
         systemStore.setSystem(data);
         expeditionStore.enterSystem(data);
+        // Fetch EDSM body data in background for discoverer info
+        fetchEdsmBodies(data.StarSystem as string);
         tripStore.addSystem(
           data.StarSystem as string,
           (data.JumpDist as number) ?? 0,

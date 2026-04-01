@@ -34,6 +34,12 @@ pub struct EdsmCoords {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EdsmDiscovery {
+    pub commander: Option<String>,
+    pub date: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdsmBodyInfo {
     pub id: Option<u64>,
     pub id64: Option<u64>,
@@ -61,6 +67,7 @@ pub struct EdsmBodyInfo {
     pub atmosphere_type: Option<String>,
     #[serde(rename = "terraformingState")]
     pub terraforming_state: Option<String>,
+    pub discovery: Option<EdsmDiscovery>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

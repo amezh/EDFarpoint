@@ -1,24 +1,13 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { configStore, type AppConfig } from "$lib/stores/config.svelte";
+  import { configStore } from "$lib/stores/config.svelte";
 
-  let config: AppConfig | null = $state(null);
-  let saving = $state(false);
   let overlayOpen = $state(false);
 
-  async function loadSettings() {
-    // Copy from shared store (or load fresh if not yet loaded)
-    if (!configStore.current) await configStore.load();
-    config = configStore.current ? structuredClone($state.snapshot(configStore.current)) : null;
-    overlayOpen = await invoke<boolean>("is_overlay_open");
-  }
+  const config = $derived(configStore.current);
 
-  async function saveConfig() {
-    if (!config) return;
-    saving = true;
-    await invoke("update_config", { config });
-    configStore.update(structuredClone(config));
-    saving = false;
+  function save() {
+    configStore.patch(() => {}); // trigger debounced save
   }
 
   async function toggleOverlay() {
@@ -32,14 +21,14 @@
   async function toggleAlwaysOnTop() {
     try {
       const result = await invoke<boolean>("toggle_always_on_top");
-      if (config) config.window.panel_always_on_top = result;
+      configStore.patch((c) => { c.window.panel_always_on_top = result; });
     } catch (e) {
       console.warn("Always on top:", e);
     }
   }
 
   $effect(() => {
-    loadSettings();
+    invoke<boolean>("is_overlay_open").then((v) => { overlayOpen = v; }).catch(() => {});
   });
 </script>
 
@@ -51,13 +40,13 @@
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Journal directory</span>
           <input type="text" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
-                 bind:value={config.paths.journal_dir}
+                 bind:value={config.paths.journal_dir} onchange={save}
                  placeholder="Auto-detected" />
         </label>
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">EDSM API key</span>
           <input type="text" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
-                 bind:value={config.edsm.api_key}
+                 bind:value={config.edsm.api_key} onchange={save}
                  placeholder="Optional" />
         </label>
       </div>
@@ -81,7 +70,7 @@
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Overlay opacity</span>
           <input type="range" min="0.3" max="1" step="0.05"
-                 bind:value={config.window.overlay_opacity}
+                 bind:value={config.window.overlay_opacity} onchange={save}
                  class="w-32" />
         </label>
       </div>
@@ -94,14 +83,51 @@
           <span class="text-ed-text-muted">Value threshold</span>
           <div class="flex items-center gap-1">
             <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-24 text-xs text-right"
-                   bind:value={config.bio.value_threshold} />
+                   bind:value={config.bio.value_threshold} onchange={save} />
             <span class="text-ed-text-muted text-xs">Cr</span>
           </div>
         </label>
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Dim below threshold</span>
-          <input type="checkbox" bind:checked={config.bio.dim_below_threshold} />
+          <input type="checkbox" bind:checked={config.bio.dim_below_threshold}
+                 onchange={save} />
         </label>
+      </div>
+    </div>
+
+    <div class="ed-card">
+      <h3 class="text-ed-amber font-bold mb-3">Discovery / POI</h3>
+      <div class="flex flex-col gap-2 text-sm">
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Min carto value</span>
+          <div class="flex items-center gap-1">
+            <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-24 text-xs text-right"
+                   bind:value={config.poi.min_carto_value} onchange={save} step="100000" />
+            <span class="text-ed-text-muted text-xs">Cr</span>
+          </div>
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Highlight ringed bodies</span>
+          <input type="checkbox" bind:checked={config.poi.show_rings}
+                 onchange={save} />
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Highlight terraformable</span>
+          <input type="checkbox" bind:checked={config.poi.show_terraformable}
+                 onchange={save} />
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Highlight landable</span>
+          <input type="checkbox" bind:checked={config.poi.show_landable}
+                 onchange={save} />
+        </label>
+        {#if config.poi.show_landable}
+          <label class="flex items-center justify-between">
+            <span class="text-ed-text-muted">Max gravity (g)</span>
+            <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-20 text-xs text-right"
+                   bind:value={config.poi.max_gravity} onchange={save} step="0.1" />
+          </label>
+        {/if}
       </div>
     </div>
 
@@ -110,18 +136,13 @@
       <div class="flex flex-col gap-2 text-sm">
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Enable remote server</span>
-          <input type="checkbox" bind:checked={config.remote.enabled} />
+          <input type="checkbox" bind:checked={config.remote.enabled}
+                 onchange={save} />
         </label>
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Port</span>
           <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-20 text-xs text-right"
-                 bind:value={config.remote.port} />
-        </label>
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Auth token</span>
-          <input type="text" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-32 text-xs"
-                 bind:value={config.remote.auth_token}
-                 placeholder="Optional" />
+                 bind:value={config.remote.port} onchange={save} />
         </label>
         {#if config.remote.enabled}
           <p class="text-xs text-ed-green mt-1">
@@ -130,28 +151,6 @@
         {/if}
       </div>
     </div>
-
-    <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">Auto-Switch</h3>
-      <div class="flex flex-col gap-2 text-sm">
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Enable auto-switch</span>
-          <input type="checkbox" bind:checked={config.autoswitch.enabled} />
-        </label>
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Panel auto-switch</span>
-          <input type="checkbox" bind:checked={config.autoswitch.panel_autoswitch} />
-        </label>
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Overlay auto-switch</span>
-          <input type="checkbox" bind:checked={config.autoswitch.overlay_autoswitch} />
-        </label>
-      </div>
-    </div>
-
-    <button class="ed-btn-primary w-full" onclick={saveConfig} disabled={saving}>
-      {saving ? "Saving..." : "Save Settings"}
-    </button>
   </div>
 {:else}
   <div class="ed-card text-ed-text-muted text-center">Loading settings...</div>

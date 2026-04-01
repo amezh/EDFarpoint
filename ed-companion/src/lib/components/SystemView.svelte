@@ -37,17 +37,25 @@
       : []
   );
 
+  const poi = $derived(configStore.current?.poi);
+
+  function isPoiBody(b: Body): boolean {
+    if (b.starType) return false;
+    // Always: ELW, WW, AW
+    if (["Earthlike body", "Earth-like world", "Water world", "Ammonia world"].includes(b.type)) return true;
+    // Terraformable
+    if (b.terraformable && (poi?.show_terraformable ?? true)) return true;
+    // Rings
+    if (b.rings.length > 0 && (poi?.show_rings ?? true)) return true;
+    // Value threshold
+    const val = estimateCartoValue({ bodyType: b.type, terraformable: b.terraformable, wasDiscovered: b.wasDiscovered, wasMapped: b.wasMapped, withDSS: true });
+    if (val >= (poi?.min_carto_value ?? 500000)) return true;
+    return false;
+  }
+
   const valuableCarto = $derived(
     system?.bodies
-      .filter(
-        (b) =>
-          !b.starType &&
-          (b.terraformable ||
-            b.type === "Earthlike body" ||
-            b.type === "Earth-like world" ||
-            b.type === "Water world" ||
-            b.type === "Ammonia world"),
-      )
+      .filter((b) => isPoiBody(b) && b.bioSignals === 0)
       .sort((a, b) => {
         const va = estimateCartoValue({ bodyType: a.type, terraformable: a.terraformable, wasDiscovered: a.wasDiscovered, wasMapped: a.wasMapped, withDSS: true });
         const vb = estimateCartoValue({ bodyType: b.type, terraformable: b.terraformable, wasDiscovered: b.wasDiscovered, wasMapped: b.wasMapped, withDSS: true });
@@ -64,11 +72,8 @@
       (b) =>
         !b.starType &&
         b.bioSignals === 0 &&
-        !b.terraformable &&
-        b.type !== "Earthlike body" &&
-        b.type !== "Earth-like world" &&
-        b.type !== "Water world" &&
-        b.type !== "Ammonia world",
+        b.personalStatus !== "bio_complete" &&
+        !isPoiBody(b),
     ) ?? []
   );
 
@@ -104,6 +109,35 @@
     return "text-ed-dim";
   }
 
+  /** DSS mapping status color */
+  function mapColor(b: Body): string {
+    if (b.mappedByUs) return "text-ed-green";     // first mapped by us
+    if (b.mapped) return "text-ed-blue";           // we mapped (but not first)
+    if (b.wasMapped) return "text-ed-text-muted";  // mapped by someone else
+    return "";                                      // unmapped
+  }
+
+  function mapLabel(b: Body): string {
+    if (b.mappedByUs) return "1st map";
+    if (b.mapped) return "mapped";
+    if (b.wasMapped) return "prev mapped";
+    return "";
+  }
+
+  /** Format ring class from journal enum to readable */
+  function ringType(ringClass: string): string {
+    return ringClass
+      .replace("eRingClass_", "")
+      .replace(/([a-z])([A-Z])/g, "$1 $2");
+  }
+
+  // Exploration completion
+  const totalBodies = $derived(system?.bodyCount ?? 0);
+  const scannedBodies = $derived(system?.bodies.length ?? 0);
+  const explorationPct = $derived(
+    totalBodies > 0 ? Math.round((scannedBodies / totalBodies) * 100) : 0
+  );
+
   function typeShort(t: string): string {
     const map: Record<string, string> = {
       "Earthlike body": "ELW",
@@ -132,7 +166,9 @@
       </div>
       <div class="flex items-center gap-3 mt-1 text-xs text-ed-text-muted">
         <span>FSS {fssScanned}/{system.bodyCount ?? "?"}</span>
-        {#if system.fssProgress > 0 && system.fssProgress < 1}
+        {#if totalBodies > 0}
+          <span>{explorationPct}%</span>
+        {:else if system.fssProgress > 0 && system.fssProgress < 1}
           <span>{(system.fssProgress * 100).toFixed(0)}%</span>
         {/if}
         {#if !system.firstDiscovery}
@@ -158,9 +194,25 @@
               <span class="text-xs font-mono text-ed-green font-bold">{body.bioSignals} bio</span>
               {#if !body.mapped}
                 <span class="text-[10px] bg-ed-green/20 text-ed-green px-1 rounded">DSS</span>
+              {:else if mapLabel(body)}
+                <span class="text-[10px] {mapColor(body)}">{mapLabel(body)}</span>
               {/if}
               {#if body.personalStatus !== "landed"}
                 <span class="text-[10px] bg-ed-amber/20 text-ed-amber px-1 rounded">LAND</span>
+              {/if}
+            </div>
+            <!-- Detail row: distance, rings, discoverer -->
+            <div class="flex items-center gap-2 px-3 pb-1 text-[10px] text-ed-text-muted">
+              {#if body.distanceLs != null}
+                <span>{body.distanceLs.toFixed(0)} Ls</span>
+              {/if}
+              {#if !body.wasDiscovered}
+                <span class="text-ed-amber">1st</span>
+              {:else if body.edsmDiscoverer}
+                <span title="Discovered by {body.edsmDiscoverer}">{body.edsmDiscoverer}</span>
+              {/if}
+              {#if body.rings.length > 0}
+                <span class="text-ed-cyan">{body.rings.map(r => ringType(r.ringClass)).join(", ")} ring{body.rings.length > 1 ? "s" : ""}</span>
               {/if}
             </div>
             <!-- Bio value range -->
@@ -233,19 +285,32 @@
           Map these — high value
         </div>
         {#each valuableCarto as body (body.bodyId)}
-          <div
-            class="flex items-center gap-2 px-3 py-1.5 rounded mb-0.5 bg-ed-surface/80 border-l-2 border-ed-amber"
-          >
-            <span class="text-xs w-3 {statusColor(body)}">{statusIcon(body)}</span>
-            <span class="font-mono text-sm flex-1 truncate">{body.shortName}</span>
-            <span class="text-xs text-ed-amber">{typeShort(body.type)}</span>
-            <span class="text-xs text-ed-text-muted">{body.distanceLs?.toFixed(0)} LS</span>
-            <span class="text-xs font-mono text-ed-amber">~{fmt(bodyValue(body))} Cr</span>
-            {#if !body.mapped}
-              <span class="text-[10px] bg-ed-amber/20 text-ed-amber px-1 rounded">DSS</span>
-            {:else}
-              <span class="text-[10px] text-ed-dim">mapped</span>
-            {/if}
+          <div class="rounded mb-0.5 bg-ed-surface/80 border-l-2 border-ed-amber">
+            <div class="flex items-center gap-2 px-3 py-1.5">
+              <span class="text-xs w-3 {statusColor(body)}">{statusIcon(body)}</span>
+              <span class="font-mono text-sm flex-1 truncate">{body.shortName}</span>
+              <span class="text-xs text-ed-amber">{typeShort(body.type)}</span>
+              <span class="text-xs text-ed-text-muted">{body.distanceLs?.toFixed(0)} Ls</span>
+              <span class="text-xs font-mono text-ed-amber">~{fmt(bodyValue(body))} Cr</span>
+              {#if !body.mapped}
+                <span class="text-[10px] bg-ed-amber/20 text-ed-amber px-1 rounded">DSS</span>
+              {:else if mapLabel(body)}
+                <span class="text-[10px] {mapColor(body)}">{mapLabel(body)}</span>
+              {/if}
+            </div>
+            <div class="flex items-center gap-2 px-3 pb-1 text-[10px] text-ed-text-muted">
+              {#if !body.wasDiscovered}
+                <span class="text-ed-amber">1st discovery</span>
+              {:else if body.edsmDiscoverer}
+                <span>{body.edsmDiscoverer}</span>
+              {/if}
+              {#if body.rings.length > 0}
+                <span class="text-ed-cyan">{body.rings.map(r => ringType(r.ringClass)).join(", ")} ring{body.rings.length > 1 ? "s" : ""}</span>
+              {/if}
+              {#if body.terraformable}
+                <span class="text-ed-green">terraformable</span>
+              {/if}
+            </div>
           </div>
         {/each}
       </div>
@@ -277,12 +342,18 @@
           <div class="flex items-center gap-2 px-3 py-1 rounded mb-0.5 text-ed-text-muted text-xs">
             <span class="font-mono flex-1 truncate">{body.shortName}</span>
             <span>{typeShort(body.type)}</span>
-            <span>{body.distanceLs?.toFixed(0)} LS</span>
+            <span>{body.distanceLs?.toFixed(0)} Ls</span>
+            {#if !body.wasDiscovered}
+              <span class="text-ed-amber">1st</span>
+            {/if}
+            {#if body.rings.length > 0}
+              <span class="text-ed-cyan">{body.rings.length}R</span>
+            {/if}
             {#if bodyValue(body) > 0}
               <span class="font-mono">~{fmt(bodyValue(body))}</span>
             {/if}
-            {#if body.landable}
-              <span class="text-ed-dim">land</span>
+            {#if body.mapped}
+              <span class="{mapColor(body)}">{mapLabel(body)}</span>
             {/if}
           </div>
         {/each}

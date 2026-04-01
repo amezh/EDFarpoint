@@ -3,10 +3,13 @@
 mod bio;
 mod config;
 mod edsm;
+#[cfg(not(target_os = "android"))]
 mod journal;
 mod remote;
 mod stats;
+#[cfg(not(target_os = "android"))]
 mod status;
+#[cfg(not(target_os = "android"))]
 mod window;
 
 use std::path::PathBuf;
@@ -19,10 +22,8 @@ use tauri::{Emitter, Manager};
 use bio::BioPredictor;
 use config::AppConfig;
 use edsm::EdsmClient;
-use journal::JournalWatcher;
 use remote::RemoteState;
 use stats::{LifetimeStats, TripStats};
-use status::StatusPoller;
 
 /// Shared application state accessible from Tauri commands
 pub struct AppState {
@@ -56,7 +57,17 @@ fn get_config(state: tauri::State<'_, Arc<AppState>>) -> Value {
 
 #[tauri::command]
 fn update_config(state: tauri::State<'_, Arc<AppState>>, config: AppConfig) {
-    *state.config.write() = config;
+    *state.config.write() = config.clone();
+    // Persist to disk
+    if let Some(config_dir) = dirs::config_dir() {
+        let path = config_dir.join("ed-farpoint").join("config.json");
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        if let Ok(json) = serde_json::to_string_pretty(&config) {
+            let _ = std::fs::write(&path, json);
+        }
+    }
 }
 
 #[tauri::command]
@@ -92,21 +103,25 @@ fn predict_bio(
     }
 }
 
+#[cfg(not(target_os = "android"))]
 #[tauri::command]
 fn toggle_always_on_top(app: tauri::AppHandle) -> Result<bool, String> {
     window::toggle_always_on_top(&app).map_err(|e| e.to_string())
 }
 
+#[cfg(not(target_os = "android"))]
 #[tauri::command]
 fn create_overlay(app: tauri::AppHandle) -> Result<(), String> {
     window::create_overlay_window(&app).map_err(|e| e.to_string())
 }
 
+#[cfg(not(target_os = "android"))]
 #[tauri::command]
 fn toggle_overlay(app: tauri::AppHandle) -> Result<bool, String> {
     window::toggle_overlay(&app).map_err(|e| e.to_string())
 }
 
+#[cfg(not(target_os = "android"))]
 #[tauri::command]
 fn is_overlay_open(app: tauri::AppHandle) -> bool {
     window::is_overlay_open(&app)
@@ -145,38 +160,57 @@ async fn fetch_edsm_system(
     Ok(serde_json::to_value(&info).unwrap_or(Value::Null))
 }
 
+#[tauri::command]
+async fn fetch_edsm_bodies(
+    state: tauri::State<'_, Arc<AppState>>,
+    system_name: String,
+) -> Result<Value, String> {
+    let bodies = state.edsm.get_bodies(&system_name).await;
+    Ok(serde_json::to_value(&bodies).unwrap_or(Value::Null))
+}
+
 /// Frontend calls this once on mount to get structured historical data
 #[tauri::command]
 fn get_journal_history() -> Value {
-    // This blocks until watcher finishes reading (up to 30s timeout).
-    // Tauri runs sync commands on a thread pool, so blocking is safe here.
-    match journal::watcher::take_historical_data() {
-        Some(data) => {
-            serde_json::json!({
-                "allEvents": data.all_events,
-                "tripStartIdx": data.trip_start_idx,
-                "lastDockTimestamp": data.last_dock_timestamp,
-                "lastDockStation": data.last_dock_station,
-            })
+    #[cfg(not(target_os = "android"))]
+    {
+        match journal::watcher::take_historical_data() {
+            Some(data) => {
+                serde_json::json!({
+                    "allEvents": data.all_events,
+                    "tripStartIdx": data.trip_start_idx,
+                    "lastDockTimestamp": data.last_dock_timestamp,
+                    "lastDockStation": data.last_dock_station,
+                })
+            }
+            None => Value::Null,
         }
-        None => Value::Null,
     }
+    #[cfg(target_os = "android")]
+    { Value::Null }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let config = AppConfig::default();
+    // Load config from disk, falling back to defaults
+    let config = dirs::config_dir()
+        .map(|d| d.join("ed-farpoint").join("config.json"))
+        .and_then(|p| std::fs::read_to_string(&p).ok())
+        .and_then(|s| serde_json::from_str::<AppConfig>(&s).ok())
+        .unwrap_or_default();
 
-    // Determine journal directory
+    // Determine journal directory (desktop only)
+    #[cfg(not(target_os = "android"))]
     let journal_dir = if config.paths.journal_dir.is_empty() {
-        JournalWatcher::default_journal_dir().unwrap_or_else(|| PathBuf::from("."))
+        journal::watcher::JournalWatcher::default_journal_dir().unwrap_or_else(|| PathBuf::from("."))
     } else {
         PathBuf::from(&config.paths.journal_dir)
     };
 
+    #[cfg(not(target_os = "android"))]
     log::info!("Journal directory: {}", journal_dir.display());
 
-    // Determine data directory (where Canonn bio data lives)
+    // Determine data directory (where bio rules data lives)
     // Look for: assets/ next to Cargo.toml, data/ next to exe, data/ in project root
     let data_dir = {
         // Dev: assets/ inside src-tauri
@@ -234,9 +268,12 @@ pub fn run() {
         remote: remote_state.clone(),
     });
 
+    #[cfg(not(target_os = "android"))]
     let journal_dir_clone = journal_dir.clone();
     let state_for_setup = app_state.clone();
     let remote_for_setup = remote_state.clone();
+    let _remote_enabled = remote_enabled;
+    let _remote_port = remote_port;
 
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default()
@@ -244,43 +281,68 @@ pub fn run() {
             .build())
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(app_state)
-        .invoke_handler(tauri::generate_handler![
-            get_trip_stats,
-            reset_trip_stats,
-            get_lifetime_stats,
-            get_config,
-            update_config,
-            predict_bio,
-            toggle_always_on_top,
-            create_overlay,
-            toggle_overlay,
-            is_overlay_open,
-            fetch_edsm_system,
-            push_remote_state,
-            get_journal_history,
-        ])
+        .invoke_handler({
+            #[cfg(not(target_os = "android"))]
+            {
+                tauri::generate_handler![
+                    get_trip_stats,
+                    reset_trip_stats,
+                    get_lifetime_stats,
+                    get_config,
+                    update_config,
+                    predict_bio,
+                    toggle_always_on_top,
+                    create_overlay,
+                    toggle_overlay,
+                    is_overlay_open,
+                    fetch_edsm_system,
+                    fetch_edsm_bodies,
+                    push_remote_state,
+                    get_journal_history,
+                ]
+            }
+            #[cfg(target_os = "android")]
+            {
+                tauri::generate_handler![
+                    get_trip_stats,
+                    reset_trip_stats,
+                    get_lifetime_stats,
+                    get_config,
+                    update_config,
+                    predict_bio,
+                    fetch_edsm_system,
+                    fetch_edsm_bodies,
+                    push_remote_state,
+                    get_journal_history,
+                ]
+            }
+        })
         .setup(move |app| {
             let app_handle = app.handle().clone();
 
-            // Start journal watcher
-            let watcher = JournalWatcher::new(journal_dir_clone.clone());
-            let app_for_journal = app_handle.clone();
-            tauri::async_runtime::spawn(async move {
-                watcher.start(app_for_journal).await;
-            });
+            #[cfg(not(target_os = "android"))]
+            {
+                // Start journal watcher
+                let watcher = journal::watcher::JournalWatcher::new(journal_dir_clone.clone());
+                let app_for_journal = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    watcher.start(app_for_journal).await;
+                });
 
-            // Start status poller
-            let poller = StatusPoller::new(journal_dir_clone);
-            let app_for_status = app_handle.clone();
-            tauri::async_runtime::spawn(async move {
-                poller.start(app_for_status).await;
-            });
+                // Start status poller
+                let poller = status::StatusPoller::new(journal_dir_clone);
+                let app_for_status = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    poller.start(app_for_status).await;
+                });
+            }
 
             // Start remote server if enabled
-            if remote_enabled {
+            if _remote_enabled {
                 let remote = remote_for_setup;
+                let port = _remote_port;
                 tauri::async_runtime::spawn(async move {
-                    remote::start_server(remote, remote_port).await;
+                    remote::start_server(remote, port).await;
                 });
             }
 
