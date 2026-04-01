@@ -24,6 +24,10 @@
     return "text-ed-text-muted";
   }
 
+  function isScoopable(starClass: string | null): boolean {
+    return starClass != null && SCOOPABLE.has(starClass);
+  }
+
   // Visited systems in reverse chronological (most recent first), excluding current
   const pastSystems = $derived(
     visited.filter(s => s.name !== currentName).reverse()
@@ -62,8 +66,9 @@
   {#if routeAhead().length > 0}
     <div class="text-[10px] text-ed-text-muted uppercase tracking-wider px-1 mt-1">Next</div>
     {#each routeAhead().slice(0, 5) as sys, i (sys.name + i)}
-      <div class="flex items-center gap-2 px-3 py-1 text-xs">
+      <div class="flex items-center gap-2 px-3 py-1 text-xs {isScoopable(sys.starClass) ? 'bg-ed-amber/5' : ''}">
         <span class="w-3 text-right text-ed-text-muted">{i + 1}</span>
+        <span class="w-1.5 h-1.5 rounded-full shrink-0 {isScoopable(sys.starClass) ? 'bg-ed-amber' : ''}"></span>
         <span class="{starColor(sys.starClass)} w-4">{sys.starClass}</span>
         <span class="font-mono flex-1 truncate text-ed-text-muted">{sys.name}</span>
         <span class="text-ed-text-muted font-mono">{sys.distanceLy?.toFixed(1)} LY</span>
@@ -132,6 +137,7 @@
     {#each pastSystems.slice(0, 20) as sys (sys.name)}
       {@const totalValue = sys.cartoValue + sys.bioValue}
       <div class="flex items-center gap-2 px-3 py-1 text-xs">
+        <span class="w-1.5 h-1.5 rounded-full shrink-0 {isScoopable(sys.starClass) ? 'bg-ed-amber' : ''}"></span>
         {#if sys.starClass}
           <span class="{starColor(sys.starClass)} w-4">{sys.starClass}</span>
         {:else}
