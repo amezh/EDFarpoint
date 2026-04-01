@@ -1,5 +1,10 @@
 // Bio tracker store — per-planet species tracking
 
+export interface ScanPosition {
+  latitude: number;
+  longitude: number;
+}
+
 export interface BioSpecies {
   name: string;
   localName: string;
@@ -9,13 +14,30 @@ export interface BioSpecies {
   clonalRange: number | null;
   samples: number; // 0, 1, 2, 3
   analysed: boolean;
+  scanPositions: ScanPosition[]; // lat/lon of each scan
 }
 
 export interface PlanetBioState {
   bodyName: string;
   bodyId: number;
   systemAddress: number;
+  bodyRadius: number | null; // in km, for distance calculation
   species: BioSpecies[];
+}
+
+/** Haversine distance between two lat/lon points on a sphere of given radius (km) */
+export function haversineDistance(
+  lat1: number, lon1: number,
+  lat2: number, lon2: number,
+  radiusKm: number,
+): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * radiusKm * Math.asin(Math.sqrt(a)) * 1000; // return meters
 }
 
 function createBioStore() {
@@ -30,12 +52,16 @@ function createBioStore() {
       return allPlanets;
     },
 
-    setPlanet(bodyName: string, bodyId: number, systemAddress: number) {
+    setPlanet(bodyName: string, bodyId: number, systemAddress: number, bodyRadius: number | null) {
       const key = `${systemAddress}:${bodyId}`;
       if (allPlanets.has(key)) {
         currentPlanetState = allPlanets.get(key)!;
+        // Update radius if we have it now
+        if (bodyRadius != null) {
+          currentPlanetState.bodyRadius = bodyRadius;
+        }
       } else {
-        currentPlanetState = { bodyName, bodyId, systemAddress, species: [] };
+        currentPlanetState = { bodyName, bodyId, systemAddress, bodyRadius, species: [] };
         allPlanets.set(key, currentPlanetState);
       }
     },
@@ -44,7 +70,7 @@ function createBioStore() {
       currentPlanetState = null;
     },
 
-    handleScanOrganic(data: Record<string, unknown>) {
+    handleScanOrganic(data: Record<string, unknown>, latitude: number | null, longitude: number | null) {
       const systemAddress = data.SystemAddress as number;
       const bodyId = data.Body as number;
       const key = `${systemAddress}:${bodyId}`;
@@ -56,7 +82,7 @@ function createBioStore() {
 
       let planet = allPlanets.get(key);
       if (!planet) {
-        planet = { bodyName: `Body ${bodyId}`, bodyId, systemAddress, species: [] };
+        planet = { bodyName: `Body ${bodyId}`, bodyId, systemAddress, bodyRadius: null, species: [] };
         allPlanets.set(key, planet);
       }
 
@@ -71,8 +97,14 @@ function createBioStore() {
           clonalRange: null,
           samples: 0,
           analysed: false,
+          scanPositions: [],
         };
         planet.species = [...planet.species, species];
+      }
+
+      // Record position for this scan
+      if (latitude != null && longitude != null) {
+        species.scanPositions.push({ latitude, longitude });
       }
 
       switch (scanType) {

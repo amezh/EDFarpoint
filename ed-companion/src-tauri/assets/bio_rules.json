@@ -1,0 +1,6099 @@
+[
+  {
+    "name": "Aleoida Arcus",
+    "value": 7252500,
+    "genus": "Aleoida",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 175.0,
+        "max_temperature": 180.0,
+        "min_pressure": 0.0161,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Aleoida Coronamus",
+    "value": 6284600,
+    "genus": "Aleoida",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.2928,
+        "min_temperature": 85.8,
+        "max_temperature": 190.0,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Aleoida Gravis",
+    "value": 12934900,
+    "genus": "Aleoida",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 1.0008,
+        "min_temperature": 190.0,
+        "max_temperature": 469.5,
+        "min_pressure": 0.054,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Aleoida Laminiae",
+    "value": 3385200,
+    "genus": "Aleoida",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 152.0,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus",
+          "sagittarius-carina"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Aleoida Spica",
+    "value": 3385200,
+    "genus": "Aleoida",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.2939,
+        "min_temperature": 45.5,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "outer",
+          "perseus",
+          "scutum-centaurus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Acies",
+    "value": 1000000,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.255,
+        "max_gravity": 1.1849,
+        "min_temperature": 20.0,
+        "max_temperature": 367.4,
+        "min_pressure": null,
+        "max_pressure": 0.01,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Alcyoneum",
+    "value": 1658500,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.376,
+        "min_temperature": 57.6,
+        "max_temperature": 312.5,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Aurasus",
+    "value": 1000000,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0385,
+        "max_gravity": 1.0008,
+        "min_temperature": 58.1,
+        "max_temperature": 1387.9,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Bullaris",
+    "value": 1152500,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0245,
+        "max_gravity": 0.6068,
+        "min_temperature": 50.5,
+        "max_temperature": 142.4,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "MethaneRich"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0248,
+        "max_gravity": 0.6068,
+        "min_temperature": 50.5,
+        "max_temperature": 142.4,
+        "min_pressure": 0.01,
+        "max_pressure": 0.05,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Cerbrus",
+    "value": 1689800,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 1.9134,
+        "min_temperature": 132.0,
+        "max_temperature": 4703.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 1.9134,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 1.9134,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "WaterRich"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0404,
+        "max_gravity": 1.9134,
+        "min_temperature": 132.0,
+        "max_temperature": 619.9,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Informem",
+    "value": 8418000,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0379,
+        "max_gravity": 0.6201,
+        "min_temperature": 42.5,
+        "max_temperature": 230.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0379,
+        "max_gravity": 0.63,
+        "min_temperature": 42.8,
+        "max_temperature": 230.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Nebulus",
+    "value": 5289900,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Helium"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.3949,
+        "max_gravity": 0.5616,
+        "min_temperature": 20.0,
+        "max_temperature": 21.0,
+        "min_pressure": 0.067,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Helium"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.3979,
+        "max_gravity": 0.7,
+        "min_temperature": 20.0,
+        "max_temperature": 21.0,
+        "min_pressure": 0.067,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Omentum",
+    "value": 4638900,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6004,
+        "min_temperature": 20.0,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6004,
+        "min_temperature": 20.0,
+        "max_temperature": 317.8,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Helium"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6004,
+        "min_temperature": 20.0,
+        "max_temperature": 317.8,
+        "min_pressure": 0.065,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6004,
+        "min_temperature": 20.0,
+        "max_temperature": 317.8,
+        "min_pressure": 0.035,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6004,
+        "min_temperature": 20.0,
+        "max_temperature": 317.8,
+        "min_pressure": null,
+        "max_pressure": 0.0065,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "NeonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": 317.8,
+        "min_pressure": 0.0027,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0269,
+        "max_gravity": 0.5924,
+        "min_temperature": 20.0,
+        "max_temperature": 317.8,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "WaterRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6004,
+        "min_temperature": 20.0,
+        "max_temperature": 330.0,
+        "min_pressure": 0.07,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Scopulum",
+    "value": 4934500,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.6112,
+        "min_temperature": 20.0,
+        "max_temperature": 284.4,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon dioxide",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Helium"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.6112,
+        "min_temperature": 20,
+        "max_temperature": 284.4,
+        "min_pressure": 0.075,
+        "max_pressure": null,
+        "volcanism": [
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.6112,
+        "min_temperature": 20.0,
+        "max_temperature": 284.4,
+        "min_pressure": 0.03,
+        "max_pressure": null,
+        "volcanism": [
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.6112,
+        "min_temperature": 20,
+        "max_temperature": 284.4,
+        "min_pressure": null,
+        "max_pressure": 0.008,
+        "volcanism": [
+          "carbon dioxide",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "NeonRich"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.6112,
+        "min_temperature": 20,
+        "max_temperature": 284.4,
+        "min_pressure": 0.005,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon dioxide",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.027,
+        "max_gravity": 0.6086,
+        "min_temperature": 20.0,
+        "max_temperature": 284.4,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon dioxide",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.6112,
+        "min_temperature": 20.0,
+        "max_temperature": 284.4,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon dioxide",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Tela",
+    "value": 1949000,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "ArgonRich"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": null,
+        "max_pressure": 0.05,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": null,
+        "min_gravity": 0.025,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": 0.0025,
+        "max_pressure": 0.02,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0261,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": null,
+        "min_pressure": 0.006,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide",
+          "CarbonDioxideRich"
+        ],
+        "body_type": null,
+        "min_gravity": 0.025,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": null,
+        "min_pressure": 0.006,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Helium"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": 0.067,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.026,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": 0.012,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": null,
+        "max_pressure": 0.008,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "NeonRich"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": 0.003,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0261,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0261,
+        "max_gravity": 0.61,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6096,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "WaterRich"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.6096,
+        "min_temperature": 20.0,
+        "max_temperature": 698.0,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Verrata",
+    "value": 3897000,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "Icy body"
+        ],
+        "min_gravity": 0.03,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky Ice world",
+          "Icy body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0307,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": null,
+        "max_pressure": 0.01,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide",
+          "CarbonDioxideRich"
+        ],
+        "body_type": [
+          "Rocky Ice world",
+          "Icy body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 440.7,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Helium"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": 0.065,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Rocky Ice world",
+          "Icy body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": null,
+        "max_pressure": 0.075,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "NeonRich"
+        ],
+        "body_type": [
+          "Rocky Ice world",
+          "Icy body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": 0.005,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Rocky Ice world",
+          "Icy body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": 20.0,
+        "max_temperature": 441.0,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0306,
+        "max_gravity": 0.6107,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Vesicula",
+    "value": 1000000,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0265,
+        "max_gravity": 0.9834,
+        "min_temperature": 45.2,
+        "max_temperature": 646.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Bacterium Volu",
+    "value": 7774700,
+    "genus": "Bacterium",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": null,
+        "min_gravity": 0.0508,
+        "max_gravity": 0.61,
+        "min_temperature": 143.5,
+        "max_temperature": 246.0,
+        "min_pressure": 0.013,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Cactoida Cortexum",
+    "value": 3667600,
+    "genus": "Cactoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 1.0008,
+        "min_temperature": 158.7,
+        "max_temperature": 469.5,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Cactoida Lapis",
+    "value": 2483600,
+    "genus": "Cactoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 160.0,
+        "max_temperature": 224.7,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Cactoida Peperatis",
+    "value": 2483600,
+    "genus": "Cactoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 160.0,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "scutum-centaurus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Cactoida Pullulanta",
+    "value": 3667600,
+    "genus": "Cactoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 127.4,
+        "max_temperature": 197.0,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "perseus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Cactoida Vermis",
+    "value": 16202800,
+    "genus": "Cactoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0394,
+        "max_gravity": 0.276,
+        "min_temperature": 160.0,
+        "max_temperature": 450.0,
+        "min_pressure": null,
+        "max_pressure": 0.005,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0394,
+        "max_gravity": 0.276,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0394,
+        "max_gravity": 0.276,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Clypeus Lacrimam",
+    "value": 8418000,
+    "genus": "Clypeus",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 1.0008,
+        "min_temperature": 190.0,
+        "max_temperature": null,
+        "min_pressure": 0.054,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 1.0008,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 1.0008,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Clypeus Margaritus",
+    "value": 11873200,
+    "genus": "Clypeus",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 190.0,
+        "max_temperature": 452.0,
+        "min_pressure": 0.054,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Clypeus Speculumi",
+    "value": 16202800,
+    "genus": "Clypeus",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 0.276,
+        "min_temperature": 190.0,
+        "max_temperature": 451.7,
+        "min_pressure": 0.055,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": 2000.0,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 0.276,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": 2000.0,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 0.276,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": 2000.0,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Concha Aureolas",
+    "value": 7774700,
+    "genus": "Concha",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.276,
+        "min_temperature": 152.0,
+        "max_temperature": 183.4,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Concha Biconcavis",
+    "value": 16777215,
+    "genus": "Concha",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.053,
+        "max_gravity": 0.275,
+        "min_temperature": 42.0,
+        "max_temperature": 52.0,
+        "min_pressure": null,
+        "max_pressure": 0.0047,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Concha Labiata",
+    "value": 2352400,
+    "genus": "Concha",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0385,
+        "max_gravity": 0.276,
+        "min_temperature": 133.6,
+        "max_temperature": 200.0,
+        "min_pressure": 0.002,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Concha Renibus",
+    "value": 4572400,
+    "genus": "Concha",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": 77.4,
+        "max_temperature": 469.5,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate",
+          "metallic"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": 77.4,
+        "max_temperature": null,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": 77.4,
+        "max_temperature": 469.5,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate",
+          "metallic"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Electricae Pluma",
+    "value": 6284600,
+    "genus": "Electricae",
+    "clonal_range": 1000,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon",
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 150.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": [
+          "A",
+          "N",
+          "D",
+          "H",
+          "AeBe"
+        ],
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon",
+          "NeonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.028,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 149.7,
+        "min_pressure": null,
+        "max_pressure": 0.005,
+        "volcanism": null,
+        "star": null,
+        "parent_star": [
+          "A",
+          "N",
+          "D",
+          "H",
+          "AeBe"
+        ],
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Electricae Radialem",
+    "value": 6284600,
+    "genus": "Electricae",
+    "clonal_range": 1000,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon",
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.276,
+        "min_temperature": 29.7,
+        "max_temperature": 150.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": "all",
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon",
+          "NeonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.026,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 149.2,
+        "min_pressure": null,
+        "max_pressure": 0.005,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": "all",
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fonticulua Campestris",
+    "value": 1000000,
+    "genus": "Fonticulua",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0265,
+        "max_gravity": 0.276,
+        "min_temperature": 37.7,
+        "max_temperature": 4566.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fonticulua Digitos",
+    "value": 1804100,
+    "genus": "Fonticulua",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.07,
+        "min_temperature": 82.7,
+        "max_temperature": 109.0,
+        "min_pressure": 0.03,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fonticulua Fluctus",
+    "value": 20000000,
+    "genus": "Fonticulua",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.2321,
+        "max_gravity": 0.276,
+        "min_temperature": 143.0,
+        "max_temperature": 200.0,
+        "min_pressure": 0.012,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fonticulua Lapida",
+    "value": 3111000,
+    "genus": "Fonticulua",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0379,
+        "max_gravity": 0.6201,
+        "min_temperature": 50.0,
+        "max_temperature": 89.5,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fonticulua Segmentatus",
+    "value": 19010800,
+    "genus": "Fonticulua",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Neon",
+          "NeonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.25,
+        "max_gravity": 0.276,
+        "min_temperature": 50.0,
+        "max_temperature": 75.0,
+        "min_pressure": null,
+        "max_pressure": 0.006,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fonticulua Upupam",
+    "value": 5727600,
+    "genus": "Fonticulua",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0785,
+        "max_gravity": 0.276,
+        "min_temperature": 60.6,
+        "max_temperature": 125.0,
+        "min_pressure": 0.0175,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Frutexa Acus",
+    "value": 7774700,
+    "genus": "Frutexa",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 1.0008,
+        "min_temperature": 56.5,
+        "max_temperature": 469.5,
+        "min_pressure": 0.0029,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Frutexa Collum",
+    "value": 1639800,
+    "genus": "Frutexa",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 215.0,
+        "min_pressure": null,
+        "max_pressure": 0.004,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0405,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 175.9,
+        "min_pressure": null,
+        "max_pressure": 0.004,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Frutexa Fera",
+    "value": 1632500,
+    "genus": "Frutexa",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0385,
+        "max_gravity": 0.276,
+        "min_temperature": 146.0,
+        "max_temperature": 197.0,
+        "min_pressure": 0.003,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "outer"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Frutexa Flabellum",
+    "value": 1808900,
+    "genus": "Frutexa",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0398,
+        "max_gravity": 0.276,
+        "min_temperature": 114.4,
+        "max_temperature": 312.5,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!scutum-centaurus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Frutexa Flammasis",
+    "value": 10326000,
+    "genus": "Frutexa",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 152.0,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "scutum-centaurus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Frutexa Metallicum",
+    "value": 1632500,
+    "genus": "Frutexa",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0393,
+        "max_gravity": 0.276,
+        "min_temperature": 100.1,
+        "max_temperature": 399.9,
+        "min_pressure": null,
+        "max_pressure": 0.01,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0393,
+        "max_gravity": 0.276,
+        "min_temperature": 100.1,
+        "max_temperature": 399.9,
+        "min_pressure": 0.002,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0461,
+        "max_gravity": 0.275,
+        "min_temperature": 100.0,
+        "max_temperature": 399.7,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0393,
+        "max_gravity": 0.2751,
+        "min_temperature": null,
+        "max_temperature": 400.0,
+        "min_pressure": null,
+        "max_pressure": 0.07,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Frutexa Sponsae",
+    "value": 5988000,
+    "genus": "Frutexa",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 0.056,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 0.056,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fumerola Aquatis",
+    "value": 6284600,
+    "genus": "Fumerola",
+    "clonal_range": 100,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world",
+          "Rocky body"
+        ],
+        "min_gravity": 0.028,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 451.2,
+        "min_pressure": 0.002,
+        "max_pressure": 0.02,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon",
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 451.2,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 439.4,
+        "min_pressure": 0.01,
+        "max_pressure": 0.03,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 451.2,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 446.5,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.2748,
+        "min_temperature": 20.0,
+        "max_temperature": 451.2,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 451.2,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world",
+          "Rocky body"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 451.2,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0281,
+        "max_gravity": 0.2748,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fumerola Carbosis",
+    "value": 6284600,
+    "genus": "Fumerola",
+    "clonal_range": 100,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 271.3,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.2741,
+        "min_temperature": 20.0,
+        "max_temperature": 271.3,
+        "min_pressure": 0.03,
+        "max_pressure": null,
+        "volcanism": [
+          "methane magma"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 269.7,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 271.3,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 271.3,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0257,
+        "max_gravity": 0.276,
+        "min_temperature": 20.0,
+        "max_temperature": 272.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon",
+          "methane"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Ammonia",
+          "ArgonRich",
+          "CarbonDioxideRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": null,
+        "max_gravity": 0.276,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "carbon"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fumerola Extremus",
+    "value": 16202800,
+    "genus": "Fumerola",
+    "clonal_range": 100,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.036,
+        "max_gravity": 0.2746,
+        "min_temperature": 54.4,
+        "max_temperature": 642.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": [
+          "silicate",
+          "metallic",
+          "rocky"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.036,
+        "max_gravity": 0.276,
+        "min_temperature": 50.0,
+        "max_temperature": 642.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate",
+          "metallic",
+          "rocky"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.2746,
+        "min_temperature": 54.4,
+        "max_temperature": 642.0,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate",
+          "metallic",
+          "rocky"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.036,
+        "max_gravity": 0.276,
+        "min_temperature": 54.0,
+        "max_temperature": 642.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate",
+          "metallic",
+          "rocky"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0385,
+        "max_gravity": 0.276,
+        "min_temperature": 68.9,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate",
+          "metallic",
+          "rocky"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fumerola Nitris",
+    "value": 7500900,
+    "genus": "Fumerola",
+    "clonal_range": 100,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Neon"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0261,
+        "max_gravity": 0.276,
+        "min_temperature": 30.0,
+        "max_temperature": 248.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon",
+          "ArgonRich",
+          "NeonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0258,
+        "max_gravity": 0.276,
+        "min_temperature": 39.5,
+        "max_temperature": 248.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.025,
+        "max_gravity": 0.2735,
+        "min_temperature": 39.5,
+        "max_temperature": 248.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0258,
+        "max_gravity": 0.276,
+        "min_temperature": 39.5,
+        "max_temperature": 248.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": null,
+        "max_gravity": 0.276,
+        "min_temperature": 41.5,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0258,
+        "max_gravity": 0.276,
+        "min_temperature": 39.5,
+        "max_temperature": 250.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fungoida Bullarum",
+    "value": 3703200,
+    "genus": "Fungoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0449,
+        "max_gravity": 0.276,
+        "min_temperature": 50.0,
+        "max_temperature": 160.6,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0449,
+        "max_gravity": 0.276,
+        "min_temperature": 50.0,
+        "max_temperature": 160.6,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fungoida Gelata",
+    "value": 3330300,
+    "genus": "Fungoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0402,
+        "max_gravity": 0.276,
+        "min_temperature": 82.3,
+        "max_temperature": 451.8,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": [
+          "major silicate"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0376,
+        "max_gravity": 0.271,
+        "min_temperature": 77.9,
+        "max_temperature": 452.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": [
+          "major silicate"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0376,
+        "max_gravity": 0.271,
+        "min_temperature": 77.9,
+        "max_temperature": 452.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": [
+          "major rocky"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0376,
+        "max_gravity": 0.276,
+        "min_temperature": 77.9,
+        "max_temperature": null,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0376,
+        "max_gravity": 0.271,
+        "min_temperature": 77.9,
+        "max_temperature": 452.0,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "major silicate",
+          "major metallic"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0376,
+        "max_gravity": 0.271,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fungoida Setisis",
+    "value": 1670100,
+    "genus": "Fungoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0329,
+        "max_gravity": 0.276,
+        "min_temperature": 67.4,
+        "max_temperature": 224.7,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0329,
+        "max_gravity": 0.276,
+        "min_temperature": 67.4,
+        "max_temperature": 224.7,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0329,
+        "max_gravity": 0.276,
+        "min_temperature": 67.0,
+        "max_temperature": 224.7,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Fungoida Stabitis",
+    "value": 2680300,
+    "genus": "Fungoida",
+    "clonal_range": 300,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": 64.7,
+        "max_temperature": 469.5,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": 60.0,
+        "max_temperature": 469.5,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "silicate",
+          "rocky"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 0.5,
+        "min_temperature": 60.0,
+        "max_temperature": 451.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": 64.7,
+        "max_temperature": null,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0392,
+        "max_gravity": 1.0008,
+        "min_temperature": 64.7,
+        "max_temperature": 469.5,
+        "min_pressure": 0.012,
+        "max_pressure": null,
+        "volcanism": [
+          "major silicate"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.039,
+        "max_gravity": 1.0008,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Osseus Cornibus",
+    "value": 1483000,
+    "genus": "Osseus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0405,
+        "max_gravity": 0.276,
+        "min_temperature": 180.0,
+        "max_temperature": null,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "perseus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Osseus Discus",
+    "value": 12934900,
+    "genus": "Osseus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0344,
+        "max_gravity": 0.2733,
+        "min_temperature": 68.9,
+        "max_temperature": 642.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0344,
+        "max_gravity": 0.276,
+        "min_temperature": 65.0,
+        "max_temperature": 642.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.026,
+        "max_gravity": 0.276,
+        "min_temperature": 70.7,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0344,
+        "max_gravity": 0.2733,
+        "min_temperature": 68.9,
+        "max_temperature": 642.0,
+        "min_pressure": 0.012,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0344,
+        "max_gravity": 0.2733,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Osseus Fractus",
+    "value": 4027800,
+    "genus": "Osseus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 158.7,
+        "max_temperature": null,
+        "min_pressure": 0.025,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!perseus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Osseus Pellebantus",
+    "value": 9739000,
+    "genus": "Osseus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0405,
+        "max_gravity": 1.0008,
+        "min_temperature": 191.0,
+        "max_temperature": null,
+        "min_pressure": 0.057,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "!perseus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Osseus Pumice",
+    "value": 3156300,
+    "genus": "Osseus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0323,
+        "max_gravity": 0.276,
+        "min_temperature": 42.8,
+        "max_temperature": 135.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0323,
+        "max_gravity": 0.276,
+        "min_temperature": 42.8,
+        "max_temperature": 135.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water",
+          "geysers"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "ArgonRich"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0323,
+        "max_gravity": 0.276,
+        "min_temperature": 42.8,
+        "max_temperature": 133.1,
+        "min_pressure": 0.03,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0323,
+        "max_gravity": 0.276,
+        "min_temperature": 42.8,
+        "max_temperature": 133.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0323,
+        "max_gravity": 0.276,
+        "min_temperature": 42.0,
+        "max_temperature": 133.1,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Osseus Spiralis",
+    "value": 2404700,
+    "genus": "Osseus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world",
+          "High metal content world"
+        ],
+        "min_gravity": 0.039,
+        "max_gravity": 0.276,
+        "min_temperature": 160.0,
+        "max_temperature": 224.7,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Recepta Conditivus",
+    "value": 14313700,
+    "genus": "Recepta",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide",
+          "CarbonDioxideRich"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 272.9,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0424,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 272.9,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.0424,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 272.9,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 275.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      }
+    ]
+  },
+  {
+    "name": "Recepta Deltahedronix",
+    "value": 16202800,
+    "genus": "Recepta",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 271.8,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Icy body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 271.8,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 272.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      }
+    ]
+  },
+  {
+    "name": "Recepta Umbrux",
+    "value": 12934900,
+    "genus": "Recepta",
+    "clonal_range": 150,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 272.8,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.041,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 272.8,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Icy body"
+        ],
+        "min_gravity": 0.041,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 272.8,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": null,
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 273.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null,
+        "atmosphere_component": {
+          "SulphurDioxide": 1.05
+        }
+      }
+    ]
+  },
+  {
+    "name": "Stratum Araneamus",
+    "value": 2448900,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.26,
+        "max_gravity": 0.57,
+        "min_temperature": 165.0,
+        "max_temperature": 373.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Stratum Cucumisis",
+    "value": 16202800,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 1.0008,
+        "min_temperature": 74.9,
+        "max_temperature": 469.5,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxideRich"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.041,
+        "max_gravity": 1.0008,
+        "min_temperature": 74.9,
+        "max_temperature": 469.5,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.041,
+        "max_gravity": 1.0008,
+        "min_temperature": 74.9,
+        "max_temperature": 469.5,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.041,
+        "max_gravity": 1.0008,
+        "min_temperature": 74.9,
+        "max_temperature": 469.5,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Stratum Excutitus",
+    "value": 2448900,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.48,
+        "min_temperature": 85.8,
+        "max_temperature": 190.0,
+        "min_pressure": 0.0035,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0417,
+        "max_gravity": 0.4732,
+        "min_temperature": 85.8,
+        "max_temperature": 190.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Stratum Frigus",
+    "value": 2637500,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.043,
+        "max_gravity": 0.5553,
+        "min_temperature": 191.0,
+        "max_temperature": 371.9,
+        "min_pressure": 0.001,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "perseus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxideRich"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0437,
+        "max_gravity": 0.56,
+        "min_temperature": 191.0,
+        "max_temperature": 371.9,
+        "min_pressure": 0.01,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "perseus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0437,
+        "max_gravity": 0.5553,
+        "min_temperature": 191.0,
+        "max_temperature": 371.9,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "perseus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Stratum Laminamus",
+    "value": 2788300,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 0.3434,
+        "min_temperature": 57.6,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Stratum Limaxus",
+    "value": 1362000,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.03,
+        "max_gravity": 0.4768,
+        "min_temperature": 165.0,
+        "max_temperature": 190.0,
+        "min_pressure": 0.05,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "scutum-centaurus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0407,
+        "max_gravity": 0.4768,
+        "min_temperature": 165.0,
+        "max_temperature": 190.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "scutum-centaurus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Stratum Paleas",
+    "value": 1362000,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.5988,
+        "min_temperature": 158.7,
+        "max_temperature": 450.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.5988,
+        "min_temperature": 158.7,
+        "max_temperature": 450.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxideRich"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.5988,
+        "min_temperature": 158.7,
+        "max_temperature": 450.0,
+        "min_pressure": 0.015,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.5988,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.5988,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": 0.065,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.5988,
+        "min_temperature": 158.7,
+        "max_temperature": 450.0,
+        "min_pressure": 0.022,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Stratum Tectonicas",
+    "value": 19010800,
+    "genus": "Stratum",
+    "clonal_range": 500,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.045,
+        "max_gravity": 0.8844,
+        "min_temperature": 45.5,
+        "max_temperature": 4703.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Argon",
+          "ArgonRich"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0452,
+        "max_gravity": 0.8844,
+        "min_temperature": 45.5,
+        "max_temperature": 4703.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.045,
+        "max_gravity": 0.8844,
+        "min_temperature": 45.5,
+        "max_temperature": 4703.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxideRich"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.035,
+        "max_gravity": 0.8844,
+        "min_temperature": 45.5,
+        "max_temperature": 4703.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0452,
+        "max_gravity": 0.8844,
+        "min_temperature": 45.5,
+        "max_temperature": 4703.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.0452,
+        "max_gravity": 0.8844,
+        "min_temperature": 45.5,
+        "max_temperature": 4703.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.045,
+        "max_gravity": 0.8844,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tubus Cavas",
+    "value": 11873200,
+    "genus": "Tubus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.1526,
+        "min_temperature": 160.0,
+        "max_temperature": 197.0,
+        "min_pressure": 0.003,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "scutum-centaurus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tubus Compagibus",
+    "value": 7774700,
+    "genus": "Tubus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.1837,
+        "min_temperature": 97.0,
+        "max_temperature": 224.7,
+        "min_pressure": 0.003,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tubus Conifer",
+    "value": 2415500,
+    "genus": "Tubus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0406,
+        "max_gravity": 0.153,
+        "min_temperature": 160.0,
+        "max_temperature": 197.0,
+        "min_pressure": 0.003,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "perseus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tubus Rosarium",
+    "value": 2637500,
+    "genus": "Tubus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 0.1636,
+        "min_temperature": 160.0,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tubus Sororibus",
+    "value": 5727600,
+    "genus": "Tubus",
+    "clonal_range": 800,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.045,
+        "max_gravity": 0.1527,
+        "min_temperature": 160.0,
+        "max_temperature": 194.6,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "High metal content world"
+        ],
+        "min_gravity": 0.045,
+        "max_gravity": 0.1527,
+        "min_temperature": 160.0,
+        "max_temperature": 195.0,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Albata",
+    "value": 3252500,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0416,
+        "max_gravity": 0.276,
+        "min_temperature": 172.7,
+        "max_temperature": 180.0,
+        "min_pressure": 0.016,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina-core-9",
+          "perseus-core",
+          "orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Capillum",
+    "value": 7025800,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Argon"
+        ],
+        "body_type": [
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0323,
+        "max_gravity": 0.276,
+        "min_temperature": 80.0,
+        "max_temperature": 160.6,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Methane"
+        ],
+        "body_type": [
+          "Rocky body",
+          "Rocky Ice world"
+        ],
+        "min_gravity": 0.0323,
+        "max_gravity": 0.276,
+        "min_temperature": 80.0,
+        "max_temperature": 160.6,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Caputus",
+    "value": 3472400,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.041,
+        "max_gravity": 0.2928,
+        "min_temperature": 85.8,
+        "max_temperature": 190.0,
+        "min_pressure": 0.0275,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina-core-9",
+          "perseus-core",
+          "orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Catena",
+    "value": 1766600,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.276,
+        "min_temperature": 152.0,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "scutum-centaurus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Cultro",
+    "value": 1766600,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.2793,
+        "min_temperature": 57.6,
+        "max_temperature": 467.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "orion-cygnus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Divisa",
+    "value": 1766600,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Ammonia"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0407,
+        "max_gravity": 0.2939,
+        "min_temperature": 45.5,
+        "max_temperature": 177.0,
+        "min_pressure": null,
+        "max_pressure": 0.0135,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "perseus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Ignis",
+    "value": 1849000,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.2,
+        "min_temperature": 97.0,
+        "max_temperature": 224.7,
+        "min_pressure": 0.00289,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina-core-9",
+          "perseus-core",
+          "orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Pennata",
+    "value": 5853800,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.039,
+        "max_gravity": 0.175,
+        "min_temperature": 145.7,
+        "max_temperature": 154.0,
+        "min_pressure": 0.00289,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina-core-9",
+          "perseus-core",
+          "orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Pennatis",
+    "value": 1000000,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0385,
+        "max_gravity": 0.276,
+        "min_temperature": 146.4,
+        "max_temperature": 197.0,
+        "min_pressure": 0.00289,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "outer"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Propagito",
+    "value": 1000000,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0396,
+        "max_gravity": 0.276,
+        "min_temperature": 145.0,
+        "max_temperature": 197.0,
+        "min_pressure": 0.00289,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "scutum-centaurus"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Serrati",
+    "value": 4447100,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.042,
+        "max_gravity": 0.23,
+        "min_temperature": 133.6,
+        "max_temperature": 174.0,
+        "min_pressure": 0.01,
+        "max_pressure": 0.071,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina-core-9",
+          "perseus-core",
+          "orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Stigmasis",
+    "value": 19010800,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "SulphurDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 0.276,
+        "min_temperature": 132.0,
+        "max_temperature": 206.6,
+        "min_pressure": null,
+        "max_pressure": 0.01,
+        "volcanism": null,
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Triticum",
+    "value": 7774700,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.04,
+        "max_gravity": 1.0008,
+        "min_temperature": 191.0,
+        "max_temperature": 469.5,
+        "min_pressure": 0.058,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina-core-9",
+          "perseus-core",
+          "orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Ventusa",
+    "value": 3227700,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "CarbonDioxide"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.1599,
+        "min_temperature": 56.5,
+        "max_temperature": 194.1,
+        "min_pressure": 0.00289,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": [
+          "sagittarius-carina-core-9",
+          "perseus-core",
+          "orion-cygnus-core"
+        ],
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  },
+  {
+    "name": "Tussock Virgam",
+    "value": 14313700,
+    "genus": "Tussock",
+    "clonal_range": 200,
+    "rulesets": [
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.065,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": "None",
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      },
+      {
+        "atmosphere": [
+          "Water"
+        ],
+        "body_type": [
+          "Rocky body",
+          "High metal content world"
+        ],
+        "min_gravity": 0.0397,
+        "max_gravity": 0.065,
+        "min_temperature": null,
+        "max_temperature": null,
+        "min_pressure": null,
+        "max_pressure": null,
+        "volcanism": [
+          "water"
+        ],
+        "star": null,
+        "parent_star": null,
+        "main_star": null,
+        "regions": null,
+        "nebula": null,
+        "min_distance": null,
+        "max_distance": null
+      }
+    ]
+  }
+]

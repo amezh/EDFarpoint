@@ -21,14 +21,19 @@
   );
 
   // Split bio bodies: above threshold (or unknown value) vs below
+  // Account for 5x first discovery bonus when comparing against threshold
+  function effectiveMax(b: Body): number | null {
+    if (b.bioValueMax == null) return null;
+    return b.bioValueMax * (!b.wasDiscovered ? 5 : 1);
+  }
   const valuableBio = $derived(
     bioThreshold > 0
-      ? allBio.filter((b) => b.bioValueMax == null || b.bioValueMax >= bioThreshold)
+      ? allBio.filter((b) => effectiveMax(b) == null || effectiveMax(b)! >= bioThreshold)
       : allBio
   );
   const lowValueBio = $derived(
     bioThreshold > 0
-      ? allBio.filter((b) => b.bioValueMax != null && b.bioValueMax < bioThreshold)
+      ? allBio.filter((b) => effectiveMax(b) != null && effectiveMax(b)! < bioThreshold)
       : []
   );
 
@@ -160,8 +165,9 @@
             </div>
             <!-- Bio value range -->
             {#if body.bioValueMin != null && body.bioValueMax != null}
+              {@const mult = !body.wasDiscovered ? 5 : 1}
               <div class="px-3 pb-1 text-xs text-ed-green/80 font-mono">
-                ~{formatCredits(body.bioValueMin)} – {formatCredits(body.bioValueMax)} Cr
+                ~{formatCredits(body.bioValueMin * mult)} – {formatCredits(body.bioValueMax * mult)} Cr
                 {#if !body.wasDiscovered}
                   <span class="text-ed-amber ml-1">(5x first discovery)</span>
                 {/if}
@@ -171,11 +177,12 @@
             {/if}
             <!-- Predicted species list -->
             {#if body.bioSpeciesPredicted.length > 0}
+              {@const mult = !body.wasDiscovered ? 5 : 1}
               <div class="px-3 pb-2 flex flex-col gap-0.5">
                 {#each body.bioSpeciesPredicted as species}
-                  <div class="flex items-center gap-2 pl-5 text-xs">
+                  <div class="flex items-center gap-2 pl-5 text-xs" class:opacity-40={species.confidence === "low"}>
                     <span class="text-ed-text truncate flex-1">{species.name}</span>
-                    <span class="font-mono text-ed-green/70">{formatCredits(species.value)}</span>
+                    <span class="font-mono text-ed-green/70">{formatCredits(species.value * mult)}</span>
                     <span class="text-ed-text-muted">{species.clonal_range}m</span>
                   </div>
                 {/each}
@@ -193,12 +200,26 @@
           {lowValueBio.length} low-value bio {lowValueBio.length === 1 ? "body" : "bodies"} (below {fmt(bioThreshold)} Cr)
         </summary>
         {#each lowValueBio as body (body.bodyId)}
-          <div class="flex items-center gap-2 px-3 py-1 rounded mb-0.5 text-ed-text-muted text-xs">
-            <span class="font-mono flex-1 truncate">{body.shortName}</span>
-            <span>{typeShort(body.type)}</span>
-            <span class="font-mono">{body.bioSignals} bio</span>
-            {#if body.bioValueMax != null}
-              <span class="font-mono">~{formatCredits(body.bioValueMax)}</span>
+          {@const mult = !body.wasDiscovered ? 5 : 1}
+          <div class="rounded mb-0.5 bg-ed-surface/40">
+            <div class="flex items-center gap-2 px-3 py-1 text-ed-text-muted text-xs">
+              <span class="font-mono flex-1 truncate">{body.shortName}</span>
+              <span>{typeShort(body.type)}</span>
+              <span class="font-mono">{body.bioSignals} bio</span>
+              {#if body.bioValueMax != null}
+                <span class="font-mono">~{formatCredits(body.bioValueMax * mult)}</span>
+              {/if}
+            </div>
+            {#if body.bioSpeciesPredicted.length > 0}
+              <div class="px-3 pb-1.5 flex flex-col gap-0.5">
+                {#each body.bioSpeciesPredicted as species}
+                  <div class="flex items-center gap-2 pl-5 text-xs text-ed-text-muted" class:opacity-40={species.confidence === "low"}>
+                    <span class="truncate flex-1">{species.name}</span>
+                    <span class="font-mono text-ed-green/50">{formatCredits(species.value * mult)}</span>
+                    <span class="opacity-60">{species.clonal_range}m</span>
+                  </div>
+                {/each}
+              </div>
             {/if}
           </div>
         {/each}

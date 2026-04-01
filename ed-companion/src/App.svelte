@@ -46,33 +46,23 @@
   }
 
   async function triggerBioPrediction(body: Body) {
-    if (body.bioSignals === 0 || body.bioSpeciesPredicted.length > 0) {
-      console.log(`[bio-predict] SKIP ${body.shortName}: signals=${body.bioSignals}, predicted=${body.bioSpeciesPredicted.length}`);
-      return;
-    }
-    if (!body.planetClass) {
-      console.log(`[bio-predict] SKIP ${body.shortName}: no planetClass (stub)`);
-      return;
-    }
+    if (body.bioSignals === 0 || body.bioSpeciesPredicted.length > 0) return;
+    if (!body.planetClass) return; // stub from FSSBodySignals — wait for Scan
     const starType = systemStore.getParentStarType(body);
-    if (!starType) {
-      console.log(`[bio-predict] SKIP ${body.shortName}: no star type`);
-      return;
-    }
-    console.log(`[bio-predict] PREDICTING ${body.shortName}: class=${body.planetClass}, atmo=${body.atmosphereType}, g=${body.gravity}, T=${body.temperature}, star=${starType}`);
+    if (!starType) return; // star not scanned yet — will retry when star arrives
+    // Pass AtmosphereType enum (e.g. "ThinArgon") — Rust normalizes to base type ("Argon")
     const result = await predictBio(
       body.name,
       body.bodyId,
       body.bioSignals,
       body.planetClass,
-      body.atmosphereType,
+      body.atmosphereType || body.atmosphere,
       body.gravity ?? 0,
       body.temperature ?? 0,
       body.volcanism,
       starType,
       body.distanceLs ?? 0,
     );
-    console.log(`[bio-predict] RESULT ${body.shortName}:`, result ? `${result.species.length} species, min=${result.min_value}, max=${result.max_value}` : 'null');
     if (result) {
       systemStore.updateBioPrediction(body.bodyId, result);
     }
@@ -189,7 +179,7 @@
         break;
 
       case "ScanOrganic":
-        bioStore.handleScanOrganic(data);
+        bioStore.handleScanOrganic(data, statusStore.current.latitude, statusStore.current.longitude);
         if ((data.ScanType as string) === "Analyse") {
           const speciesName = (data.Species_Localised as string) ?? (data.Species as string) ?? "";
           const baseValue = getSpeciesValue(speciesName);
@@ -203,13 +193,17 @@
         }
         break;
 
-      case "ApproachBody":
+      case "ApproachBody": {
+        const approachBodyId = data.BodyID as number;
+        const approachBody = systemStore.current?.bodies.find((b) => b.bodyId === approachBodyId);
         bioStore.setPlanet(
           data.Body as string,
-          data.BodyID as number,
+          approachBodyId,
           data.SystemAddress as number,
+          approachBody?.radius ?? null,
         );
         break;
+      }
 
       case "LeaveBody":
         bioStore.leavePlanet();

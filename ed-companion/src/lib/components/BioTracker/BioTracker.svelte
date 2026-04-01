@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { bioStore } from "$lib/stores/bio.svelte";
+  import { bioStore, haversineDistance, type BioSpecies } from "$lib/stores/bio.svelte";
+  import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
 
   const tracker = $derived(bioStore.currentPlanet);
+  const status = $derived(statusStore.current);
 
   // Show all bodies with bio across the system when not on a planet
   const systemBioBodies = $derived(
@@ -21,6 +23,25 @@
     if (samples === 2) return "2nd sample — one more";
     return "Complete";
   }
+
+  /** Distance from last scan to current position, in meters */
+  function distFromLastScan(species: BioSpecies): number | null {
+    if (species.scanPositions.length === 0) return null;
+    if (status.latitude == null || status.longitude == null) return null;
+    if (!tracker?.bodyRadius) return null;
+
+    const last = species.scanPositions[species.scanPositions.length - 1];
+    return haversineDistance(
+      last.latitude, last.longitude,
+      status.latitude, status.longitude,
+      tracker.bodyRadius,
+    );
+  }
+
+  function fmtDist(meters: number): string {
+    if (meters >= 1000) return (meters / 1000).toFixed(1) + " km";
+    return Math.round(meters) + " m";
+  }
 </script>
 
 {#if tracker && tracker.species.length > 0}
@@ -36,6 +57,9 @@
     {#each tracker.species as species (species.name)}
       {@const done = species.analysed}
       {@const active = species.samples > 0 && !done}
+      {@const dist = active ? distFromLastScan(species) : null}
+      {@const range = species.clonalRange ?? 0}
+      {@const farEnough = dist != null && dist >= range}
       <div
         class="rounded-lg p-3 border-l-3 {done ? 'bg-ed-surface/40 border-ed-dim' : active ? 'bg-ed-surface border-ed-green' : 'bg-ed-surface border-ed-border'}"
       >
@@ -65,15 +89,27 @@
           </div>
         </div>
 
-        <!-- Action hint -->
-        {#if !done}
+        <!-- Distance from last scan -->
+        {#if active && dist != null}
+          <div class="mt-2 flex items-center justify-between text-xs">
+            <span class="{farEnough ? 'text-ed-green' : 'text-ed-amber'}">
+              {sampleLabel(species.samples)}
+            </span>
+            <span class="font-mono font-bold {farEnough ? 'text-ed-green' : 'text-ed-amber'}">
+              {fmtDist(dist)} / {fmtDist(range)}
+              {#if farEnough}
+                — ready
+              {/if}
+            </span>
+          </div>
+        {:else if !done}
           <div class="mt-2 flex items-center justify-between text-xs">
             <span class="{active ? 'text-ed-green' : 'text-ed-text-muted'}">
               {sampleLabel(species.samples)}
             </span>
             {#if species.clonalRange && active}
               <span class="font-mono text-ed-amber font-bold">
-                ≥ {species.clonalRange}m apart
+                &ge; {species.clonalRange}m apart
               </span>
             {/if}
           </div>

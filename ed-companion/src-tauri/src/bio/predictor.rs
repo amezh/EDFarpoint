@@ -1,38 +1,38 @@
 #![allow(non_snake_case, dead_code, unused_variables)]
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-/// A single species entry from the Canonn biostats dataset
+/// A single ruleset defining conditions under which a species can appear
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BioStatsEntry {
-    pub name: Option<String>,
-    pub hud_category: Option<String>,
-    pub fdevname: Option<String>,
-    pub id: Option<Value>,
-    pub count: Option<u64>,
-    pub ming: Option<f64>,
-    pub maxg: Option<f64>,
-    pub mint: Option<f64>,
-    pub maxt: Option<f64>,
-    pub minp: Option<f64>,
-    pub maxp: Option<f64>,
-    pub mind: Option<f64>,
-    pub maxd: Option<f64>,
-    #[serde(default)]
-    pub atmosphereType: Vec<String>,
-    #[serde(default)]
-    pub primaryStars: Vec<String>,
-    #[serde(default)]
-    pub localStars: Vec<String>,
-    #[serde(default)]
-    pub volcanism: Vec<String>,
-    #[serde(default)]
-    pub bodies: Vec<String>,
-    pub reward: Option<u64>,
+pub struct Ruleset {
+    pub atmosphere: Option<Vec<String>>,
+    pub body_type: Option<Vec<String>>,
+    pub min_gravity: Option<f64>,
+    pub max_gravity: Option<f64>,
+    pub min_temperature: Option<f64>,
+    pub max_temperature: Option<f64>,
+    pub min_pressure: Option<f64>,
+    pub max_pressure: Option<f64>,
+    pub volcanism: Option<serde_json::Value>, // "None", "Any", or list of strings
+    pub star: Option<Vec<String>>,
+    pub parent_star: Option<Vec<String>>,
+    pub main_star: Option<Vec<String>>,
+    pub regions: Option<Vec<String>>,
+    pub nebula: Option<String>,
+    pub min_distance: Option<f64>,
+    pub max_distance: Option<f64>,
+}
+
+/// A species entry with curated prediction rules
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BioRuleEntry {
+    pub name: String,
+    pub value: u64,
+    pub genus: String,
+    pub clonal_range: u32,
+    pub rulesets: Vec<Ruleset>,
 }
 
 /// Species prediction result for a planet
@@ -42,7 +42,7 @@ pub struct PredictedSpecies {
     pub codex_name: Option<String>,
     pub value: u64,
     pub clonal_range: u32,
-    pub confidence: String, // "confirmed" or "predicted"
+    pub confidence: String,
 }
 
 /// Prediction summary for a planet
@@ -56,97 +56,77 @@ pub struct BioPrediction {
     pub max_value: u64,
 }
 
-/// Clonal colony minimum distances by genus
-fn default_clonal_ranges() -> HashMap<String, u32> {
-    let mut m = HashMap::new();
-    m.insert("Aleoida".into(), 150);
-    m.insert("Bacterium".into(), 500);
-    m.insert("Cactoida".into(), 300);
-    m.insert("Clypeus".into(), 150);
-    m.insert("Concha".into(), 150);
-    m.insert("Electricae".into(), 1000);
-    m.insert("Fonticulua".into(), 500);
-    m.insert("Frutexa".into(), 150);
-    m.insert("Fumerola".into(), 100);
-    m.insert("Fungoida".into(), 300);
-    m.insert("Osseus".into(), 800);
-    m.insert("Recepta".into(), 150);
-    m.insert("Stratum".into(), 500);
-    m.insert("Tubus".into(), 800);
-    m.insert("Tussock".into(), 200);
-    m.insert("Brain Tree".into(), 100);
-    m.insert("Bark Mound".into(), 100);
-    m.insert("Anemone".into(), 100);
-    m.insert("Sinuous Tuber".into(), 100);
-    m.insert("Amphora Plant".into(), 100);
-    m
+pub struct BioPredictor {
+    rules: Vec<BioRuleEntry>,
 }
 
-pub struct BioPredictor {
-    entries: Vec<BioStatsEntry>,
-    clonal_ranges: HashMap<String, u32>,
-    prices: HashMap<String, u64>,
+/// Normalize atmosphere input to base type matching bio rules (e.g. "Argon", "CarbonDioxide").
+/// Handles both journal AtmosphereType enum ("ThinArgon") and descriptive Atmosphere field
+/// ("thin argon atmosphere").
+fn normalize_atmosphere_type(atmo: &str) -> String {
+    let s = atmo.trim();
+    if s.is_empty() {
+        return String::new();
+    }
+
+    // First try: journal AtmosphereType enum format (PascalCase, no spaces)
+    // e.g. "ThinArgon" -> "Argon", "ThickCarbonDioxide" -> "CarbonDioxide"
+    let base = if let Some(rest) = s.strip_prefix("Thin") {
+        rest.to_string()
+    } else if let Some(rest) = s.strip_prefix("Thick") {
+        rest.to_string()
+    } else if let Some(rest) = s.strip_prefix("SemiHot") {
+        rest.to_string()
+    } else if let Some(rest) = s.strip_prefix("Hot") {
+        rest.to_string()
+    } else if s.contains(' ') {
+        // Fallback: descriptive Atmosphere field ("thin argon atmosphere")
+        // Strip "thin ", "thick ", "hot " prefix and " atmosphere" suffix
+        let lower = s.to_lowercase();
+        let stripped = lower
+            .trim_end_matches(" atmosphere")
+            .trim_start_matches("thin ")
+            .trim_start_matches("thick ")
+            .trim_start_matches("semi-hot ")
+            .trim_start_matches("hot ")
+            .to_string();
+        // Convert to PascalCase: "carbon dioxide" -> "CarbonDioxide"
+        // Also handle hyphens: "argon-rich" -> "ArgonRich", "neon-rich" -> "NeonRich"
+        stripped
+            .split(|c: char| c == ' ' || c == '-')
+            .filter(|w| !w.is_empty())
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    Some(c) => c.to_uppercase().to_string() + chars.as_str(),
+                    None => String::new(),
+                }
+            })
+            .collect::<String>()
+    } else {
+        // Already in base format (e.g. "Argon", "CarbonDioxide", "None")
+        s.to_string()
+    };
+
+    base
 }
 
 impl BioPredictor {
-    /// Load the Canonn biostats dataset from a JSON file
+    /// Load the curated bio rules from bio_rules.json
     pub fn load(data_dir: &Path) -> Result<Self, Box<dyn std::error::Error>> {
-        let biostats_path = data_dir.join("canonn_biostats.json");
-        let prices_path = data_dir.join("canonn_codex_prices.json");
-        let clonal_path = data_dir.join("clonal_colony_ranges.json");
+        let rules_path = data_dir.join("bio_rules.json");
 
-        let mut entries = Vec::new();
-        if biostats_path.exists() {
-            let content = fs::read_to_string(&biostats_path)?;
-            let parsed: Value = serde_json::from_str(&content)?;
-            // The biostats file is a JSON object keyed by entryid
-            if let Value::Object(map) = parsed {
-                for (_key, value) in map {
-                    if let Ok(entry) = serde_json::from_value::<BioStatsEntry>(value) {
-                        if entry.hud_category.as_deref() == Some("Biology") {
-                            entries.push(entry);
-                        }
-                    }
-                }
-            }
-            log::info!("Bio predictor: loaded {} species entries", entries.len());
+        let rules = if rules_path.exists() {
+            let content = fs::read_to_string(&rules_path)?;
+            let parsed: Vec<BioRuleEntry> = serde_json::from_str(&content)?;
+            log::info!("Bio predictor: loaded {} species rules", parsed.len());
+            parsed
         } else {
-            log::warn!("Bio predictor: biostats file not found at {:?}", biostats_path);
-        }
+            log::warn!("Bio predictor: rules file not found at {:?}", rules_path);
+            Vec::new()
+        };
 
-        let mut prices = HashMap::new();
-        if prices_path.exists() {
-            let content = fs::read_to_string(&prices_path)?;
-            let parsed: Value = serde_json::from_str(&content)?;
-            if let Value::Object(map) = parsed {
-                for (_key, value) in map {
-                    if let Value::Object(ref entry) = value {
-                        if let (Some(Value::String(name)), Some(reward)) =
-                            (entry.get("name"), entry.get("reward"))
-                        {
-                            if let Some(r) = reward.as_u64() {
-                                prices.insert(name.clone(), r);
-                            }
-                        }
-                    }
-                }
-            }
-            log::info!("Bio predictor: loaded {} price entries", prices.len());
-        }
-
-        let mut clonal_ranges = default_clonal_ranges();
-        if clonal_path.exists() {
-            let content = fs::read_to_string(&clonal_path)?;
-            if let Ok(parsed) = serde_json::from_str::<HashMap<String, u32>>(&content) {
-                clonal_ranges.extend(parsed);
-            }
-        }
-
-        Ok(Self {
-            entries,
-            clonal_ranges,
-            prices,
-        })
+        Ok(Self { rules })
     }
 
     /// Predict possible bio species for a planet based on its properties
@@ -163,106 +143,53 @@ impl BioPredictor {
         star_type: &str,
         distance_ls: f64,
     ) -> BioPrediction {
+        let atmo_normalized = normalize_atmosphere_type(atmosphere_type);
+        log::info!(
+            "Bio predict: body={}, class={}, atmo='{}' -> '{}', grav={}, temp={}, volc='{}', star={}, dist={}, rules={}",
+            body_name, planet_class, atmosphere_type, atmo_normalized, gravity_g, temperature_k, volcanism, star_type, distance_ls, self.rules.len()
+        );
+        let volc_lower = volcanism.to_lowercase();
+        let has_no_volcanism = volc_lower.is_empty()
+            || volc_lower == "no volcanism"
+            || volc_lower.contains("none");
+
         let mut candidates: Vec<PredictedSpecies> = Vec::new();
 
-        for entry in &self.entries {
-            // Filter by body type
-            if !entry.bodies.is_empty() {
-                let matches_body = entry.bodies.iter().any(|b| {
-                    planet_class.to_lowercase().contains(&b.to_lowercase())
-                });
-                if !matches_body {
-                    continue;
-                }
-            }
-
-            // Filter by atmosphere
-            if !entry.atmosphereType.is_empty() {
-                let atmo_lower = atmosphere_type.to_lowercase();
-                let matches_atmo = entry.atmosphereType.iter().any(|a| {
-                    atmo_lower.contains(&a.to_lowercase()) || a.to_lowercase().contains(&atmo_lower)
-                });
-                if !matches_atmo && !atmosphere_type.is_empty() {
-                    continue;
-                }
-                // If planet has no atmosphere and entry requires one, skip
-                if atmosphere_type.is_empty() || atmosphere_type == "None" {
-                    continue;
-                }
-            }
-
-            // Filter by gravity
-            if let (Some(ming), Some(maxg)) = (entry.ming, entry.maxg) {
-                if gravity_g < ming * 0.95 || gravity_g > maxg * 1.05 {
-                    continue;
-                }
-            }
-
-            // Filter by temperature
-            if let (Some(mint), Some(maxt)) = (entry.mint, entry.maxt) {
-                if temperature_k < mint * 0.95 || temperature_k > maxt * 1.05 {
-                    continue;
-                }
-            }
-
-            // Filter by volcanism
-            if !entry.volcanism.is_empty() && !volcanism.is_empty() {
-                let volc_lower = volcanism.to_lowercase();
-                let matches_volc = entry.volcanism.iter().any(|v| {
-                    volc_lower.contains(&v.to_lowercase())
-                });
-                // Some species require volcanism, some don't
-                // If the entry has volcanism list and the planet has volcanism,
-                // check if it matches
-                if !matches_volc && !volc_lower.contains("none") {
-                    // Entry requires specific volcanism that doesn't match
-                    continue;
-                }
-            }
-
-            // Filter by star type
-            if !entry.primaryStars.is_empty() {
-                let matches_star = entry.primaryStars.iter().any(|s| {
-                    s.to_lowercase() == star_type.to_lowercase()
-                        || star_type.to_lowercase().starts_with(&s.to_lowercase())
-                });
-                if !matches_star {
-                    continue;
-                }
-            }
-
-            let name = entry
-                .name
-                .clone()
-                .unwrap_or_else(|| "Unknown Species".to_string());
-
-            let value = entry.reward.unwrap_or_else(|| {
-                self.prices.get(&name).copied().unwrap_or(0)
+        for entry in &self.rules {
+            // A species matches if ANY of its rulesets pass
+            let matches = entry.rulesets.iter().any(|rs| {
+                self.ruleset_matches(
+                    rs,
+                    planet_class,
+                    &atmo_normalized,
+                    gravity_g,
+                    temperature_k,
+                    &volc_lower,
+                    has_no_volcanism,
+                    star_type,
+                    distance_ls,
+                )
             });
 
-            // Extract genus from name for clonal range
-            let genus = name.split_whitespace().next().unwrap_or("").to_string();
-            let clonal_range = self.clonal_ranges.get(&genus).copied().unwrap_or(150);
-
-            candidates.push(PredictedSpecies {
-                name: name.clone(),
-                codex_name: entry.fdevname.clone(),
-                value,
-                clonal_range,
-                confidence: "predicted".to_string(),
-            });
+            if matches {
+                candidates.push(PredictedSpecies {
+                    name: entry.name.clone(),
+                    codex_name: None,
+                    value: entry.value,
+                    clonal_range: entry.clonal_range,
+                    confidence: "predicted".to_string(),
+                });
+            }
         }
+
+        log::info!(
+            "Bio predict: {} candidates: {:?}",
+            candidates.len(),
+            candidates.iter().map(|c| format!("{}={}", c.name, c.value)).collect::<Vec<_>>()
+        );
 
         // Sort by value descending
         candidates.sort_by(|a, b| b.value.cmp(&a.value));
-
-        // Deduplicate by base species name (keep highest value variant)
-        let mut seen_base = std::collections::HashSet::new();
-        candidates.retain(|c| {
-            // Base species = first two words
-            let base: String = c.name.split_whitespace().take(2).collect::<Vec<_>>().join(" ");
-            seen_base.insert(base)
-        });
 
         // Calculate min/max values
         let min_value = if signal_count > 0 && !candidates.is_empty() {
@@ -296,13 +223,225 @@ impl BioPredictor {
         }
     }
 
+    /// Check if a single ruleset matches the given body conditions
+    fn ruleset_matches(
+        &self,
+        rs: &Ruleset,
+        planet_class: &str,
+        atmo_normalized: &str,
+        gravity_g: f64,
+        temperature_k: f64,
+        volc_lower: &str,
+        has_no_volcanism: bool,
+        star_type: &str,
+        distance_ls: f64,
+    ) -> bool {
+        // Atmosphere check
+        if let Some(ref atmo_list) = rs.atmosphere {
+            let atmo_matches = if atmo_list.iter().any(|a| a == "Any") {
+                !atmo_normalized.is_empty() && atmo_normalized.to_lowercase() != "none"
+            } else {
+                atmo_list.iter().any(|a| a.eq_ignore_ascii_case(atmo_normalized))
+            };
+            if !atmo_matches {
+                return false;
+            }
+        }
+
+        // Body type check
+        if let Some(ref body_types) = rs.body_type {
+            let pc_lower = planet_class.to_lowercase();
+            // Also handle "Rocky ice body" vs "Rocky Ice world" - ED journal uses different names
+            let body_matches = body_types.iter().any(|bt| {
+                let bt_lower = bt.to_lowercase();
+                bt_lower == pc_lower
+                    || (bt_lower == "rocky ice body" && pc_lower == "rocky ice world")
+                    || (bt_lower == "rocky ice world" && pc_lower == "rocky ice body")
+                    || (bt_lower == "high metal content body" && pc_lower == "high metal content world")
+                    || (bt_lower == "high metal content world" && pc_lower == "high metal content body")
+            });
+            if !body_matches {
+                return false;
+            }
+        }
+
+        // Gravity check
+        if let Some(ming) = rs.min_gravity {
+            if gravity_g < ming {
+                return false;
+            }
+        }
+        if let Some(maxg) = rs.max_gravity {
+            if gravity_g > maxg {
+                return false;
+            }
+        }
+
+        // Temperature check
+        if let Some(mint) = rs.min_temperature {
+            if temperature_k < mint {
+                return false;
+            }
+        }
+        if let Some(maxt) = rs.max_temperature {
+            if temperature_k > maxt {
+                return false;
+            }
+        }
+
+        // Volcanism check
+        if let Some(ref volc_rule) = rs.volcanism {
+            match volc_rule {
+                serde_json::Value::String(s) => {
+                    if s == "None" {
+                        // Must have no volcanism
+                        if !has_no_volcanism {
+                            return false;
+                        }
+                    } else if s == "Any" {
+                        // Must have some volcanism
+                        if has_no_volcanism {
+                            return false;
+                        }
+                    }
+                }
+                serde_json::Value::Array(arr) => {
+                    // List of volcanism substring matches
+                    if has_no_volcanism {
+                        return false; // List implies volcanism is required
+                    }
+                    // Check exclusions first (prefixed with "!")
+                    for item in arr {
+                        if let serde_json::Value::String(v) = item {
+                            if let Some(excluded) = v.strip_prefix('!') {
+                                if volc_lower.contains(&excluded.to_lowercase()) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    // Check at least one positive match
+                    let has_positive = arr.iter().any(|item| {
+                        if let serde_json::Value::String(v) = item {
+                            if v.starts_with('!') {
+                                return false;
+                            }
+                            if let Some(exact) = v.strip_prefix('=') {
+                                volc_lower == exact.to_lowercase()
+                            } else {
+                                volc_lower.contains(&v.to_lowercase())
+                            }
+                        } else {
+                            false
+                        }
+                    });
+                    if !has_positive {
+                        return false;
+                    }
+                }
+                serde_json::Value::Null => {
+                    // null means no volcanism requirement — any volcanism state OK
+                }
+                _ => {}
+            }
+        }
+        // If volcanism field is None (absent), no volcanism requirement
+
+        // Star type check (system-wide)
+        if let Some(ref stars) = rs.star {
+            let st_lower = star_type.to_lowercase();
+            let star_matches = stars.iter().any(|s| {
+                if s.contains(':') {
+                    // Tuple format "B:V" — check type and luminosity
+                    let parts: Vec<&str> = s.splitn(2, ':').collect();
+                    st_lower == parts[0].to_lowercase()
+                } else {
+                    let s_lower = s.to_lowercase();
+                    st_lower == s_lower
+                        || st_lower.starts_with(&format!("{}_", s_lower))
+                        || st_lower.starts_with(&format!("{} ", s_lower))
+                }
+            });
+            if !star_matches {
+                return false;
+            }
+        }
+
+        // Parent star check
+        if let Some(ref pstars) = rs.parent_star {
+            let st_lower = star_type.to_lowercase();
+            let star_matches = pstars.iter().any(|s| {
+                if s.contains(':') {
+                    let parts: Vec<&str> = s.splitn(2, ':').collect();
+                    st_lower == parts[0].to_lowercase()
+                } else {
+                    let s_lower = s.to_lowercase();
+                    st_lower == s_lower
+                        || st_lower.starts_with(&format!("{}_", s_lower))
+                        || st_lower.starts_with(&format!("{} ", s_lower))
+                        // "D" matches white dwarf types
+                        || (s_lower == "d" && st_lower.starts_with("d"))
+                        // "N" matches neutron star
+                        || (s_lower == "n" && (st_lower == "n" || st_lower.starts_with("neutron")))
+                        // "H" matches black hole
+                        || (s_lower == "h" && (st_lower == "h" || st_lower.starts_with("supermassive")))
+                }
+            });
+            if !star_matches {
+                return false;
+            }
+        }
+
+        // Main star check
+        if let Some(ref mstars) = rs.main_star {
+            let st_lower = star_type.to_lowercase();
+            let star_matches = mstars.iter().any(|s| {
+                let s_lower = s.to_lowercase();
+                st_lower == s_lower
+                    || st_lower.starts_with(&format!("{}_", s_lower))
+                    || st_lower.starts_with(&format!("{} ", s_lower))
+            });
+            if !star_matches {
+                return false;
+            }
+        }
+
+        // Distance check
+        if let Some(min_dist) = rs.min_distance {
+            if distance_ls < min_dist {
+                return false;
+            }
+        }
+        if let Some(max_dist) = rs.max_distance {
+            if distance_ls > max_dist {
+                return false;
+            }
+        }
+
+        // Note: nebula, regions, atmosphere_component, and pressure checks are not yet
+        // implemented — they require additional data (system coordinates, atmosphere
+        // composition, surface pressure) that we don't have in the current API.
+        // These will cause some false positives for species that require nebula proximity
+        // or specific regions, but those are relatively rare cases.
+
+        true
+    }
+
     /// Get the clonal range for a genus
     pub fn clonal_range(&self, genus: &str) -> u32 {
-        self.clonal_ranges.get(genus).copied().unwrap_or(150)
+        self.rules
+            .iter()
+            .find(|r| r.genus == genus)
+            .map(|r| r.clonal_range)
+            .unwrap_or(150)
     }
 
     /// Get the value for a species by name
     pub fn species_value(&self, name: &str) -> u64 {
-        self.prices.get(name).copied().unwrap_or(0)
+        self.rules
+            .iter()
+            .find(|r| r.name == name)
+            .map(|r| r.value)
+            .unwrap_or(0)
     }
 }
