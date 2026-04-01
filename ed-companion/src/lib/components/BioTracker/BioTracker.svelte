@@ -2,6 +2,31 @@
   import { bioStore, haversineDistance, type BioSpecies } from "$lib/stores/bio.svelte";
   import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
+  import { playReady } from "$lib/utils/sounds";
+
+  // Track which species already triggered the "ready" sound to avoid repeats
+  let readySounded = $state(new Set<string>());
+
+  // Play sound when bio scan distance is reached
+  $effect(() => {
+    if (!tracker) return;
+    for (const species of tracker.species) {
+      if (species.analysed || species.samples === 0) continue;
+      const dists = distancesToScans(species);
+      if (dists.length === 0) continue;
+      const range = getClonalRange(species);
+      const allFar = dists.every(d => d >= range);
+      if (allFar && !readySounded.has(species.name)) {
+        readySounded.add(species.name);
+        readySounded = new Set(readySounded);
+        playReady();
+      } else if (!allFar && readySounded.has(species.name)) {
+        // Reset if player moved back within range
+        readySounded.delete(species.name);
+        readySounded = new Set(readySounded);
+      }
+    }
+  });
 
   const tracker = $derived(bioStore.currentPlanet);
   const status = $derived(statusStore.current);
@@ -17,6 +42,20 @@
     return v.toString();
   }
 
+  // Fallback clonal ranges by genus when species.clonalRange is null
+  const CLONAL_RANGES: Record<string, number> = {
+    Aleoida: 150, Bacterium: 500, Cactoida: 300, Clypeus: 150, Concha: 150,
+    Electricae: 1000, Fonticulua: 500, Frutexa: 150, Fumerola: 100,
+    Fungoida: 300, Osseus: 800, Recepta: 150, Stratum: 500, Tubus: 800, Tussock: 200,
+  };
+
+  function getClonalRange(species: BioSpecies): number {
+    if (species.clonalRange) return species.clonalRange;
+    // Look up by genus name
+    const genus = species.genus || species.localName.split(" ")[0];
+    return CLONAL_RANGES[genus] ?? 200;
+  }
+
   function sampleLabel(samples: number): string {
     if (samples === 0) return "Not started";
     if (samples === 1) return "1st sample — move away";
@@ -24,19 +63,17 @@
     return "Complete";
   }
 
-  /** Distance from last scan to current position, in meters */
-  function distFromLastScan(species: BioSpecies): number | null {
-    if (species.scanPositions.length === 0) return null;
-    if (status.latitude == null || status.longitude == null) return null;
-    if (!tracker?.bodyRadius) return null;
+  /** Distance from current position to each previous scan, in meters */
+  function distancesToScans(species: BioSpecies): number[] {
+    if (species.scanPositions.length === 0) return [];
+    if (status.latitude == null || status.longitude == null) return [];
+    if (!tracker?.bodyRadius) return [];
 
-    const last = species.scanPositions[species.scanPositions.length - 1];
-    return haversineDistance(
-      last.latitude, last.longitude,
-      status.latitude, status.longitude,
-      tracker.bodyRadius,
+    return species.scanPositions.map(pos =>
+      haversineDistance(pos.latitude, pos.longitude, status.latitude!, status.longitude!, tracker!.bodyRadius!),
     );
   }
+
 
   function fmtDist(meters: number): string {
     if (meters >= 1000) return (meters / 1000).toFixed(1) + " km";
@@ -57,9 +94,9 @@
     {#each tracker.species as species (species.name)}
       {@const done = species.analysed}
       {@const active = species.samples > 0 && !done}
-      {@const dist = active ? distFromLastScan(species) : null}
-      {@const range = species.clonalRange ?? 0}
-      {@const farEnough = dist != null && dist >= range}
+      {@const dists = active ? distancesToScans(species) : []}
+      {@const range = getClonalRange(species)}
+      {@const farEnough = dists.length > 0 && dists.every(d => d >= range)}
       <div
         class="rounded-lg p-3 border-l-3 {done ? 'bg-ed-surface/40 border-ed-dim' : active ? 'bg-ed-surface border-ed-green' : 'bg-ed-surface border-ed-border'}"
       >
@@ -89,27 +126,27 @@
           </div>
         </div>
 
-        <!-- Distance from last scan -->
-        {#if active && dist != null}
-          <div class="mt-2 flex items-center justify-between text-xs">
-            <span class="{farEnough ? 'text-ed-green' : 'text-ed-amber'}">
-              {sampleLabel(species.samples)}
-            </span>
-            <span class="font-mono font-bold {farEnough ? 'text-ed-green' : 'text-ed-amber'}">
-              {fmtDist(dist)} / {fmtDist(range)}
-              {#if farEnough}
-                — ready
-              {/if}
+        <!-- Distance to each previous scan -->
+        {#if active && dists.length > 0}
+          <div class="mt-2 flex items-center gap-2 text-xs">
+            <span class="text-ed-text-muted shrink-0">{range}m</span>
+            {#each dists as d}
+              <span class="font-mono font-bold px-1.5 py-0.5 rounded {d >= range ? 'bg-ed-green/20 text-ed-green' : 'bg-red-900/30 text-red-400'}">
+                {fmtDist(d)}
+              </span>
+            {/each}
+            <span class="ml-auto font-bold {farEnough ? 'text-ed-green' : 'text-red-400'}">
+              {farEnough ? "Scan!" : "Move away"}
             </span>
           </div>
         {:else if !done}
           <div class="mt-2 flex items-center justify-between text-xs">
-            <span class="{active ? 'text-ed-green' : 'text-ed-text-muted'}">
+            <span class="{active ? 'text-ed-amber' : 'text-ed-text-muted'}">
               {sampleLabel(species.samples)}
             </span>
-            {#if species.clonalRange && active}
+            {#if active}
               <span class="font-mono text-ed-amber font-bold">
-                &ge; {species.clonalRange}m apart
+                &ge; {range}m apart
               </span>
             {/if}
           </div>

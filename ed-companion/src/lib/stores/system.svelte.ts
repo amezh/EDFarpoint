@@ -43,6 +43,7 @@ export interface Body {
   personalStatus: "unvisited" | "fss" | "dss" | "landed" | "bio_complete";
   parents: Array<Record<string, number>>;
   rings: RingInfo[];
+  confirmedGenuses: string[]; // from SAASignalsFound Genuses array (e.g. ["Bacterium", "Stratum"])
   semiMajorAxis: number | null;  // meters
   eccentricity: number | null;
   orbitalInclination: number | null; // degrees
@@ -76,8 +77,35 @@ function shortBodyName(fullName: string, systemName: string): string {
   return fullName;
 }
 
+const SYSTEM_STORAGE_KEY = "systemStore";
+
+function saveSystemToSession(s: SystemState | null) {
+  if (!s) return;
+  try {
+    const serializable = { ...s, stars: Array.from(s.stars.entries()) };
+    sessionStorage.setItem(SYSTEM_STORAGE_KEY, JSON.stringify(serializable));
+  } catch { /* ignore */ }
+}
+
+function loadSystemFromSession(): SystemState | null {
+  try {
+    const raw = sessionStorage.getItem(SYSTEM_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    parsed.stars = new Map(parsed.stars ?? []);
+    return parsed as SystemState;
+  } catch { return null; }
+}
+
 function createSystemStore() {
-  let state = $state<SystemState | null>(null);
+  let state = $state<SystemState | null>(loadSystemFromSession());
+
+  // Persist on changes
+  $effect.root(() => {
+    $effect(() => {
+      saveSystemToSession(state);
+    });
+  });
 
   return {
     get current() {
@@ -86,11 +114,15 @@ function createSystemStore() {
 
     setSystem(data: Record<string, unknown>) {
       const name = data.StarSystem as string;
+      const address = data.SystemAddress as number;
       const starPos = data.StarPos as [number, number, number];
+
+      // If same system (relog, Location event), keep existing data
+      if (state && state.address === address) return;
 
       state = {
         name,
-        address: data.SystemAddress as number,
+        address,
         starPos,
         starClass: null,
         bodyCount: null,
@@ -159,6 +191,7 @@ function createSystemStore() {
         personalStatus: existing >= 0 ? state.bodies[existing].personalStatus : "fss",
         parents: (scan.Parents as Array<Record<string, number>>) ?? [],
         rings,
+        confirmedGenuses: existing >= 0 ? state.bodies[existing].confirmedGenuses : [],
         semiMajorAxis: (scan.SemiMajorAxis as number) ?? null,
         eccentricity: (scan.Eccentricity as number) ?? null,
         orbitalInclination: (scan.OrbitalInclination as number) ?? null,
@@ -221,6 +254,7 @@ function createSystemStore() {
           personalStatus: "fss",
           parents: [],
           rings: [],
+          confirmedGenuses: [],
           semiMajorAxis: null,
           eccentricity: null,
           orbitalInclination: null,
@@ -237,6 +271,12 @@ function createSystemStore() {
         } else if (sig.Type.includes("Geological")) {
           body.geoSignals = sig.Count;
         }
+      }
+
+      // Capture confirmed genuses from SAASignalsFound (DSS scan)
+      const genuses = data.Genuses as Array<{ Genus: string; Genus_Localised: string }> | undefined;
+      if (genuses && genuses.length > 0) {
+        body.confirmedGenuses = genuses.map(g => g.Genus_Localised ?? g.Genus);
       }
     },
 

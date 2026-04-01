@@ -18,11 +18,13 @@
   import { estimateCartoValue, estimateStarValue } from "$lib/utils/valueCalc";
   import { pushRemoteState } from "$lib/utils/remotePush";
   import type { Body } from "$lib/stores/system.svelte";
+  import { playDiscovery } from "$lib/utils/sounds";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
 
   let ready = $state(false);
+  let appReady = false; // suppress sounds during history replay
   let showSettings = $state(false);
   let statsLoading = $state(true);
   let statsProgress = $state("");
@@ -77,6 +79,18 @@
       body.distanceLs ?? 0,
     );
     if (result) {
+      // If we have confirmed genuses from DSS, filter predictions to only matching genera
+      if (body.confirmedGenuses.length > 0) {
+        const confirmed = new Set(body.confirmedGenuses.map(g => g.toLowerCase()));
+        result.species = result.species.filter(s => {
+          const genus = s.name.split(" ")[0].toLowerCase();
+          return confirmed.has(genus);
+        });
+        // Recalculate min/max with filtered list
+        const sorted = [...result.species].sort((a, b) => b.value - a.value);
+        result.max_value = sorted.slice(0, result.signal_count).reduce((s, sp) => s + sp.value, 0);
+        result.min_value = sorted.slice(-result.signal_count).reduce((s, sp) => s + sp.value, 0);
+      }
       systemStore.updateBioPrediction(body.bodyId, result);
     }
   }
@@ -184,11 +198,24 @@
           if (sigBody) {
             triggerBioPrediction(sigBody);
           }
+          // Play sound for bio signal discovery (only during live play, not history)
+          const sigs = data.Signals as Array<{ Type: string; Count: number }> | undefined;
+          if (appReady && sigs?.some(s => s.Type.includes("Biological"))) {
+            playDiscovery();
+          }
         }
 
         if (event === "SAASignalsFound") {
           const bodyId = data.BodyID as number;
           systemStore.markBodyMapped(bodyId);
+
+          // Re-trigger bio prediction with confirmed genuses from DSS
+          const dssBody = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
+          if (dssBody && dssBody.confirmedGenuses.length > 0) {
+            // Clear old predictions and re-predict with genus filter
+            dssBody.bioSpeciesPredicted = [];
+            triggerBioPrediction(dssBody);
+          }
 
           // Calculate DSS mapping bonus (full mapped value minus FSS-only)
           const body = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
@@ -379,6 +406,7 @@
         handleJournalEvent(allEvents[i]);
       }
       ready = true; // Show UI now with trip data
+      appReady = true; // Enable notification sounds (history replay done)
 
       // Batch-trigger bio predictions for any bodies that loaded from history
       for (const body of systemStore.current?.bodies ?? []) {

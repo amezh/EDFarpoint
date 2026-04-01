@@ -1,4 +1,4 @@
-// Route store — NavRoute.json data
+// Route store — NavRoute.json data + persistence
 
 export interface RouteSystem {
   name: string;
@@ -15,12 +15,30 @@ export interface RouteState {
   remainingLy: number;
 }
 
+const STORAGE_KEY = "routeStore";
+
+function saveToSession(s: RouteState) {
+  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+
+function loadFromSession(): RouteState | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 function createRouteStore() {
-  let state = $state<RouteState>({
+  const restored = loadFromSession();
+  let state = $state<RouteState>(restored ?? {
     systems: [],
     destination: null,
     remainingJumps: 0,
     remainingLy: 0,
+  });
+
+  $effect.root(() => {
+    $effect(() => { saveToSession(state); });
   });
 
   return {
