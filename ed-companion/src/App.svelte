@@ -9,10 +9,13 @@
   import TripStats from "$lib/components/TripStats/TripStats.svelte";
   import { bioStore } from "$lib/stores/bio.svelte";
   import { journalStore } from "$lib/stores/journal.svelte";
+  import { lifetimeStore } from "$lib/stores/lifetime.svelte";
   import { routeStore } from "$lib/stores/route.svelte";
   import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
+  import { getSpeciesValue } from "$lib/utils/bioValues";
+  import { estimateCartoValue, estimateStarValue } from "$lib/utils/valueCalc";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
@@ -20,6 +23,9 @@
   type TabId = "system" | "route" | "bio" | "stats" | "settings";
   let activeTab: TabId = $state("system");
   let ready = $state(false);
+  let statsLoading = $state(true);
+  let statsProgress = $state("");
+  let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
 
   const tabs: { id: TabId; label: string }[] = [
     { id: "route", label: "Route" },
@@ -39,20 +45,41 @@
       case "FSDJump":
       case "Location":
         systemStore.setSystem(data);
+        tripStore.addSystem(
+          data.StarSystem as string,
+          (data.JumpDist as number) ?? 0,
+        );
         if (event === "FSDJump") {
-          tripStore.addSystem(
-            data.StarSystem as string,
-            (data.JumpDist as number) ?? 0,
-          );
           routeStore.advanceRoute(data.StarSystem as string);
         }
         break;
 
       case "Scan": {
         const isStar = !!(data.StarType);
-        if (!isStar) {
+        if (isStar) {
+          // Star scan — still has carto value
+          const starValue = estimateStarValue(
+            data.StarType as string,
+            data.WasDiscovered as boolean,
+          );
+          tripStore.addCartoValue(starValue);
+        } else {
+          // Body scan
           systemStore.addOrUpdateBody(data);
-          tripStore.addBodyScan(!(data.WasDiscovered as boolean));
+          const isFirst = !(data.WasDiscovered as boolean);
+          tripStore.addBodyScan(isFirst);
+
+          // Estimate carto value for this body
+          const bodyType = (data.PlanetClass as string) ?? "";
+          const terraformable = (data.TerraformState as string) === "Terraformable";
+          const value = estimateCartoValue({
+            bodyType,
+            terraformable,
+            wasDiscovered: (data.WasDiscovered as boolean) ?? false,
+            wasMapped: (data.WasMapped as boolean) ?? false,
+            withDSS: false,
+          });
+          tripStore.addCartoValue(value);
         }
         break;
       }
@@ -65,15 +92,38 @@
       case "SAASignalsFound":
         systemStore.updateBodySignals(data);
         if (event === "SAASignalsFound") {
-          systemStore.markBodyMapped(data.BodyID as number);
+          const bodyId = data.BodyID as number;
+          systemStore.markBodyMapped(bodyId);
           tripStore.addBodyMapped();
+
+          // Add DSS mapping bonus to carto value
+          const body = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
+          if (body) {
+            const dssValue = estimateCartoValue({
+              bodyType: body.type,
+              terraformable: body.terraformable,
+              wasDiscovered: body.wasDiscovered,
+              wasMapped: body.wasMapped,
+              withDSS: true,
+            });
+            // DSS value is the full mapped value minus the FSS-only value already counted
+            const fssValue = estimateCartoValue({
+              bodyType: body.type,
+              terraformable: body.terraformable,
+              wasDiscovered: body.wasDiscovered,
+              wasMapped: body.wasMapped,
+              withDSS: false,
+            });
+            tripStore.addCartoValue(dssValue - fssValue);
+          }
         }
         break;
 
       case "ScanOrganic":
         bioStore.handleScanOrganic(data);
         if ((data.ScanType as string) === "Analyse") {
-          tripStore.addBioAnalysis(0);
+          const speciesName = (data.Species_Localised as string) ?? (data.Species as string) ?? "";
+          tripStore.addBioAnalysis(getSpeciesValue(speciesName));
         } else if ((data.ScanType as string) === "Log") {
           tripStore.addBioScan();
         }
@@ -97,15 +147,94 @@
     }
   }
 
-  onMount(() => {
-    // Pull historical events from Rust backend (frontend-initiated, no race condition)
-    invoke<Record<string, unknown>[]>("get_journal_history").then((events) => {
-      for (const ev of events) {
-        handleJournalEvent(ev);
+  /** Process a journal event for lifetime stats only (no system/bio state) */
+  function handleLifetimeEvent(data: Record<string, unknown>) {
+    const event = data.event as string;
+    if (!event) return;
+
+    switch (event) {
+      case "FSDJump":
+        lifetimeStore.addSystem();
+        lifetimeStore.addDistance((data.JumpDist as number) ?? 0);
+        break;
+      case "Scan": {
+        const isStar = !!(data.StarType);
+        if (isStar) {
+          lifetimeStore.addCartoEarned(estimateStarValue(data.StarType as string, data.WasDiscovered as boolean));
+        } else {
+          lifetimeStore.addBodyScan();
+          const value = estimateCartoValue({
+            bodyType: (data.PlanetClass as string) ?? "",
+            terraformable: (data.TerraformState as string) === "Terraformable",
+            wasDiscovered: (data.WasDiscovered as boolean) ?? false,
+            wasMapped: (data.WasMapped as boolean) ?? false,
+            withDSS: false,
+          });
+          lifetimeStore.addCartoEarned(value);
+        }
+        break;
       }
-      ready = true;
+      case "SAASignalsFound":
+        lifetimeStore.addBodyMap();
+        break;
+      case "ScanOrganic":
+        if ((data.ScanType as string) === "Analyse") {
+          const lsName = (data.Species_Localised as string) ?? (data.Species as string) ?? "";
+          lifetimeStore.addBioSpecies(
+            lsName,
+            getSpeciesValue(lsName),
+          );
+        }
+        break;
+    }
+  }
+
+  onMount(() => {
+    // Pull structured history from Rust backend
+    invoke<Record<string, unknown> | null>("get_journal_history").then((result) => {
+      if (!result) {
+        ready = true;
+        statsLoading = false;
+        return;
+      }
+
+      const allEvents = result.allEvents as Record<string, unknown>[];
+      const tripStartIdx = result.tripStartIdx as number;
+      lastDockInfo = result.lastDockTimestamp
+        ? { timestamp: result.lastDockTimestamp as string, station: (result.lastDockStation as string) ?? "" }
+        : null;
+
+      // Phase 1: Process trip events immediately (post-dock → end)
+      // This is fast since it's typically just the recent sessions
+      for (let i = tripStartIdx; i < allEvents.length; i++) {
+        handleJournalEvent(allEvents[i]);
+      }
+      ready = true; // Show UI now with trip data
+
+      // Phase 2: Process ALL events for lifetime stats in background chunks
+      statsProgress = `Processing lifetime stats (${allEvents.length} events)...`;
+      let li = 0;
+      const CHUNK = 5000;
+
+      function processLifetimeChunk() {
+        const end = Math.min(li + CHUNK, allEvents.length);
+        for (; li < end; li++) {
+          handleLifetimeEvent(allEvents[li]);
+        }
+
+        if (li < allEvents.length) {
+          statsProgress = `Lifetime stats... ${Math.round((li / allEvents.length) * 100)}%`;
+          requestAnimationFrame(processLifetimeChunk);
+        } else {
+          statsLoading = false;
+          statsProgress = "";
+        }
+      }
+
+      requestAnimationFrame(processLifetimeChunk);
     }).catch(() => {
-      ready = true; // Show UI even if history pull fails
+      ready = true;
+      statsLoading = false;
     });
 
     // Live events (after startup)
@@ -167,8 +296,21 @@
         <BioTracker />
       {:else if activeTab === "stats"}
         <div class="flex flex-col gap-4">
+          {#if lastDockInfo}
+            <div class="text-xs text-ed-text-muted px-1">
+              Last docked: {lastDockInfo.station} · {lastDockInfo.timestamp}
+            </div>
+          {:else}
+            <div class="text-xs text-ed-amber px-1">Never docked — entire history is one trip</div>
+          {/if}
           <TripStats />
-          <LifetimeStats />
+          {#if statsLoading}
+            <div class="ed-card text-center text-ed-text-muted text-sm py-4">
+              <p>{statsProgress}</p>
+            </div>
+          {:else}
+            <LifetimeStats />
+          {/if}
         </div>
       {:else if activeTab === "settings"}
         <Settings />

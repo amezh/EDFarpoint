@@ -44,11 +44,12 @@
             <p class="font-semibold text-sm {done ? 'text-ed-dim line-through' : active ? 'text-ed-green' : 'text-ed-text'}">
               {species.localName}
             </p>
-            {#if species.value}
-              <p class="text-xs {done ? 'text-ed-dim' : 'text-ed-amber'}">
-                {fmt(species.value)} Cr
-              </p>
-            {/if}
+            <p class="text-xs {done ? 'text-ed-dim' : 'text-ed-amber'}">
+              {species.value ? fmt(species.value) + " Cr" : species.genus}
+              {#if species.clonalRange && !done}
+                <span class="text-ed-text-muted ml-1">· {species.clonalRange}m range</span>
+              {/if}
+            </p>
           </div>
 
           <!-- Sample dots -->

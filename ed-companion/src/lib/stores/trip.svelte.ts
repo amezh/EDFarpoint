@@ -10,69 +10,76 @@ export interface TripState {
   bioSpeciesFound: number;
   bioSpeciesAnalysed: number;
   distanceTravelled: number;
-  visitedSystems: Set<string>;
 }
 
 function createTripStore() {
-  let state = $state<TripState>({
-    systemsVisited: 0,
-    bodiesScanned: 0,
-    bodiesMapped: 0,
-    firstDiscoveries: 0,
-    cartoValue: 0,
-    bioValue: 0,
-    bioSpeciesFound: 0,
-    bioSpeciesAnalysed: 0,
-    distanceTravelled: 0,
-    visitedSystems: new Set(),
-  });
+  let systemsVisited = $state(0);
+  let bodiesScanned = $state(0);
+  let bodiesMapped = $state(0);
+  let firstDiscoveries = $state(0);
+  let cartoValue = $state(0);
+  let bioValue = $state(0);
+  let bioSpeciesFound = $state(0);
+  let bioSpeciesAnalysed = $state(0);
+  let distanceTravelled = $state(0);
+  const visitedSystems = new Set<string>();
 
   return {
-    get current() {
-      return state;
+    get current(): TripState {
+      return {
+        systemsVisited,
+        bodiesScanned,
+        bodiesMapped,
+        firstDiscoveries,
+        cartoValue,
+        bioValue,
+        bioSpeciesFound,
+        bioSpeciesAnalysed,
+        distanceTravelled,
+      };
     },
 
     addSystem(name: string, jumpDist: number) {
-      if (!state.visitedSystems.has(name)) {
-        state.visitedSystems.add(name);
-        state.systemsVisited = state.visitedSystems.size;
+      if (!visitedSystems.has(name)) {
+        visitedSystems.add(name);
+        systemsVisited = visitedSystems.size;
       }
-      state.distanceTravelled += jumpDist;
+      distanceTravelled += jumpDist;
     },
 
     addBodyScan(isFirstDiscovery: boolean) {
-      state.bodiesScanned++;
-      if (isFirstDiscovery) state.firstDiscoveries++;
+      bodiesScanned++;
+      if (isFirstDiscovery) firstDiscoveries++;
     },
 
     addBodyMapped() {
-      state.bodiesMapped++;
+      bodiesMapped++;
     },
 
     addCartoValue(value: number) {
-      state.cartoValue += value;
+      cartoValue += value;
     },
 
     addBioScan() {
-      state.bioSpeciesFound++;
+      bioSpeciesFound++;
     },
 
     addBioAnalysis(value: number) {
-      state.bioSpeciesAnalysed++;
-      state.bioValue += value;
+      bioSpeciesAnalysed++;
+      bioValue += value;
     },
 
     reset() {
-      state.systemsVisited = 0;
-      state.bodiesScanned = 0;
-      state.bodiesMapped = 0;
-      state.firstDiscoveries = 0;
-      state.cartoValue = 0;
-      state.bioValue = 0;
-      state.bioSpeciesFound = 0;
-      state.bioSpeciesAnalysed = 0;
-      state.distanceTravelled = 0;
-      state.visitedSystems = new Set();
+      systemsVisited = 0;
+      bodiesScanned = 0;
+      bodiesMapped = 0;
+      firstDiscoveries = 0;
+      cartoValue = 0;
+      bioValue = 0;
+      bioSpeciesFound = 0;
+      bioSpeciesAnalysed = 0;
+      distanceTravelled = 0;
+      visitedSystems.clear();
     },
   };
 }

@@ -12,13 +12,43 @@ use tokio::sync::mpsc;
 
 use super::events::JournalEvent;
 
-/// Global store for historical events — frontend pulls these via a command
-static HISTORICAL_EVENTS: std::sync::LazyLock<Mutex<Option<Vec<Value>>>> =
-    std::sync::LazyLock::new(|| Mutex::new(None));
+/// Historical data split into lifetime (all) and trip (since last dock)
+pub struct HistoricalData {
+    /// All events across all journal files (for lifetime stats + current system state)
+    pub all_events: Vec<Value>,
+    /// Index into all_events where the current trip starts (after last Docked)
+    pub trip_start_idx: usize,
+    /// Timestamp of last dock, if any
+    pub last_dock_timestamp: Option<String>,
+    /// Last dock station name, if any
+    pub last_dock_station: Option<String>,
+}
 
-/// Take the historical events (returns them once, then None)
-pub fn take_historical_events() -> Option<Vec<Value>> {
-    HISTORICAL_EVENTS.lock().take()
+/// Global store for historical data, with a condvar to signal readiness
+static HISTORICAL_DATA: std::sync::LazyLock<(Mutex<Option<HistoricalData>>, std::sync::Condvar)> =
+    std::sync::LazyLock::new(|| (Mutex::new(None), std::sync::Condvar::new()));
+
+/// Take the historical data, blocking until it's ready (returns once, then None)
+pub fn take_historical_data() -> Option<HistoricalData> {
+    let (mutex, condvar) = &*HISTORICAL_DATA;
+    // Wait until data is available (with 30s timeout to avoid hanging forever)
+    let mut guard = mutex.lock();
+    if guard.is_none() {
+        // Data not ready yet — wait for watcher to signal
+        // parking_lot::Mutex doesn't work with std::sync::Condvar,
+        // so we use a spin-wait with short sleeps instead
+        drop(guard);
+        let start = std::time::Instant::now();
+        loop {
+            std::thread::sleep(Duration::from_millis(50));
+            guard = mutex.lock();
+            if guard.is_some() || start.elapsed() > Duration::from_secs(30) {
+                break;
+            }
+            drop(guard);
+        }
+    }
+    guard.take()
 }
 
 pub struct JournalWatcher {
@@ -36,7 +66,6 @@ impl JournalWatcher {
         }
     }
 
-    /// Find the default ED journal directory on Windows
     pub fn default_journal_dir() -> Option<PathBuf> {
         if let Some(home) = dirs::home_dir() {
             let path = home
@@ -50,10 +79,14 @@ impl JournalWatcher {
         None
     }
 
-    /// Find the most recent .log file in the journal directory
-    fn find_latest_journal(&self) -> Option<PathBuf> {
-        let entries = fs::read_dir(&self.journal_dir).ok()?;
-        entries
+    /// Get all journal files sorted chronologically by modification time.
+    /// ED uses two naming formats: `Journal.YYMMDDHHMMSS` (old) and
+    /// `Journal.YYYY-MM-DDTHHMMSS` (new). Sorting by mtime handles both.
+    fn all_journal_files(&self) -> Vec<PathBuf> {
+        let mut files: Vec<(PathBuf, std::time::SystemTime)> = fs::read_dir(&self.journal_dir)
+            .ok()
+            .into_iter()
+            .flatten()
             .filter_map(|e| e.ok())
             .filter(|e| {
                 e.path()
@@ -64,11 +97,35 @@ impl JournalWatcher {
                         .to_string_lossy()
                         .starts_with("Journal.")
             })
-            .max_by_key(|e| e.metadata().ok().and_then(|m| m.modified().ok()))
-            .map(|e| e.path())
+            .filter_map(|e| {
+                let mtime = e.metadata().ok()?.modified().ok()?;
+                Some((e.path(), mtime))
+            })
+            .collect();
+        files.sort_by_key(|(_, mtime)| *mtime);
+        let files: Vec<PathBuf> = files.into_iter().map(|(p, _)| p).collect();
+        files
     }
 
-    /// Read new lines from the current journal file starting at our saved position
+    fn find_latest_journal(&self) -> Option<PathBuf> {
+        self.all_journal_files().into_iter().last()
+    }
+
+    /// Read all lines from a journal file as parsed JSON
+    fn read_all_lines(path: &Path) -> Vec<Value> {
+        let file = match File::open(path) {
+            Ok(f) => f,
+            Err(_) => return Vec::new(),
+        };
+        let reader = BufReader::new(file);
+        reader
+            .lines()
+            .filter_map(|l| l.ok())
+            .filter(|l| !l.trim().is_empty())
+            .filter_map(|l| serde_json::from_str::<Value>(l.trim()).ok())
+            .collect()
+    }
+
     fn read_new_lines(path: &Path, position: &mut u64) -> Vec<Value> {
         let mut results = Vec::new();
         let file = match File::open(path) {
@@ -81,7 +138,6 @@ impl JournalWatcher {
             Err(_) => return results,
         };
 
-        // If file is smaller than our position, it's a new file
         if metadata.len() < *position {
             *position = 0;
         }
@@ -113,44 +169,75 @@ impl JournalWatcher {
         results
     }
 
-    /// Process the current journal file and read all historical events
-    /// (used on startup to catch up with the current session)
-    pub fn read_current_session(&self) -> Vec<Value> {
-        let latest = match self.find_latest_journal() {
-            Some(p) => p,
-            None => return Vec::new(),
-        };
+    /// Read ALL journal files and find the trip boundary (last Docked event)
+    pub fn read_all_history(&self) -> HistoricalData {
+        let files = self.all_journal_files();
+        let start = std::time::Instant::now();
 
-        let mut position = 0u64;
-        let events = Self::read_new_lines(&latest, &mut position);
+        let mut all_events = Vec::new();
+        let mut last_dock_idx: Option<usize> = None;
+        let mut last_dock_timestamp: Option<String> = None;
+        let mut last_dock_station: Option<String> = None;
 
-        *self.current_file.lock() = Some(latest);
-        *self.file_position.lock() = position;
+        for path in &files {
+            let events = Self::read_all_lines(path);
+            for ev in events {
+                let idx = all_events.len();
 
-        events
+                if ev.get("event").and_then(|e| e.as_str()) == Some("Docked") {
+                    last_dock_idx = Some(idx);
+                    last_dock_timestamp = ev.get("timestamp").and_then(|t| t.as_str()).map(|s| s.to_string());
+                    last_dock_station = ev.get("StationName").and_then(|s| s.as_str()).map(|s| s.to_string());
+                }
+
+                all_events.push(ev);
+            }
+        }
+
+        let trip_start_idx = last_dock_idx.map(|i| i + 1).unwrap_or(0);
+
+        let elapsed = start.elapsed();
+        log::info!(
+            "Journal history: {} total events from {} files in {:.1}s. Trip starts at event {} (last dock: {})",
+            all_events.len(),
+            files.len(),
+            elapsed.as_secs_f64(),
+            trip_start_idx,
+            last_dock_timestamp.as_deref().unwrap_or("never"),
+        );
+
+        HistoricalData {
+            all_events,
+            trip_start_idx,
+            last_dock_timestamp,
+            last_dock_station,
+        }
     }
 
-    /// Start watching for file changes and emit events via Tauri IPC
     pub async fn start(self, app: AppHandle) {
         let (tx, mut rx) = mpsc::channel::<()>(100);
 
-        // Read current session — store for pull via command, don't push
-        let events = self.read_current_session();
-        log::info!(
-            "Journal watcher: read {} historical events, waiting for frontend to pull",
-            events.len()
-        );
-        // Store in managed state so the frontend can request it via command
+        // Read full history
+        let data = self.read_all_history();
+
+        // Set position to end of latest journal for live tailing
+        if let Some(latest) = self.find_latest_journal() {
+            let file_len = fs::metadata(&latest).map(|m| m.len()).unwrap_or(0);
+            *self.current_file.lock() = Some(latest);
+            *self.file_position.lock() = file_len;
+        }
+
+        // Store for frontend pull
         {
-            let mut store = HISTORICAL_EVENTS.lock();
-            *store = Some(events);
+            let mut store = HISTORICAL_DATA.lock();
+            *store = Some(data);
         }
 
         let journal_dir = self.journal_dir.clone();
         let current_file = self.current_file.clone();
         let file_position = self.file_position.clone();
 
-        // File system watcher thread
+        // File system watcher
         let tx_clone = tx.clone();
         std::thread::spawn(move || {
             let rt_tx = tx_clone;
@@ -168,13 +255,12 @@ impl JournalWatcher {
                 .watch(&journal_dir, RecursiveMode::NonRecursive)
                 .expect("Failed to watch journal directory");
 
-            // Keep watcher alive
             loop {
                 std::thread::sleep(Duration::from_secs(3600));
             }
         });
 
-        // Also poll periodically as a fallback (some events may be missed by fs watcher)
+        // Periodic poll fallback
         let tx_poll = tx.clone();
         tokio::spawn(async move {
             loop {
@@ -183,17 +269,15 @@ impl JournalWatcher {
             }
         });
 
-        // Event processing loop
+        // Live event loop
         let journal_dir = self.journal_dir.clone();
         loop {
             if rx.recv().await.is_none() {
                 break;
             }
 
-            // Drain any queued notifications
             while rx.try_recv().is_ok() {}
 
-            // Check if there's a newer journal file
             let latest = find_latest_in(&journal_dir);
             if let Some(ref latest_path) = latest {
                 let mut current = current_file.lock();
@@ -204,7 +288,6 @@ impl JournalWatcher {
                 }
             }
 
-            // Read new lines
             let current = current_file.lock().clone();
             if let Some(ref path) = current {
                 let mut pos = file_position.lock();

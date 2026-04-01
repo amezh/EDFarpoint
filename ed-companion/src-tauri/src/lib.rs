@@ -121,10 +121,20 @@ async fn fetch_edsm_system(
     Ok(serde_json::to_value(&info).unwrap_or(Value::Null))
 }
 
-/// Frontend calls this once on mount to get all historical journal events
+/// Frontend calls this once on mount to get structured historical data
 #[tauri::command]
-fn get_journal_history() -> Vec<Value> {
-    journal::watcher::take_historical_events().unwrap_or_default()
+fn get_journal_history() -> Value {
+    match journal::watcher::take_historical_data() {
+        Some(data) => {
+            serde_json::json!({
+                "allEvents": data.all_events,
+                "tripStartIdx": data.trip_start_idx,
+                "lastDockTimestamp": data.last_dock_timestamp,
+                "lastDockStation": data.last_dock_station,
+            })
+        }
+        None => Value::Null,
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

@@ -20,9 +20,11 @@
 
   let config: Config | null = $state(null);
   let saving = $state(false);
+  let overlayOpen = $state(false);
 
   async function loadConfig() {
     config = (await invoke("get_config")) as Config;
+    overlayOpen = await invoke<boolean>("is_overlay_open");
   }
 
   async function saveConfig() {
@@ -34,7 +36,7 @@
 
   async function toggleOverlay() {
     try {
-      await invoke("create_overlay");
+      overlayOpen = await invoke<boolean>("toggle_overlay");
     } catch (e) {
       console.warn("Overlay:", e);
     }
@@ -85,7 +87,9 @@
         </label>
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Overlay window</span>
-          <button class="ed-btn text-xs" onclick={toggleOverlay}>Open</button>
+          <button class="ed-btn text-xs" onclick={toggleOverlay}>
+            {overlayOpen ? "Close" : "Open"}
+          </button>
         </label>
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Overlay opacity</span>
