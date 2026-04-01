@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { routeStore } from "$lib/stores/route";
+  import { routeStore } from "$lib/stores/route.svelte";
 
   const route = $derived(routeStore.current);
 

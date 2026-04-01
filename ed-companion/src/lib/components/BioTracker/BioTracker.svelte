@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { bioStore } from "$lib/stores/bio";
+  import { bioStore } from "$lib/stores/bio.svelte";
 
   const tracker = $derived(bioStore.currentPlanet);
 </script>

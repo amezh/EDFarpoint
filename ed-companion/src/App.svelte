@@ -1,5 +1,6 @@
 <script lang="ts">
   import { listen } from "@tauri-apps/api/event";
+  import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
   import Header from "$lib/components/Header.svelte";
   import StatusBar from "$lib/components/StatusBar.svelte";
@@ -9,12 +10,12 @@
   import TripStats from "$lib/components/TripStats/TripStats.svelte";
   import LifetimeStats from "$lib/components/LifetimeStats/LifetimeStats.svelte";
   import Settings from "$lib/components/Settings/Settings.svelte";
-  import { journalStore } from "$lib/stores/journal";
-  import { statusStore } from "$lib/stores/status";
-  import { systemStore } from "$lib/stores/system";
-  import { routeStore } from "$lib/stores/route";
-  import { bioStore } from "$lib/stores/bio";
-  import { tripStore } from "$lib/stores/trip";
+  import { journalStore } from "$lib/stores/journal.svelte";
+  import { statusStore } from "$lib/stores/status.svelte";
+  import { systemStore } from "$lib/stores/system.svelte";
+  import { routeStore } from "$lib/stores/route.svelte";
+  import { bioStore } from "$lib/stores/bio.svelte";
+  import { tripStore } from "$lib/stores/trip.svelte";
 
   type TabId = "system" | "route" | "bio" | "stats" | "settings";
   let activeTab: TabId = $state("system");
@@ -97,17 +98,14 @@
   }
 
   onMount(() => {
-    // Historical batch — process all at once without triggering per-event reactivity
-    const unlistenBatch = listen<unknown[]>("journal-batch", (event) => {
-      const events = event.payload as Record<string, unknown>[];
+    // Pull historical events from Rust backend (frontend-initiated, no race condition)
+    invoke<Record<string, unknown>[]>("get_journal_history").then((events) => {
       for (const ev of events) {
         handleJournalEvent(ev);
       }
-    });
-
-    // Ready signal — show UI after historical replay
-    const unlistenReady = listen<unknown>("journal-ready", () => {
       ready = true;
+    }).catch(() => {
+      ready = true; // Show UI even if history pull fails
     });
 
     // Live events (after startup)
@@ -123,13 +121,7 @@
       routeStore.setRoute(event.payload as Record<string, unknown>);
     });
 
-    // Fallback: if no journal-ready arrives within 3s, show UI anyway
-    const timeout = setTimeout(() => { ready = true; }, 3000);
-
     return () => {
-      clearTimeout(timeout);
-      unlistenBatch.then((fn) => fn());
-      unlistenReady.then((fn) => fn());
       unlistenJournal.then((fn) => fn());
       unlistenStatus.then((fn) => fn());
       unlistenNavRoute.then((fn) => fn());

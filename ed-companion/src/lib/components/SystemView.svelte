@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { systemStore } from "$lib/stores/system";
+  import { systemStore } from "$lib/stores/system.svelte";
   import BodyTable from "$lib/components/BodyTable/BodyTable.svelte";
 
   const system = $derived(systemStore.current);

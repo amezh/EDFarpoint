@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { lifetimeStore } from "$lib/stores/lifetime";
+  import { lifetimeStore } from "$lib/stores/lifetime.svelte";
 
   const stats = $derived(lifetimeStore.current);
 

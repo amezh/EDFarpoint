@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Body } from "$lib/stores/system";
+  import type { Body } from "$lib/stores/system.svelte";
 
   let { bodies = [] }: { bodies: Body[] } = $props();
 </script>

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { systemStore } from "$lib/stores/system";
-  import { bioStore } from "$lib/stores/bio";
-  import { tripStore } from "$lib/stores/trip";
-  import { routeStore } from "$lib/stores/route";
+  import { systemStore } from "$lib/stores/system.svelte";
+  import { bioStore } from "$lib/stores/bio.svelte";
+  import { tripStore } from "$lib/stores/trip.svelte";
+  import { routeStore } from "$lib/stores/route.svelte";
 
   const system = $derived(systemStore.current);
   const bio = $derived(bioStore.currentPlanet);

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { tripStore } from "$lib/stores/trip";
+  import { tripStore } from "$lib/stores/trip.svelte";
 
   const trip = $derived(tripStore.current);
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { systemStore } from "$lib/stores/system";
-  import { journalStore } from "$lib/stores/journal";
+  import { systemStore } from "$lib/stores/system.svelte";
+  import { journalStore } from "$lib/stores/journal.svelte";
 
   const system = $derived(systemStore.current);
   const commander = $derived(journalStore.commander);
