@@ -26,6 +26,7 @@ pub struct RemoteState {
     pub trip_stats: RwLock<TripStats>,
     pub lifetime_stats: RwLock<LifetimeStats>,
     pub current_bio: RwLock<Value>,
+    pub current_expedition: RwLock<Value>,
     pub event_tx: broadcast::Sender<String>,
     pub auth_token: RwLock<Option<String>>,
 }
@@ -40,6 +41,7 @@ impl RemoteState {
             trip_stats: RwLock::new(TripStats::new()),
             lifetime_stats: RwLock::new(LifetimeStats::default()),
             current_bio: RwLock::new(Value::Null),
+            current_expedition: RwLock::new(Value::Null),
             event_tx: tx,
             auth_token: RwLock::new(None),
         });
@@ -66,6 +68,7 @@ pub async fn start_server(state: Arc<RemoteState>, port: u16) {
         .route("/api/trip", get(get_trip))
         .route("/api/stats", get(get_stats))
         .route("/api/bio/current", get(get_bio))
+        .route("/api/snapshot", get(get_snapshot))
         .route("/api/trip/reset", post(reset_trip))
         .route("/ws", get(ws_handler))
         .layer(CorsLayer::permissive())
@@ -104,6 +107,18 @@ async fn get_bio(State(state): State<Arc<RemoteState>>) -> impl IntoResponse {
     Json(state.current_bio.read().clone())
 }
 
+async fn get_snapshot(State(state): State<Arc<RemoteState>>) -> impl IntoResponse {
+    let snapshot = serde_json::json!({
+        "status": *state.current_status.read(),
+        "system": *state.current_system.read(),
+        "route": *state.current_route.read(),
+        "bio": *state.current_bio.read(),
+        "expedition": *state.current_expedition.read(),
+        "trip": serde_json::to_value(&*state.trip_stats.read()).unwrap_or(Value::Null),
+    });
+    Json(snapshot)
+}
+
 async fn reset_trip(State(state): State<Arc<RemoteState>>) -> impl IntoResponse {
     state.trip_stats.write().reset();
     StatusCode::OK
@@ -120,15 +135,17 @@ async fn handle_ws(mut socket: WebSocket, state: Arc<RemoteState>) {
     let mut rx = state.event_tx.subscribe();
 
     // Send current state as initial snapshot
-    let status = state.current_status.read().clone();
-    let system = state.current_system.read().clone();
     let _ = socket
         .send(Message::Text(
             serde_json::json!({
                 "type": "snapshot",
                 "payload": {
-                    "status": status,
-                    "system": system,
+                    "status": *state.current_status.read(),
+                    "system": *state.current_system.read(),
+                    "route": *state.current_route.read(),
+                    "bio": *state.current_bio.read(),
+                    "expedition": *state.current_expedition.read(),
+                    "trip": serde_json::to_value(&*state.trip_stats.read()).unwrap_or(Value::Null),
                 }
             })
             .to_string()

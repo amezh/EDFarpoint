@@ -14,10 +14,12 @@
   import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
+  import { expeditionStore } from "$lib/stores/expedition.svelte";
   import { configStore } from "$lib/stores/config.svelte";
   import { getSpeciesValue } from "$lib/utils/bioValues";
   import { predictBio } from "$lib/utils/bioPredict";
   import { estimateCartoValue, estimateStarValue } from "$lib/utils/valueCalc";
+  import { pushRemoteState } from "$lib/utils/remotePush";
   import type { Body } from "$lib/stores/system.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { listen } from "@tauri-apps/api/event";
@@ -37,6 +39,13 @@
     { id: "stats", label: "Stats" },
     { id: "settings", label: "Settings" },
   ];
+
+  // Push state to remote WebSocket server when stores change
+  $effect(() => { pushRemoteState("system", systemStore.current); });
+  $effect(() => { pushRemoteState("route", routeStore.current); });
+  $effect(() => { pushRemoteState("expedition", expeditionStore.visited); });
+  $effect(() => { pushRemoteState("trip", tripStore.current); });
+  $effect(() => { pushRemoteState("status", statusStore.current); });
 
   // Track body discovery status: key = "systemAddr:bodyId" => wasDiscovered
   const bodyDiscoveryMap = new Map<string, boolean>();
@@ -78,6 +87,7 @@
       case "FSDJump":
       case "Location":
         systemStore.setSystem(data);
+        expeditionStore.enterSystem(data);
         tripStore.addSystem(
           data.StarSystem as string,
           (data.JumpDist as number) ?? 0,
@@ -96,6 +106,12 @@
             !!(data.WasDiscovered),
           );
           tripStore.addStarScan(starValue);
+          if (systemStore.current?.name) {
+            expeditionStore.addCartoValue(systemStore.current.name, starValue);
+            if (!(data.WasDiscovered)) {
+              expeditionStore.markFirstDiscoveryStar(systemStore.current.name);
+            }
+          }
 
           // Track star type for bio predictions
           const starBodyId = data.BodyID as number;
@@ -128,6 +144,11 @@
             withDSS: false,
           });
           tripStore.addBodyScan(isFirst, fssValue);
+          if (systemStore.current?.name) {
+            expeditionStore.addCartoValue(systemStore.current.name, fssValue);
+            expeditionStore.addBodyScanned(systemStore.current.name);
+            if (isFirst) expeditionStore.markFirstDiscoveryBody(systemStore.current.name);
+          }
 
           // Trigger bio prediction for this body
           const scannedBody = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
@@ -171,9 +192,17 @@
             };
             const dssValue = estimateCartoValue({ ...common, withDSS: true });
             const fssValue = estimateCartoValue({ ...common, withDSS: false });
-            tripStore.addBodyMapped(Math.max(0, dssValue - fssValue));
+            const dssBonus = Math.max(0, dssValue - fssValue);
+            tripStore.addBodyMapped(dssBonus);
+            if (systemStore.current?.name) {
+              expeditionStore.addCartoValue(systemStore.current.name, dssBonus);
+              expeditionStore.addBodyMapped(systemStore.current.name);
+            }
           } else {
             tripStore.addBodyMapped(0);
+            if (systemStore.current?.name) {
+              expeditionStore.addBodyMapped(systemStore.current.name);
+            }
           }
         }
         break;
@@ -188,6 +217,10 @@
           const bodyId = data.Body as number;
           const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bodyId)) ?? true;
           tripStore.addBioAnalysis(baseValue, !wasDisc);
+          if (systemStore.current?.name) {
+            const totalBioValue = !wasDisc ? baseValue * 5 : baseValue;
+            expeditionStore.addBioValue(systemStore.current.name, totalBioValue);
+          }
         } else if ((data.ScanType as string) === "Log") {
           tripStore.addBioScan();
         }
@@ -211,6 +244,7 @@
 
       case "Docked":
         tripStore.reset();
+        expeditionStore.reset();
         bodyDiscoveryMap.clear();
         break;
     }

@@ -112,6 +112,30 @@ fn is_overlay_open(app: tauri::AppHandle) -> bool {
     window::is_overlay_open(&app)
 }
 
+/// Frontend pushes state updates to the remote WebSocket server
+#[tauri::command]
+fn push_remote_state(
+    state: tauri::State<'_, Arc<AppState>>,
+    key: String,
+    value: Value,
+) {
+    match key.as_str() {
+        "status" => *state.remote.current_status.write() = value.clone(),
+        "system" => *state.remote.current_system.write() = value.clone(),
+        "route" => *state.remote.current_route.write() = value.clone(),
+        "bio" => *state.remote.current_bio.write() = value.clone(),
+        "expedition" => *state.remote.current_expedition.write() = value.clone(),
+        "trip" => {
+            if let Ok(trip) = serde_json::from_value::<TripStats>(value.clone()) {
+                *state.remote.trip_stats.write() = trip;
+            }
+        }
+        _ => {}
+    }
+    // Broadcast the update to all WebSocket clients
+    state.remote.broadcast(&key, &value);
+}
+
 #[tauri::command]
 async fn fetch_edsm_system(
     state: tauri::State<'_, Arc<AppState>>,
@@ -232,6 +256,7 @@ pub fn run() {
             toggle_overlay,
             is_overlay_open,
             fetch_edsm_system,
+            push_remote_state,
             get_journal_history,
         ])
         .setup(move |app| {
