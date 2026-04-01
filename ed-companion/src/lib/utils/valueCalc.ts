@@ -1,5 +1,81 @@
-// Cartographic value estimation using known multipliers
-// Based on: https://elite-dangerous.fandom.com/wiki/Explorer#Cartographic_value
+// Cartographic value estimation using official ED exploration formulae
+// Source: https://forums.frontier.co.uk/threads/exploration-value-formulae.232000/
+// Post-3.3 (Beyond Chapter 4) formulas
+
+const Q = 0.56591828;
+
+// ── Star k values ──────────────────────────────────────────
+
+const STAR_K: Record<string, number> = {
+  // Neutron stars
+  N: 22628,
+  // Black holes
+  H: 22628,
+  SupermassiveBlackHole: 22628,
+  // White dwarfs
+  D: 14057,
+  DA: 14057,
+  DAB: 14057,
+  DAO: 14057,
+  DAZ: 14057,
+  DAV: 14057,
+  DB: 14057,
+  DBZ: 14057,
+  DBV: 14057,
+  DO: 14057,
+  DOV: 14057,
+  DQ: 14057,
+  DC: 14057,
+  DCV: 14057,
+  DX: 14057,
+};
+
+const DEFAULT_STAR_K = 1200;
+
+/** Star FSS scan value: k + (mass * k / 66.25) */
+export function estimateStarValue(
+  starType: string,
+  solarMass: number,
+  wasDiscovered: boolean,
+): number {
+  const k = STAR_K[starType] ?? DEFAULT_STAR_K;
+  const mass = solarMass || 1;
+  let value = k + (mass * k) / 66.25;
+  if (!wasDiscovered) value *= 2.6;
+  return Math.round(value);
+}
+
+// ── Body k values ──────────────────────────────────────────
+
+interface BodyK {
+  base: number;
+  terraform: number; // additional k when terraformable
+}
+
+const BODY_K: Record<string, BodyK> = {
+  "Metal rich body": { base: 21790, terraform: 105678 },
+  "Metal-rich body": { base: 21790, terraform: 105678 },
+  "Ammonia world": { base: 96932, terraform: 0 },
+  "Class I gas giant": { base: 1656, terraform: 0 },
+  "Sudarsky class I gas giant": { base: 1656, terraform: 0 },
+  "Class II gas giant": { base: 9654, terraform: 0 },
+  "Sudarsky class II gas giant": { base: 9654, terraform: 0 },
+  "High metal content body": { base: 9654, terraform: 100677 },
+  "High metal content world": { base: 9654, terraform: 100677 },
+  "Water world": { base: 64831, terraform: 116295 },
+  "Earthlike body": { base: 64831, terraform: 116295 },
+  "Earth-like world": { base: 64831, terraform: 116295 },
+};
+
+const DEFAULT_BODY_K: BodyK = { base: 300, terraform: 93328 };
+
+// Mapping multipliers
+const MAP_MULT = {
+  unmapped: 1.0,
+  mapped_both_firsts: 3.699622554, // first discoverer + first mapped
+  mapped_first_mapped: 8.0956, // first mapped only (not first discoverer)
+  mapped_no_firsts: 3.3333333333, // neither first
+};
 
 export interface CartoValueParams {
   bodyType: string;
@@ -9,98 +85,57 @@ export interface CartoValueParams {
   massEM?: number;
   isFirstDiscoverer?: boolean;
   isFirstMapper?: boolean;
-  withDSS?: boolean;
+  withDSS?: boolean; // whether player mapped it with DSS
+  efficiencyBonus?: boolean; // mapped within efficiency target
 }
 
-// Base values by body type (approximate Cr)
-const BASE_VALUES: Record<string, number> = {
-  "Earthlike body": 270_000,
-  "Earth-like world": 270_000,
-  "Water world": 100_000,
-  "Ammonia world": 150_000,
-  "High metal content body": 14_000,
-  "Metal rich body": 31_000,
-  "Rocky body": 500,
-  "Rocky ice body": 500,
-  "Icy body": 500,
-  "Class I gas giant": 3_800,
-  "Class II gas giant": 28_400,
-  "Class III gas giant": 1_000,
-  "Class IV gas giant": 1_100,
-  "Class V gas giant": 1_000,
-  "Gas giant with ammonia based life": 1_500,
-  "Gas giant with water based life": 1_500,
-  "Helium gas giant": 1_000,
-  "Helium rich gas giant": 1_000,
-  "Water giant": 1_000,
-  "Sudarsky class I gas giant": 3_800,
-  "Sudarsky class II gas giant": 28_400,
-  "Sudarsky class III gas giant": 1_000,
-  "Sudarsky class IV gas giant": 1_100,
-  "Sudarsky class V gas giant": 1_000,
-};
-
-// Terraformable bonus multiplier
-const TF_MULTIPLIER: Record<string, number> = {
-  "Earthlike body": 1, // ELW is already at max
-  "Earth-like world": 1,
-  "Water world": 5.3,
-  "Ammonia world": 1,
-  "High metal content body": 11.4,
-  "Rocky body": 9.0,
-  "Rocky ice body": 9.0,
-};
-
+/**
+ * Calculate body exploration value (FSS or DSS).
+ * Returns credits rounded to integer.
+ */
 export function estimateCartoValue(params: CartoValueParams): number {
-  let base = BASE_VALUES[params.bodyType] ?? 500;
-
-  // Terraformable bonus
-  if (params.terraformable) {
-    const tfMult = TF_MULTIPLIER[params.bodyType] ?? 1;
-    base *= tfMult;
+  const bodyK = BODY_K[params.bodyType] ?? DEFAULT_BODY_K;
+  let k = bodyK.base;
+  if (params.terraformable && bodyK.terraform > 0) {
+    k += bodyK.terraform;
   }
 
-  // First discovery bonus (×2.6)
-  if (params.isFirstDiscoverer || !params.wasDiscovered) {
-    base *= 2.6;
-  }
+  const mass = params.massEM ?? 1;
+  // Base value: k + k * q * mass^0.2
+  let value = k + k * Q * Math.pow(Math.max(mass, 0.0001), 0.2);
 
-  // DSS mapping bonus (×3.33 for first mapper, ×8.95 for first mapper + first discoverer)
+  // First discoverer: is the body undiscovered?
+  const isFirstDisc = params.isFirstDiscoverer ?? !params.wasDiscovered;
+
+  // Mapping multiplier
   if (params.withDSS) {
-    if (params.isFirstMapper || !params.wasMapped) {
-      base *= params.isFirstDiscoverer || !params.wasDiscovered ? 8.95 : 3.33;
+    const isFirstMap = params.isFirstMapper ?? !params.wasMapped;
+    if (isFirstMap && isFirstDisc) {
+      value *= MAP_MULT.mapped_both_firsts;
+    } else if (isFirstMap) {
+      value *= MAP_MULT.mapped_first_mapped;
     } else {
-      base *= 1.25; // Already mapped by someone else
+      value *= MAP_MULT.mapped_no_firsts;
+    }
+
+    // Odyssey/Horizons 4.0 mapping bonus (+30%, min 555)
+    value += Math.max(value * 0.3, 555);
+
+    // Efficiency bonus
+    if (params.efficiencyBonus) {
+      value *= 1.25;
     }
   }
 
-  return Math.round(base);
+  // Floor of 500 cr
+  value = Math.max(500, value);
+
+  // First discoverer multiplier (applied last)
+  if (isFirstDisc) {
+    value *= 2.6;
+  }
+
+  return Math.round(value);
 }
 
-// Star scan values
-const STAR_VALUES: Record<string, number> = {
-  N: 22_628, // Neutron star
-  D: 14_057, // White dwarf (various subtypes)
-  DA: 14_057,
-  DAB: 14_057,
-  DAO: 14_057,
-  DAZ: 14_057,
-  DAV: 14_057,
-  DB: 14_057,
-  DBZ: 14_057,
-  DBV: 14_057,
-  DO: 14_057,
-  DOV: 14_057,
-  DQ: 14_057,
-  DC: 14_057,
-  DCV: 14_057,
-  DX: 14_057,
-  H: 22_628, // Black hole
-  SupermassiveBlackHole: 33_737,
-};
-
-export function estimateStarValue(starType: string, wasDiscovered: boolean): number {
-  let base = STAR_VALUES[starType] ?? 1_200;
-  if (!wasDiscovered) base *= 2.6;
-  return Math.round(base);
-}
+// Class III-V gas giants, helium/water giants, etc. all use DEFAULT_BODY_K (k=300)

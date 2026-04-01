@@ -1,32 +1,34 @@
 // Lifetime stats store — persisted across sessions
 
 export interface LifetimeState {
-  totalCartoEarned: number;
-  totalBioEarned: number;
+  totalCartoFSS: number;
+  totalCartoDSS: number;
+  totalBioBase: number;
+  totalBioBonus: number;
   totalSystems: number;
   totalBodiesScanned: number;
+  totalStarsScanned: number;
   totalBodiesMapped: number;
   totalBioSpecies: number;
   totalDistanceLy: number;
   rarestSpecies: string | null;
   rarestSpeciesValue: number;
-  longestTripLy: number;
-  mostValuableTrip: number;
 }
 
 function createLifetimeStore() {
   let state = $state<LifetimeState>({
-    totalCartoEarned: 0,
-    totalBioEarned: 0,
+    totalCartoFSS: 0,
+    totalCartoDSS: 0,
+    totalBioBase: 0,
+    totalBioBonus: 0,
     totalSystems: 0,
     totalBodiesScanned: 0,
+    totalStarsScanned: 0,
     totalBodiesMapped: 0,
     totalBioSpecies: 0,
     totalDistanceLy: 0,
     rarestSpecies: null,
     rarestSpeciesValue: 0,
-    longestTripLy: 0,
-    mostValuableTrip: 0,
   });
 
   return {
@@ -34,42 +36,39 @@ function createLifetimeStore() {
       return state;
     },
 
-    load(data: Partial<LifetimeState>) {
-      Object.assign(state, data);
-    },
-
     addSystem() {
       state.totalSystems++;
     },
 
-    addBodyScan() {
+    addStarScan(value: number) {
+      state.totalStarsScanned++;
+      state.totalCartoFSS += value;
+    },
+
+    addBodyScan(fssValue: number) {
       state.totalBodiesScanned++;
+      state.totalCartoFSS += fssValue;
     },
 
-    addBodyMap() {
+    addBodyMap(dssBonus: number) {
       state.totalBodiesMapped++;
+      state.totalCartoDSS += dssBonus;
     },
 
-    addBioSpecies(name: string, value: number) {
+    addBioSpecies(name: string, baseValue: number, isFirstDiscovery: boolean) {
       state.totalBioSpecies++;
-      state.totalBioEarned += value;
-      if (value > state.rarestSpeciesValue) {
+      state.totalBioBase += baseValue;
+      if (isFirstDiscovery) {
+        state.totalBioBonus += baseValue * 4;
+      }
+      if (baseValue > state.rarestSpeciesValue) {
         state.rarestSpecies = name;
-        state.rarestSpeciesValue = value;
+        state.rarestSpeciesValue = baseValue;
       }
     },
 
     addDistance(ly: number) {
       state.totalDistanceLy += ly;
-    },
-
-    addCartoEarned(value: number) {
-      state.totalCartoEarned += value;
-    },
-
-    endTrip(tripValue: number, tripDistanceLy: number) {
-      if (tripValue > state.mostValuableTrip) state.mostValuableTrip = tripValue;
-      if (tripDistanceLy > state.longestTripLy) state.longestTripLy = tripDistanceLy;
     },
 
     toJSON(): LifetimeState {

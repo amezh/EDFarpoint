@@ -83,7 +83,6 @@ const BIO_VALUES: Record<string, number> = {
   "Aleoida Laminiae": 3385200,
   "Aleoida Spica": 3385200,
   "Cactoida Peperatis": 2483600,
-  "Clypeus Margaritus": 11873200,
   "Fonticulua Campestris": 1000000,
   "Fonticulua Digitos": 1804100,
   "Fonticulua Lapida": 3111000,

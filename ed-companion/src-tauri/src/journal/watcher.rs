@@ -24,31 +24,26 @@ pub struct HistoricalData {
     pub last_dock_station: Option<String>,
 }
 
-/// Global store for historical data, with a condvar to signal readiness
-static HISTORICAL_DATA: std::sync::LazyLock<(Mutex<Option<HistoricalData>>, std::sync::Condvar)> =
-    std::sync::LazyLock::new(|| (Mutex::new(None), std::sync::Condvar::new()));
+/// Global store for historical data
+static HISTORICAL_DATA: std::sync::LazyLock<Mutex<Option<HistoricalData>>> =
+    std::sync::LazyLock::new(|| Mutex::new(None));
+
+/// Signal that historical data is ready
+static HISTORICAL_READY: std::sync::LazyLock<std::sync::atomic::AtomicBool> =
+    std::sync::LazyLock::new(|| std::sync::atomic::AtomicBool::new(false));
 
 /// Take the historical data, blocking until it's ready (returns once, then None)
 pub fn take_historical_data() -> Option<HistoricalData> {
-    let (mutex, condvar) = &*HISTORICAL_DATA;
-    // Wait until data is available (with 30s timeout to avoid hanging forever)
-    let mut guard = mutex.lock();
-    if guard.is_none() {
-        // Data not ready yet — wait for watcher to signal
-        // parking_lot::Mutex doesn't work with std::sync::Condvar,
-        // so we use a spin-wait with short sleeps instead
-        drop(guard);
-        let start = std::time::Instant::now();
-        loop {
-            std::thread::sleep(Duration::from_millis(50));
-            guard = mutex.lock();
-            if guard.is_some() || start.elapsed() > Duration::from_secs(30) {
-                break;
-            }
-            drop(guard);
+    // Wait until the watcher has stored the data (with 30s timeout)
+    let start = std::time::Instant::now();
+    while !HISTORICAL_READY.load(std::sync::atomic::Ordering::Acquire) {
+        if start.elapsed() > Duration::from_secs(30) {
+            log::warn!("Timed out waiting for journal history");
+            return None;
         }
+        std::thread::sleep(Duration::from_millis(50));
     }
-    guard.take()
+    HISTORICAL_DATA.lock().take()
 }
 
 pub struct JournalWatcher {
@@ -232,6 +227,7 @@ impl JournalWatcher {
             let mut store = HISTORICAL_DATA.lock();
             *store = Some(data);
         }
+        HISTORICAL_READY.store(true, std::sync::atomic::Ordering::Release);
 
         let journal_dir = self.journal_dir.clone();
         let current_file = self.current_file.clone();

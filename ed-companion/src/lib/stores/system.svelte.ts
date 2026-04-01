@@ -133,7 +133,6 @@ function createSystemStore() {
       if (!state) return;
       const bodyId = data.BodyID as number;
       const signals = data.Signals as Array<{ Type: string; Count: number }>;
-      const genuses = data.Genuses as Array<{ Genus: string; Genus_Localised: string }> | undefined;
 
       const body = state.bodies.find((b) => b.bodyId === bodyId);
       if (!body) return;

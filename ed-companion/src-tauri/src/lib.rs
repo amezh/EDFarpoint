@@ -124,6 +124,8 @@ async fn fetch_edsm_system(
 /// Frontend calls this once on mount to get structured historical data
 #[tauri::command]
 fn get_journal_history() -> Value {
+    // This blocks until watcher finishes reading (up to 30s timeout).
+    // Tauri runs sync commands on a thread pool, so blocking is safe here.
     match journal::watcher::take_historical_data() {
         Some(data) => {
             serde_json::json!({

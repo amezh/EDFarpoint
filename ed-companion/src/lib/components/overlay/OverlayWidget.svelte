@@ -23,6 +23,9 @@
     }
   });
 
+  const totalCarto = $derived(trip.cartoFSSValue + trip.cartoDSSValue);
+  const totalBio = $derived(trip.bioValueBase + trip.bioValueBonus);
+
   function fmt(v: number): string {
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
     if (v >= 1_000) return (v / 1_000).toFixed(1) + "K";
@@ -35,9 +38,9 @@
 <div class="p-2 text-xs font-mono bg-black/70 rounded-lg border border-ed-border/50 min-w-[300px]">
   <!-- Compact status bar -->
   <div class="flex items-center gap-3 mb-1.5 text-ed-text-muted">
-    <span class="text-ed-amber">{fmt(trip.cartoValue)}</span>
-    <span class="text-ed-green">{fmt(trip.bioValue)}</span>
-    <span class="text-ed-orange font-bold">{fmt(trip.cartoValue + trip.bioValue)}</span>
+    <span class="text-ed-amber">{fmt(totalCarto)}</span>
+    <span class="text-ed-green">{fmt(totalBio)}</span>
+    <span class="text-ed-orange font-bold">{fmt(totalCarto + totalBio)}</span>
   </div>
 
   {#if mode === "bio" && bio}

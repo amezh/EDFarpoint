@@ -35,6 +35,13 @@
     { id: "settings", label: "Settings" },
   ];
 
+  // Track body discovery status: key = "systemAddr:bodyId" => wasDiscovered
+  const bodyDiscoveryMap = new Map<string, boolean>();
+
+  function bodyKey(systemAddr: number, bodyId: number) {
+    return `${systemAddr}:${bodyId}`;
+  }
+
   function handleJournalEvent(data: Record<string, unknown>) {
     const event = data.event as string;
     if (!event) return;
@@ -57,29 +64,33 @@
       case "Scan": {
         const isStar = !!(data.StarType);
         if (isStar) {
-          // Star scan — still has carto value
           const starValue = estimateStarValue(
             data.StarType as string,
-            data.WasDiscovered as boolean,
+            (data.StellarMass as number) ?? 1,
+            !!(data.WasDiscovered),
           );
-          tripStore.addCartoValue(starValue);
+          tripStore.addStarScan(starValue);
         } else {
-          // Body scan
           systemStore.addOrUpdateBody(data);
-          const isFirst = !(data.WasDiscovered as boolean);
-          tripStore.addBodyScan(isFirst);
+          const wasDiscovered = !!(data.WasDiscovered);
+          const isFirst = !wasDiscovered;
 
-          // Estimate carto value for this body
-          const bodyType = (data.PlanetClass as string) ?? "";
-          const terraformable = (data.TerraformState as string) === "Terraformable";
-          const value = estimateCartoValue({
-            bodyType,
-            terraformable,
-            wasDiscovered: (data.WasDiscovered as boolean) ?? false,
-            wasMapped: (data.WasMapped as boolean) ?? false,
+          // Track body discovery status for bio bonus later
+          const sysAddr = data.SystemAddress as number;
+          const bodyId = data.BodyID as number;
+          if (sysAddr && bodyId) {
+            bodyDiscoveryMap.set(bodyKey(sysAddr, bodyId), wasDiscovered);
+          }
+
+          const fssValue = estimateCartoValue({
+            bodyType: (data.PlanetClass as string) ?? "",
+            terraformable: (data.TerraformState as string) === "Terraformable",
+            wasDiscovered,
+            wasMapped: !!(data.WasMapped),
+            massEM: (data.MassEM as number) ?? undefined,
             withDSS: false,
           });
-          tripStore.addCartoValue(value);
+          tripStore.addBodyScan(isFirst, fssValue);
         }
         break;
       }
@@ -94,27 +105,21 @@
         if (event === "SAASignalsFound") {
           const bodyId = data.BodyID as number;
           systemStore.markBodyMapped(bodyId);
-          tripStore.addBodyMapped();
 
-          // Add DSS mapping bonus to carto value
+          // Calculate DSS mapping bonus (full mapped value minus FSS-only)
           const body = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
           if (body) {
-            const dssValue = estimateCartoValue({
-              bodyType: body.type,
+            const common = {
+              bodyType: body.planetClass || body.type,
               terraformable: body.terraformable,
               wasDiscovered: body.wasDiscovered,
               wasMapped: body.wasMapped,
-              withDSS: true,
-            });
-            // DSS value is the full mapped value minus the FSS-only value already counted
-            const fssValue = estimateCartoValue({
-              bodyType: body.type,
-              terraformable: body.terraformable,
-              wasDiscovered: body.wasDiscovered,
-              wasMapped: body.wasMapped,
-              withDSS: false,
-            });
-            tripStore.addCartoValue(dssValue - fssValue);
+            };
+            const dssValue = estimateCartoValue({ ...common, withDSS: true });
+            const fssValue = estimateCartoValue({ ...common, withDSS: false });
+            tripStore.addBodyMapped(Math.max(0, dssValue - fssValue));
+          } else {
+            tripStore.addBodyMapped(0);
           }
         }
         break;
@@ -123,7 +128,12 @@
         bioStore.handleScanOrganic(data);
         if ((data.ScanType as string) === "Analyse") {
           const speciesName = (data.Species_Localised as string) ?? (data.Species as string) ?? "";
-          tripStore.addBioAnalysis(getSpeciesValue(speciesName));
+          const baseValue = getSpeciesValue(speciesName);
+          // Check if body was undiscovered (first discovery bio bonus)
+          const sysAddr = data.SystemAddress as number;
+          const bodyId = data.Body as number;
+          const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bodyId)) ?? true;
+          tripStore.addBioAnalysis(baseValue, !wasDisc);
         } else if ((data.ScanType as string) === "Log") {
           tripStore.addBioScan();
         }
@@ -143,9 +153,21 @@
 
       case "Docked":
         tripStore.reset();
+        bodyDiscoveryMap.clear();
         break;
     }
   }
+
+  // Lightweight body cache for lifetime stats processing
+  // key = "systemAddr:bodyId" => { planetClass, terraformable, wasDiscovered, wasMapped, massEM }
+  interface BodyInfo {
+    planetClass: string;
+    terraformable: boolean;
+    wasDiscovered: boolean;
+    wasMapped: boolean;
+    massEM?: number;
+  }
+  const bodyScanCache = new Map<string, BodyInfo>();
 
   /** Process a journal event for lifetime stats only (no system/bio state) */
   function handleLifetimeEvent(data: Record<string, unknown>) {
@@ -160,30 +182,73 @@
       case "Scan": {
         const isStar = !!(data.StarType);
         if (isStar) {
-          lifetimeStore.addCartoEarned(estimateStarValue(data.StarType as string, data.WasDiscovered as boolean));
+          lifetimeStore.addStarScan(
+            estimateStarValue(
+              data.StarType as string,
+              (data.StellarMass as number) ?? 1,
+              !!(data.WasDiscovered),
+            ),
+          );
         } else {
-          lifetimeStore.addBodyScan();
-          const value = estimateCartoValue({
-            bodyType: (data.PlanetClass as string) ?? "",
-            terraformable: (data.TerraformState as string) === "Terraformable",
-            wasDiscovered: (data.WasDiscovered as boolean) ?? false,
-            wasMapped: (data.WasMapped as boolean) ?? false,
+          const wasDiscovered = !!(data.WasDiscovered);
+          const wasMapped = !!(data.WasMapped);
+          const sysAddr = data.SystemAddress as number;
+          const bid = data.BodyID as number;
+          const bk = bodyKey(sysAddr, bid);
+
+          // Track for bio bonus
+          if (sysAddr && bid) {
+            bodyDiscoveryMap.set(bk, wasDiscovered);
+          }
+
+          const planetClass = (data.PlanetClass as string) ?? "";
+          const terraformable = (data.TerraformState as string) === "Terraformable";
+          const massEM = (data.MassEM as number) ?? undefined;
+
+          // Cache body info for DSS lookup later
+          bodyScanCache.set(bk, { planetClass, terraformable, wasDiscovered, wasMapped, massEM });
+
+          const fssValue = estimateCartoValue({
+            bodyType: planetClass,
+            terraformable,
+            wasDiscovered,
+            wasMapped,
+            massEM,
             withDSS: false,
           });
-          lifetimeStore.addCartoEarned(value);
+          lifetimeStore.addBodyScan(fssValue);
         }
         break;
       }
-      case "SAASignalsFound":
-        lifetimeStore.addBodyMap();
+      case "SAASignalsFound": {
+        // Calculate DSS mapping bonus using cached body scan data
+        const sysAddr = data.SystemAddress as number;
+        const bid = data.BodyID as number;
+        const cached = bodyScanCache.get(bodyKey(sysAddr, bid));
+        if (cached) {
+          const common = {
+            bodyType: cached.planetClass,
+            terraformable: cached.terraformable,
+            wasDiscovered: cached.wasDiscovered,
+            wasMapped: cached.wasMapped,
+            massEM: cached.massEM,
+          };
+          const dssValue = estimateCartoValue({ ...common, withDSS: true });
+          const fssValue = estimateCartoValue({ ...common, withDSS: false });
+          lifetimeStore.addBodyMap(Math.max(0, dssValue - fssValue));
+        } else {
+          lifetimeStore.addBodyMap(0);
+        }
         break;
+      }
       case "ScanOrganic":
         if ((data.ScanType as string) === "Analyse") {
           const lsName = (data.Species_Localised as string) ?? (data.Species as string) ?? "";
-          lifetimeStore.addBioSpecies(
-            lsName,
-            getSpeciesValue(lsName),
-          );
+          const baseValue = getSpeciesValue(lsName);
+          const sysAddr = data.SystemAddress as number;
+          const bid = data.Body as number;
+          const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bid)) ?? true;
+          lifetimeStore.addBioSpecies(lsName, baseValue, !wasDisc);
         }
         break;
     }
