@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "ED Companion",
+  "productName": "ED Farpoint",
   "version": "0.1.0",
   "identifier": "com.edcompanion.app",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "ED Companion",
+        "title": "ED Farpoint",
         "width": 460,
         "height": 800,
         "minWidth": 380,

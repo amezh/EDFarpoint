@@ -1,29 +1,29 @@
 <script lang="ts">
-  import { listen } from "@tauri-apps/api/event";
-  import { invoke } from "@tauri-apps/api/core";
-  import { onMount } from "svelte";
+  import BioTracker from "$lib/components/BioTracker/BioTracker.svelte";
   import Header from "$lib/components/Header.svelte";
+  import LifetimeStats from "$lib/components/LifetimeStats/LifetimeStats.svelte";
+  import RouteView from "$lib/components/RouteView/RouteView.svelte";
+  import Settings from "$lib/components/Settings/Settings.svelte";
   import StatusBar from "$lib/components/StatusBar.svelte";
   import SystemView from "$lib/components/SystemView.svelte";
-  import RouteView from "$lib/components/RouteView/RouteView.svelte";
-  import BioTracker from "$lib/components/BioTracker/BioTracker.svelte";
   import TripStats from "$lib/components/TripStats/TripStats.svelte";
-  import LifetimeStats from "$lib/components/LifetimeStats/LifetimeStats.svelte";
-  import Settings from "$lib/components/Settings/Settings.svelte";
+  import { bioStore } from "$lib/stores/bio.svelte";
   import { journalStore } from "$lib/stores/journal.svelte";
+  import { routeStore } from "$lib/stores/route.svelte";
   import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
-  import { routeStore } from "$lib/stores/route.svelte";
-  import { bioStore } from "$lib/stores/bio.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
+  import { invoke } from "@tauri-apps/api/core";
+  import { listen } from "@tauri-apps/api/event";
+  import { onMount } from "svelte";
 
   type TabId = "system" | "route" | "bio" | "stats" | "settings";
   let activeTab: TabId = $state("system");
   let ready = $state(false);
 
   const tabs: { id: TabId; label: string }[] = [
-    { id: "system", label: "System" },
     { id: "route", label: "Route" },
+    { id: "system", label: "Discovery" },
     { id: "bio", label: "Bio" },
     { id: "stats", label: "Stats" },
     { id: "settings", label: "Settings" },
@@ -131,7 +131,7 @@
 
 {#if !ready}
   <div class="h-screen flex flex-col items-center justify-center bg-ed-bg text-ed-text gap-4">
-    <div class="text-ed-orange text-2xl font-bold tracking-wider">ED Companion</div>
+    <div class="text-ed-orange text-2xl font-bold tracking-wider">ED Farpoint</div>
     <div class="text-ed-text-muted text-sm">Reading journal...</div>
     <div class="w-48 h-1 bg-ed-surface rounded overflow-hidden">
       <div class="h-full bg-ed-orange rounded animate-pulse" style="width: 60%"></div>

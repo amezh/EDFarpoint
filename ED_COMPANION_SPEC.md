@@ -1,4 +1,4 @@
-# ED Companion — Product Specification v2
+# ED Farpoint — Product Specification v2
 
 ## Overview
 
@@ -281,7 +281,7 @@ WebSocket message format:
 
 ### 10. Comparison: What Other Tools Have
 
-| Feature | Exploration Buddy | EDDiscovery | OD Explorer | **ED Companion** |
+| Feature | Exploration Buddy | EDDiscovery | OD Explorer | **ED Farpoint** |
 |---|---|---|---|---|
 | Body list with values | ✓ | ✓ | ✓ | ✓ |
 | Bio species prediction (Canonn) | ✓ | via plugin | ✓ | ✓ |

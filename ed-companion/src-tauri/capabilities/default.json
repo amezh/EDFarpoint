@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "ED Companion default permissions",
+  "description": "ED Farpoint default permissions",
   "windows": ["main", "overlay"],
   "permissions": [
     "core:default",

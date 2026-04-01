@@ -103,6 +103,16 @@ fn create_overlay(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn toggle_overlay(app: tauri::AppHandle) -> Result<bool, String> {
+    window::toggle_overlay(&app).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn is_overlay_open(app: tauri::AppHandle) -> bool {
+    window::is_overlay_open(&app)
+}
+
+#[tauri::command]
 async fn fetch_edsm_system(
     state: tauri::State<'_, Arc<AppState>>,
     system_name: String,
@@ -207,6 +217,8 @@ pub fn run() {
             predict_bio,
             toggle_always_on_top,
             create_overlay,
+            toggle_overlay,
+            is_overlay_open,
             fetch_edsm_system,
             get_journal_history,
         ])

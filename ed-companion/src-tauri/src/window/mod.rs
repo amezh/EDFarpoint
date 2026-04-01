@@ -3,7 +3,7 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 /// Create the overlay window (compact HUD)
 pub fn create_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let _window = WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("/overlay".into()))
-        .title("ED Companion Overlay")
+        .title("ED Farpoint Overlay")
         .inner_size(350.0, 200.0)
         .always_on_top(true)
         .decorations(false)
@@ -14,6 +14,31 @@ pub fn create_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::
 
     log::info!("Overlay window created");
     Ok(())
+}
+
+/// Close the overlay window
+pub fn close_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(window) = app.get_webview_window("overlay") {
+        window.close()?;
+        log::info!("Overlay window closed");
+    }
+    Ok(())
+}
+
+/// Check if the overlay window exists
+pub fn is_overlay_open(app: &AppHandle) -> bool {
+    app.get_webview_window("overlay").is_some()
+}
+
+/// Toggle the overlay window — open if closed, close if open
+pub fn toggle_overlay(app: &AppHandle) -> Result<bool, Box<dyn std::error::Error>> {
+    if is_overlay_open(app) {
+        close_overlay_window(app)?;
+        Ok(false)
+    } else {
+        create_overlay_window(app)?;
+        Ok(true)
+    }
 }
 
 /// Toggle the always-on-top state of the main window

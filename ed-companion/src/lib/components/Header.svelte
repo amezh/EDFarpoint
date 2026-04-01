@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { systemStore } from "$lib/stores/system.svelte";
   import { journalStore } from "$lib/stores/journal.svelte";
+  import { systemStore } from "$lib/stores/system.svelte";
 
   const system = $derived(systemStore.current);
   const commander = $derived(journalStore.commander);
@@ -8,7 +8,7 @@
 
 <header class="flex items-center justify-between px-4 py-2 bg-ed-panel border-b border-ed-border">
   <div class="flex items-center gap-3">
-    <span class="text-ed-orange font-bold text-lg tracking-wide">ED Companion</span>
+    <span class="text-ed-orange font-bold text-lg tracking-wide">ED Farpoint</span>
     {#if commander}
       <span class="text-ed-text-muted text-sm">CMDR {commander}</span>
     {/if}
