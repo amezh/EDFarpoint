@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+ed-companion/dist/
+ed-companion/src-tauri/target/
+ed-companion/src-tauri/gen/schemas
+
+# Environment & secrets
+.env
+.env.*
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+
+# Python
+__pycache__/
+*.pyc

@@ -1,0 +1,510 @@
+{
+  "Albidum Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }, 
+  "Aleoida Arcus": {
+    "bonus": 14505000, 
+    "reward": 7252500
+  }, 
+  "Aleoida Coronamus": {
+    "bonus": 12569200, 
+    "reward": 6284600
+  }, 
+  "Aleoida Gravis": {
+    "bonus": 25869800, 
+    "reward": 12934900
+  }, 
+  "Aleoida Laminiae": {
+    "bonus": 6770400, 
+    "reward": 3385200
+  }, 
+  "Aleoida Spica": {
+    "bonus": 6770400, 
+    "reward": 3385200
+  }, 
+  "Amphora Plant": {
+    "bonus": 3257600, 
+    "reward": 1628800
+  }, 
+  "Aureum Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Bacterium Acies": {
+    "bonus": 2000000, 
+    "reward": 1000000
+  }, 
+  "Bacterium Alcyoneum": {
+    "bonus": 3317000, 
+    "reward": 1658500
+  }, 
+  "Bacterium Aurasus": {
+    "bonus": 2000000, 
+    "reward": 1000000
+  }, 
+  "Bacterium Bullaris": {
+    "bonus": 2305000, 
+    "reward": 1152500
+  }, 
+  "Bacterium Cerbrus": {
+    "bonus": 3379600, 
+    "reward": 1689800
+  }, 
+  "Bacterium Informem": {
+    "bonus": 16836000, 
+    "reward": 8418000
+  }, 
+  "Bacterium Nebulus": {
+    "bonus": 10579800, 
+    "reward": 5289900
+  }, 
+  "Bacterium Omentum": {
+    "bonus": 9277800, 
+    "reward": 4638900
+  }, 
+  "Bacterium Scopulum": {
+    "bonus": 9869000, 
+    "reward": 4934500
+  }, 
+  "Bacterium Tela": {
+    "bonus": 3898000, 
+    "reward": 1949000
+  }, 
+  "Bacterium Verrata": {
+    "bonus": 7794000, 
+    "reward": 3897000
+  }, 
+  "Bacterium Vesicula": {
+    "bonus": 2000000, 
+    "reward": 1000000
+  }, 
+  "Bacterium Volu": {
+    "bonus": 15549400, 
+    "reward": 7774700
+  }, 
+  "Bark Mounds": {
+    "bonus": 2943800, 
+    "reward": 1471900
+  }, 
+  "Blatteum Bioluminescent Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Blatteum Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }, 
+  "Cactoida Cortexum": {
+    "bonus": 7335200, 
+    "reward": 3667600
+  }, 
+  "Cactoida Lapis": {
+    "bonus": 4967200, 
+    "reward": 2483600
+  }, 
+  "Cactoida Peperatis": {
+    "bonus": 4967200, 
+    "reward": 2483600
+  }, 
+  "Cactoida Pullulanta": {
+    "bonus": 7335200, 
+    "reward": 3667600
+  }, 
+  "Cactoida Vermis": {
+    "bonus": 32405600, 
+    "reward": 16202800
+  }, 
+  "Caeruleum Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }, 
+  "Clypeus Lacrimam": {
+    "bonus": 16836000, 
+    "reward": 8418000
+  }, 
+  "Clypeus Margaritus": {
+    "bonus": 23746400, 
+    "reward": 11873200
+  }, 
+  "Clypeus Speculumi": {
+    "bonus": 32405600, 
+    "reward": 16202800
+  }, 
+  "Concha Aureolas": {
+    "bonus": 15549400, 
+    "reward": 7774700
+  }, 
+  "Concha Biconcavis": {
+    "bonus": 38021600, 
+    "reward": 19010800
+  }, 
+  "Concha Labiata": {
+    "bonus": 4704800, 
+    "reward": 2352400
+  }, 
+  "Concha Renibus": {
+    "bonus": 9144800, 
+    "reward": 4572400
+  }, 
+  "Coral Root": {
+    "bonus": 3849200, 
+    "reward": 1924600
+  }, 
+  "Coral Tree": {
+    "bonus": 3793600, 
+    "reward": 1896800
+  }, 
+  "Croceum Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Crystalline Shards": {
+    "bonus": 3257600, 
+    "reward": 1628800
+  }, 
+  "Electricae Pluma": {
+    "bonus": 12569200, 
+    "reward": 6284600
+  }, 
+  "Electricae Radialem": {
+    "bonus": 12569200, 
+    "reward": 6284600
+  }, 
+  "Fonticulua Campestris": {
+    "bonus": 2000000, 
+    "reward": 1000000
+  }, 
+  "Fonticulua Digitos": {
+    "bonus": 3608200, 
+    "reward": 1804100
+  }, 
+  "Fonticulua Fluctus": {
+    "bonus": 40000000, 
+    "reward": 20000000
+  }, 
+  "Fonticulua Lapida": {
+    "bonus": 6222000, 
+    "reward": 3111000
+  }, 
+  "Fonticulua Segmentatus": {
+    "bonus": 38021600, 
+    "reward": 19010800
+  }, 
+  "Fonticulua Upupam": {
+    "bonus": 11455200, 
+    "reward": 5727600
+  }, 
+  "Frutexa Acus": {
+    "bonus": 15549400, 
+    "reward": 7774700
+  }, 
+  "Frutexa Collum": {
+    "bonus": 3279600, 
+    "reward": 1639800
+  }, 
+  "Frutexa Fera": {
+    "bonus": 3265000, 
+    "reward": 1632500
+  }, 
+  "Frutexa Flabellum": {
+    "bonus": 3617800, 
+    "reward": 1808900
+  }, 
+  "Frutexa Flammasis": {
+    "bonus": 20652000, 
+    "reward": 10326000
+  }, 
+  "Frutexa Metallicum": {
+    "bonus": 3265000, 
+    "reward": 1632500
+  }, 
+  "Frutexa Sponsae": {
+    "bonus": 11976000, 
+    "reward": 5988000
+  }, 
+  "Fumerola Aquatis": {
+    "bonus": 12569200, 
+    "reward": 6284600
+  }, 
+  "Fumerola Carbosis": {
+    "bonus": 12569200, 
+    "reward": 6284600
+  }, 
+  "Fumerola Extremus": {
+    "bonus": 32405600, 
+    "reward": 16202800
+  }, 
+  "Fumerola Nitris": {
+    "bonus": 15001800, 
+    "reward": 7500900
+  }, 
+  "Fungoida Bullarum": {
+    "bonus": 7406400, 
+    "reward": 3703200
+  }, 
+  "Fungoida Gelata": {
+    "bonus": 6660600, 
+    "reward": 3330300
+  }, 
+  "Fungoida Setisis": {
+    "bonus": 3340200, 
+    "reward": 1670100
+  }, 
+  "Fungoida Stabitis": {
+    "bonus": 5360600, 
+    "reward": 2680300
+  }, 
+  "Gypseeum Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Lindigoticum Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Lindigoticum Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }, 
+  "Lividum Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Luteolum Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Major Thargoid Spire": {
+    "bonus": 4494200, 
+    "reward": 2247100
+  }, 
+  "Minor Thargoid Spire": {
+    "bonus": 4494200, 
+    "reward": 2247100
+  }, 
+  "Osseus Cornibus": {
+    "bonus": 2966000, 
+    "reward": 1483000
+  }, 
+  "Osseus Discus": {
+    "bonus": 25869800, 
+    "reward": 12934900
+  }, 
+  "Osseus Fractus": {
+    "bonus": 8055600, 
+    "reward": 4027800
+  }, 
+  "Osseus Pellebantus": {
+    "bonus": 19478000, 
+    "reward": 9739000
+  }, 
+  "Osseus Pumice": {
+    "bonus": 6312600, 
+    "reward": 3156300
+  }, 
+  "Osseus Spiralis": {
+    "bonus": 4809400, 
+    "reward": 2404700
+  }, 
+  "Ostrinum Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Prasinum Bioluminescent Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Prasinum Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }, 
+  "Primary Thargoid Spire": {
+    "bonus": 4494200, 
+    "reward": 2247100
+  }, 
+  "Puniceum Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Puniceum Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Radicoida Unica": {
+    "bonus": 238074, 
+    "reward": 119037
+  }, 
+  "Recepta Conditivus": {
+    "bonus": 28627400, 
+    "reward": 14313700
+  }, 
+  "Recepta Deltahedronix": {
+    "bonus": 32405600, 
+    "reward": 16202800
+  }, 
+  "Recepta Umbrux": {
+    "bonus": 25869800, 
+    "reward": 12934900
+  }, 
+  "Roseum Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Roseum Bioluminescent Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Roseum Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Roseum Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }, 
+  "Rubeum Bioluminescent Anemone": {
+    "bonus": 2999800, 
+    "reward": 1499900
+  }, 
+  "Stratum Araneamus": {
+    "bonus": 4897800, 
+    "reward": 2448900
+  }, 
+  "Stratum Cucumisis": {
+    "bonus": 32405600, 
+    "reward": 16202800
+  }, 
+  "Stratum Excutitus": {
+    "bonus": 4897800, 
+    "reward": 2448900
+  }, 
+  "Stratum Frigus": {
+    "bonus": 5275000, 
+    "reward": 2637500
+  }, 
+  "Stratum Laminamus": {
+    "bonus": 5576600, 
+    "reward": 2788300
+  }, 
+  "Stratum Limaxus": {
+    "bonus": 2724000, 
+    "reward": 1362000
+  }, 
+  "Stratum Paleas": {
+    "bonus": 2724000, 
+    "reward": 1362000
+  }, 
+  "Stratum Tectonicas": {
+    "bonus": 38021600, 
+    "reward": 19010800
+  }, 
+  "Thargoid Barnacle Matrix": {
+    "bonus": 4627000, 
+    "reward": 2313500
+  }, 
+  "Thargoid Mega Barnacles": {
+    "bonus": 4627000, 
+    "reward": 2313500
+  }, 
+  "Thargoid Spire": {
+    "bonus": 4494200, 
+    "reward": 2247100
+  }, 
+  "Thargoid Spires": {
+    "bonus": 4494200, 
+    "reward": 2247100
+  }, 
+  "Tubus Cavas": {
+    "bonus": 23746400, 
+    "reward": 11873200
+  }, 
+  "Tubus Compagibus": {
+    "bonus": 15549400, 
+    "reward": 7774700
+  }, 
+  "Tubus Conifer": {
+    "bonus": 4831000, 
+    "reward": 2415500
+  }, 
+  "Tubus Rosarium": {
+    "bonus": 5275000, 
+    "reward": 2637500
+  }, 
+  "Tubus Sororibus": {
+    "bonus": 11455200, 
+    "reward": 5727600
+  }, 
+  "Tussock Albata": {
+    "bonus": 6505000, 
+    "reward": 3252500
+  }, 
+  "Tussock Capillum": {
+    "bonus": 14051600, 
+    "reward": 7025800
+  }, 
+  "Tussock Caputus": {
+    "bonus": 6944800, 
+    "reward": 3472400
+  }, 
+  "Tussock Catena": {
+    "bonus": 3533200, 
+    "reward": 1766600
+  }, 
+  "Tussock Cultro": {
+    "bonus": 3533200, 
+    "reward": 1766600
+  }, 
+  "Tussock Divisa": {
+    "bonus": 3533200, 
+    "reward": 1766600
+  }, 
+  "Tussock Ignis": {
+    "bonus": 3698000, 
+    "reward": 1849000
+  }, 
+  "Tussock Pennata": {
+    "bonus": 11707600, 
+    "reward": 5853800
+  }, 
+  "Tussock Pennatis": {
+    "bonus": 2000000, 
+    "reward": 1000000
+  }, 
+  "Tussock Propagito": {
+    "bonus": 2000000, 
+    "reward": 1000000
+  }, 
+  "Tussock Serrati": {
+    "bonus": 8894200, 
+    "reward": 4447100
+  }, 
+  "Tussock Stigmasis": {
+    "bonus": 38021600, 
+    "reward": 19010800
+  }, 
+  "Tussock Triticum": {
+    "bonus": 15549400, 
+    "reward": 7774700
+  }, 
+  "Tussock Ventusa": {
+    "bonus": 6455400, 
+    "reward": 3227700
+  }, 
+  "Tussock Virgam": {
+    "bonus": 28627400, 
+    "reward": 14313700
+  }, 
+  "Violaceum Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }, 
+  "Viride Brain Tree": {
+    "bonus": 3187400, 
+    "reward": 1593700
+  }, 
+  "Viride Sinuous Tubers": {
+    "bonus": 3029000, 
+    "reward": 1514500
+  }
+}
