@@ -66,6 +66,39 @@
     } catch { /* EDSM may be unreachable — silently ignore */ }
   }
 
+  /** Cross-reference bio store's actual scan data with predictions to restore confidence */
+  function syncPredictionConfidence(body: Body) {
+    const planet = bioStore.currentPlanet;
+    if (!planet || planet.bodyId !== body.bodyId) {
+      // Check allPlanets map for historical data
+      const planets = bioStore.planets;
+      if (!planets) return;
+      for (const [, p] of planets) {
+        if (p.bodyId === body.bodyId) {
+          applyConfidenceFromScans(body, p.species);
+          return;
+        }
+      }
+      return;
+    }
+    applyConfidenceFromScans(body, planet.species);
+  }
+
+  function applyConfidenceFromScans(body: Body, scans: Array<{ localName: string; analysed: boolean; samples: number }>) {
+    for (const scan of scans) {
+      const scanName = scan.localName.toLowerCase().split(" - ")[0].trim();
+      for (const p of body.bioSpeciesPredicted) {
+        if (p.name.toLowerCase() === scanName) {
+          if (scan.analysed) {
+            p.confidence = "analysed";
+          } else if (scan.samples > 0) {
+            p.confidence = "scanned";
+          }
+        }
+      }
+    }
+  }
+
   async function triggerBioPrediction(body: Body) {
     if (body.bioSignals === 0 || body.bioSpeciesPredicted.length > 0) return;
     if (!body.planetClass) return; // stub from FSSBodySignals — wait for Scan
@@ -98,12 +131,19 @@
         result.min_value = sorted.slice(-result.signal_count).reduce((s, sp) => s + sp.value, 0);
       }
       systemStore.updateBioPrediction(body.bodyId, result);
+      // Sync confidence from bio store's actual scan data (survives re-prediction)
+      syncPredictionConfidence(body);
     }
   }
 
   function handleJournalEvent(data: Record<string, unknown>) {
     const event = data.event as string;
     if (!event) return;
+
+    // Track play time from event timestamps
+    if (data.timestamp) {
+      tripStore.trackTimestamp(data.timestamp as string);
+    }
 
     journalStore.handleEvent(data);
 
@@ -460,6 +500,8 @@
       // Batch-trigger bio predictions for any bodies that loaded from history
       for (const body of systemStore.current?.bodies ?? []) {
         triggerBioPrediction(body);
+        // Also sync confidence for bodies that already have predictions from prior sessions
+        syncPredictionConfidence(body);
       }
 
       // Phase 2: Process ALL events for lifetime stats in background chunks
@@ -510,6 +552,7 @@
       emitToOverlay("trip-state",   tripStore.current);
       emitToOverlay("status-state", statusStore.current);
       if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet);
+      emitToOverlay("overlay-opacity", configStore.current?.window?.overlay_opacity ?? 1);
     });
 
     return () => {
@@ -554,6 +597,13 @@
           <span class="text-ed-text-muted">TOTAL</span>
           <span class="text-ed-orange font-bold ml-1">{fmtCr(tripStore.current.cartoFSSValue + tripStore.current.cartoDSSValue + tripStore.current.bioValueBase + tripStore.current.bioValueBonus)}</span>
         </span>
+        {#if tripStore.current.playTimeSeconds > 60}
+          {@const totalVal = tripStore.current.cartoFSSValue + tripStore.current.cartoDSSValue + tripStore.current.bioValueBase + tripStore.current.bioValueBonus}
+          <span>
+            <span class="text-ed-text-muted">Cr/h</span>
+            <span class="text-ed-cyan ml-1">{fmtCr(totalVal / (tripStore.current.playTimeSeconds / 3600))}</span>
+          </span>
+        {/if}
         <span class="text-ed-text-muted">
           {tripStore.current.systemsVisited} sys | {tripStore.current.bodiesScanned} scn | {tripStore.current.bioSpeciesAnalysed} bio
           {#if statsLoading}

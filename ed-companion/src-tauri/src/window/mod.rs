@@ -23,6 +23,7 @@ pub fn create_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::
         .inner_size(350.0, 250.0)
         .always_on_top(true)
         .decorations(false)
+        .shadow(false)
         .resizable(true)
         .skip_taskbar(true)
         .transparent(true)

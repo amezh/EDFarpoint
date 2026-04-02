@@ -13,6 +13,8 @@ export interface TripState {
   bioSpeciesFound: number;
   bioSpeciesAnalysed: number;
   distanceTravelled: number;
+  playTimeSeconds: number; // active play time (gaps > 15min excluded)
+  jumps: number;
 }
 
 function createTripStore() {
@@ -28,6 +30,10 @@ function createTripStore() {
   let bioSpeciesFound = $state(0);
   let bioSpeciesAnalysed = $state(0);
   let distanceTravelled = $state(0);
+  let playTimeSeconds = $state(0);
+  let jumps = $state(0);
+  let lastEventTime: number | null = null;
+  const MAX_GAP_MS = 15 * 60 * 1000; // 15 minutes — gaps longer than this = player was away
   const visitedSystems = new Set<string>();
 
   return {
@@ -45,7 +51,22 @@ function createTripStore() {
         bioSpeciesFound,
         bioSpeciesAnalysed,
         distanceTravelled,
+        playTimeSeconds,
+        jumps,
       };
+    },
+
+    /** Track journal event timestamp to accumulate active play time */
+    trackTimestamp(isoTimestamp: string) {
+      const t = new Date(isoTimestamp).getTime();
+      if (isNaN(t)) return;
+      if (lastEventTime !== null) {
+        const gap = t - lastEventTime;
+        if (gap > 0 && gap <= MAX_GAP_MS) {
+          playTimeSeconds += gap / 1000;
+        }
+      }
+      lastEventTime = t;
     },
 
     addSystem(name: string, jumpDist: number) {
@@ -53,6 +74,7 @@ function createTripStore() {
         visitedSystems.add(name);
         systemsVisited = visitedSystems.size;
       }
+      jumps++;
       distanceTravelled += jumpDist;
     },
 
@@ -97,6 +119,9 @@ function createTripStore() {
       bioSpeciesFound = 0;
       bioSpeciesAnalysed = 0;
       distanceTravelled = 0;
+      playTimeSeconds = 0;
+      jumps = 0;
+      lastEventTime = null;
       visitedSystems.clear();
     },
   };

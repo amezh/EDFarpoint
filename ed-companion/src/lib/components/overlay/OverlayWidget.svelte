@@ -15,6 +15,9 @@
     (trip?.cartoFSSValue ?? 0) + (trip?.cartoDSSValue ?? 0) +
     (trip?.bioValueBase ?? 0) + (trip?.bioValueBonus ?? 0)
   );
+  const crPerHour = $derived(
+    (trip?.playTimeSeconds ?? 0) > 60 ? totalValue / ((trip?.playTimeSeconds ?? 1) / 3600) : 0
+  );
   const bodies = $derived((system?.bodies ?? []) as any[]);
   const bioBodies = $derived(bodies.filter((b: any) => b.bioSignals > 0));
   const routeSystems = $derived((route?.systems ?? []) as any[]);
@@ -22,6 +25,9 @@
   const bodyRadius = $derived(bio?.bodyRadius ?? null);
   const lat = $derived(status?.latitude ?? null);
   const lon = $derived(status?.longitude ?? null);
+  const onPlanet = $derived(
+    (status?.parsed?.landed || status?.parsed?.onFoot || status?.parsed?.onFootOnPlanet) && bioSpecies.length > 0
+  );
 
   const CLONAL: Record<string, number> = {
     Aleoida: 150, Bacterium: 500, Cactoida: 300, Clypeus: 150, Concha: 150,
@@ -57,9 +63,7 @@
     return 2 * rKm * Math.asin(Math.sqrt(a)) * 1000;
   }
 
-  async function close() {
-    try { await invoke("toggle_overlay"); } catch (e) { console.error("[overlay] close failed:", e); }
-  }
+  let opacity = $state(1);
 
   onMount(() => {
     Promise.all([
@@ -68,6 +72,7 @@
       listen("trip-state",   (e) => { trip   = e.payload; }),
       listen("route-state",  (e) => { route  = e.payload; }),
       listen("status-state", (e) => { status = e.payload; }),
+      listen<number>("overlay-opacity", (e) => { opacity = e.payload; }),
     ]).then(() => {
       emit("overlay-ready", true).catch(() => {});
     }).catch(() => {});
@@ -86,7 +91,7 @@
 </script>
 
 <div class="fixed inset-0 p-2 text-xs font-mono text-gray-200 select-none"
-     style="background: transparent; -webkit-app-region: drag">
+     style="background: transparent; -webkit-app-region: drag; opacity: {opacity}">
 
   <!-- Resize handle: bottom-right corner, visible on hover only -->
   <div class="fixed bottom-0 right-0 w-4 h-4 opacity-0 hover:opacity-60 transition-opacity cursor-se-resize z-50"
@@ -99,12 +104,15 @@
   <!-- Header -->
   <div class="flex items-center gap-2 mb-1.5">
     <span class="text-orange-400 font-bold">{fmt(totalValue)} Cr</span>
+    {#if crPerHour > 0}
+      <span class="text-cyan-400">{fmt(crPerHour)}/h</span>
+    {/if}
     <span class="text-gray-500">{trip?.systemsVisited ?? 0} sys</span>
     <span class="text-gray-500">{trip?.bioSpeciesAnalysed ?? 0} bio</span>
   </div>
 
-  <!-- Bio tracker -->
-  {#if bioSpecies.length > 0}
+  <!-- Bio tracker — only when on planet surface -->
+  {#if onPlanet}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
       <div class="text-green-400 font-bold text-[10px] mb-0.5">{bio?.bodyName}</div>
       {#each bioSpecies as sp (sp.name)}
@@ -136,8 +144,39 @@
     </div>
   {/if}
 
+  <!-- Expedition stats — when NOT on planet surface -->
+  {#if !onPlanet}
+    <div class="border-t border-gray-700/50 pt-1 mt-1">
+      <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Expedition</div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Carto (FSS)</span>
+        <span class="text-ed-amber font-mono">{fmt(trip?.cartoFSSValue ?? 0)} Cr</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Carto (DSS)</span>
+        <span class="text-ed-amber font-mono">{fmt(trip?.cartoDSSValue ?? 0)} Cr</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Bio scans</span>
+        <span class="text-green-400 font-mono">{fmt((trip?.bioValueBase ?? 0) + (trip?.bioValueBonus ?? 0))} Cr</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Species</span>
+        <span class="text-gray-300">{trip?.bioSpeciesAnalysed ?? 0} analysed</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Systems</span>
+        <span class="text-gray-300">{trip?.systemsVisited ?? 0} visited</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Jumps</span>
+        <span class="text-gray-300">{trip?.jumps ?? 0}</span>
+      </div>
+    </div>
+  {/if}
+
   <!-- System bodies -->
-  {#if system && bioSpecies.length === 0}
+  {#if !onPlanet && system}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
       <div class="text-amber-400 font-bold text-[10px]">{system?.name}</div>
       <div class="text-[9px] text-gray-500">{bodies.length}/{system?.bodyCount ?? "?"} bodies</div>
@@ -164,7 +203,7 @@
     </div>
   {/if}
 
-  {#if !system && bioSpecies.length === 0 && routeSystems.length === 0}
+  {#if !onPlanet && !system && routeSystems.length === 0}
     <div class="text-gray-500 text-center py-4">Waiting for data from main window...</div>
   {/if}
 </div>

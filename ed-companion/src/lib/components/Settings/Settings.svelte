@@ -1,7 +1,7 @@
 <script lang="ts">
   import { configStore } from "$lib/stores/config.svelte";
   import { invoke } from "@tauri-apps/api/core";
-  import { listen } from "@tauri-apps/api/event";
+  import { emit, listen } from "@tauri-apps/api/event";
 
   const config = $derived(configStore.current);
 
@@ -91,7 +91,9 @@
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Overlay opacity</span>
           <input type="range" min="0.3" max="1" step="0.05"
-                 bind:value={config.window.overlay_opacity} onchange={save}
+                 bind:value={config.window.overlay_opacity}
+                 oninput={() => emit("overlay-opacity", config.window.overlay_opacity)}
+                 onchange={save}
                  class="w-32" />
         </label>
       </div>
