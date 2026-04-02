@@ -5,23 +5,27 @@
   import SystemView from "$lib/components/SystemView.svelte";
   import TripStats from "$lib/components/TripStats/TripStats.svelte";
   import { bioStore } from "$lib/stores/bio.svelte";
+  import { configStore } from "$lib/stores/config.svelte";
+  import { expeditionStore } from "$lib/stores/expedition.svelte";
   import { journalStore } from "$lib/stores/journal.svelte";
   import { lifetimeStore } from "$lib/stores/lifetime.svelte";
   import { routeStore } from "$lib/stores/route.svelte";
   import { statusStore } from "$lib/stores/status.svelte";
+  import type { Body } from "$lib/stores/system.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
-  import { expeditionStore } from "$lib/stores/expedition.svelte";
-  import { configStore } from "$lib/stores/config.svelte";
-  import { getSpeciesValue } from "$lib/utils/bioValues";
   import { predictBio } from "$lib/utils/bioPredict";
-  import { estimateCartoValue, estimateStarValue } from "$lib/utils/valueCalc";
+  import { getSpeciesValue } from "$lib/utils/bioValues";
   import { pushRemoteState } from "$lib/utils/remotePush";
-  import type { Body } from "$lib/stores/system.svelte";
   import { playDiscovery } from "$lib/utils/sounds";
+  import { estimateCartoValue, estimateStarValue } from "$lib/utils/valueCalc";
   import { invoke } from "@tauri-apps/api/core";
-  import { listen } from "@tauri-apps/api/event";
+  import { emitTo, listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
+
+  function emitToOverlay(event: string, payload: unknown) {
+    emitTo("overlay", event, payload).catch(() => {});
+  }
 
   let ready = $state(false);
   let appReady = false; // suppress sounds during history replay
@@ -45,10 +49,6 @@
   $effect(() => { pushRemoteState("status", statusStore.current); emitToOverlay("status-state", statusStore.current); });
   $effect(() => { if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet); });
 
-  import { emit } from "@tauri-apps/api/event";
-  function emitToOverlay(event: string, payload: unknown) {
-    emit(event, payload).catch(() => {});
-  }
 
   // Track body discovery status: key = "systemAddr:bodyId" => wasDiscovered
   const bodyDiscoveryMap = new Map<string, boolean>();
@@ -501,10 +501,22 @@
       routeStore.setRoute(event.payload as Record<string, unknown>);
     });
 
+    // When the overlay window finishes loading its event listeners it emits
+    // "overlay-ready".  Respond by pushing the current state snapshot so the
+    // overlay has data immediately without waiting for the next state change.
+    const unlistenOverlayReady = listen<boolean>("overlay-ready", () => {
+      emitToOverlay("system-state", systemStore.current);
+      emitToOverlay("route-state",  routeStore.current);
+      emitToOverlay("trip-state",   tripStore.current);
+      emitToOverlay("status-state", statusStore.current);
+      if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet);
+    });
+
     return () => {
       unlistenJournal.then((fn) => fn());
       unlistenStatus.then((fn) => fn());
       unlistenNavRoute.then((fn) => fn());
+      unlistenOverlayReady.then((fn) => fn());
     };
   });
 </script>

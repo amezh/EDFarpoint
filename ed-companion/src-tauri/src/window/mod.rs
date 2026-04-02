@@ -1,26 +1,71 @@
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::window::Color;
 
 /// Create the overlay window (compact HUD)
 pub fn create_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let _window = WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("/overlay".into()))
+    log::info!("[overlay] create_overlay_window called");
+
+    // Check if already open
+    if let Some(existing) = app.get_webview_window("overlay") {
+        log::info!("[overlay] window already exists, focusing");
+        let _ = existing.set_focus();
+        return Ok(());
+    }
+
+    // Load the same index.html that works for the main window.
+    // main.ts detects the window label "overlay" and mounts OverlayWidget instead of App.
+    let url = WebviewUrl::App("index.html".into());
+    log::info!("[overlay] using WebviewUrl::App(index.html) — JS will detect label");
+
+    log::info!("[overlay] building window…");
+    let window = WebviewWindowBuilder::new(app, "overlay", url)
         .title("ED Farpoint Overlay")
-        .inner_size(350.0, 200.0)
+        .inner_size(350.0, 250.0)
         .always_on_top(true)
         .decorations(false)
-        .transparent(true)
         .resizable(true)
         .skip_taskbar(true)
-        .build()?;
+        .transparent(true)
+        .background_color(Color(0, 0, 0, 0))
+        .build()
+        .map_err(|e| {
+            log::error!("[overlay] WebviewWindowBuilder::build FAILED: {}", e);
+            e
+        })?;
 
-    log::info!("Overlay window created");
+    log::info!("[overlay] window built OK, label={}", window.label());
+
+    // Log window lifecycle events
+    let app_handle = app.clone();
+    window.on_window_event(move |event| {
+        match event {
+            tauri::WindowEvent::Focused(focused) => {
+                log::info!("[overlay] window focused={}", focused);
+            }
+            tauri::WindowEvent::Destroyed => {
+                log::info!("[overlay] window destroyed");
+                let _ = app_handle.emit("overlay-state", false);
+            }
+            tauri::WindowEvent::CloseRequested { .. } => {
+                log::info!("[overlay] window close requested");
+            }
+            _ => {}
+        }
+    });
+
+    log::info!("[overlay] create_overlay_window done");
     Ok(())
 }
 
 /// Close the overlay window
 pub fn close_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    log::info!("[overlay] close_overlay_window called");
     if let Some(window) = app.get_webview_window("overlay") {
-        window.close()?;
-        log::info!("Overlay window closed");
+        log::info!("[overlay] found overlay window, calling destroy()");
+        window.destroy()?;
+        log::info!("[overlay] destroy() returned OK");
+    } else {
+        log::warn!("[overlay] close requested but no overlay window found");
     }
     Ok(())
 }
@@ -32,7 +77,9 @@ pub fn is_overlay_open(app: &AppHandle) -> bool {
 
 /// Toggle the overlay window — open if closed, close if open
 pub fn toggle_overlay(app: &AppHandle) -> Result<bool, Box<dyn std::error::Error>> {
-    if is_overlay_open(app) {
+    let currently_open = is_overlay_open(app);
+    log::info!("[overlay] toggle_overlay called, currently_open={}", currently_open);
+    if currently_open {
         close_overlay_window(app)?;
         Ok(false)
     } else {

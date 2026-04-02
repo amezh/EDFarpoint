@@ -111,20 +111,41 @@ fn toggle_always_on_top(app: tauri::AppHandle) -> Result<bool, String> {
 
 #[cfg(not(target_os = "android"))]
 #[tauri::command]
-fn create_overlay(app: tauri::AppHandle) -> Result<(), String> {
+async fn create_overlay(app: tauri::AppHandle) -> Result<(), String> {
     window::create_overlay_window(&app).map_err(|e| e.to_string())
 }
 
 #[cfg(not(target_os = "android"))]
 #[tauri::command]
-fn toggle_overlay(app: tauri::AppHandle) -> Result<bool, String> {
-    window::toggle_overlay(&app).map_err(|e| e.to_string())
+async fn close_overlay(app: tauri::AppHandle) -> Result<(), String> {
+    window::close_overlay_window(&app).map_err(|e| e.to_string())
 }
 
 #[cfg(not(target_os = "android"))]
 #[tauri::command]
-fn is_overlay_open(app: tauri::AppHandle) -> bool {
+async fn toggle_overlay(app: tauri::AppHandle) -> Result<bool, String> {
+    let result = window::toggle_overlay(&app).map_err(|e| e.to_string())?;
+    // Emit event so other windows (Settings) can sync state
+    let _ = app.emit("overlay-state", result);
+    Ok(result)
+}
+
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+async fn is_overlay_open(app: tauri::AppHandle) -> bool {
     window::is_overlay_open(&app)
+}
+
+/// Return all cached state so the overlay can hydrate on open
+#[tauri::command]
+fn get_overlay_state(state: tauri::State<'_, Arc<AppState>>) -> Value {
+    serde_json::json!({
+        "system": *state.remote.current_system.read(),
+        "bio": *state.remote.current_bio.read(),
+        "trip": serde_json::to_value(&*state.remote.trip_stats.read()).unwrap_or(Value::Null),
+        "route": *state.remote.current_route.read(),
+        "status": *state.remote.current_status.read(),
+    })
 }
 
 /// Frontend pushes state updates to the remote WebSocket server
@@ -293,8 +314,10 @@ pub fn run() {
                     predict_bio,
                     toggle_always_on_top,
                     create_overlay,
+                    close_overlay,
                     toggle_overlay,
                     is_overlay_open,
+                    get_overlay_state,
                     fetch_edsm_system,
                     fetch_edsm_bodies,
                     push_remote_state,

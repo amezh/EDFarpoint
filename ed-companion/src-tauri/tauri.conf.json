@@ -24,6 +24,19 @@
         "alwaysOnTop": false,
         "decorations": true,
         "transparent": false
+      },
+      {
+        "label": "overlay",
+        "title": "ED Farpoint Overlay",
+        "url": "overlay.html",
+        "create": false,
+        "width": 350,
+        "height": 250,
+        "resizable": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": true
       }
     ],
     "security": {

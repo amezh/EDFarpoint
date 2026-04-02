@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import { configStore } from "$lib/stores/config.svelte";
-
-  let overlayOpen = $state(false);
+  import { invoke } from "@tauri-apps/api/core";
+  import { listen } from "@tauri-apps/api/event";
 
   const config = $derived(configStore.current);
 
@@ -10,12 +9,41 @@
     configStore.patch(() => {}); // trigger debounced save
   }
 
-  async function toggleOverlay() {
-    try {
-      overlayOpen = await invoke<boolean>("toggle_overlay");
-    } catch (e) {
-      console.warn("Overlay:", e);
+  // Svelte action: imperative checkbox — checked = open window, unchecked = close window.
+  function overlayToggle(node: HTMLInputElement) {
+    // Set initial state from backend
+    invoke<boolean>("is_overlay_open")
+      .then((v) => { node.checked = v; })
+      .catch(() => {});
+
+    // External state changes (overlay closed via its own ✕ button, etc.)
+    const unlistenPromise = listen<boolean>("overlay-state", (e) => {
+      node.checked = e.payload;
+    });
+
+    // Checkbox changed → read its value → open or close accordingly.
+    function handleChange() {
+      console.log("[overlay] checkbox changed, checked=", node.checked);
+      if (node.checked) {
+        console.log("[overlay] calling create_overlay");
+        invoke("create_overlay").then(() => {
+          console.log("[overlay] create_overlay succeeded");
+        }).catch((e) => { console.error("[overlay] create_overlay failed:", e); node.checked = false; });
+      } else {
+        console.log("[overlay] calling toggle_overlay to close");
+        invoke("toggle_overlay").then((r) => {
+          console.log("[overlay] toggle_overlay returned:", r);
+        }).catch((e) => { console.error("[overlay] toggle_overlay failed:", e); });
+      }
     }
+
+    node.addEventListener("change", handleChange);
+    return {
+      destroy() {
+        node.removeEventListener("change", handleChange);
+        unlistenPromise.then((f) => f());
+      },
+    };
   }
 
   async function toggleAlwaysOnTop() {
@@ -26,9 +54,6 @@
       console.warn("Always on top:", e);
     }
   }
-
-  // Check initial overlay state once
-  invoke<boolean>("is_overlay_open").then((v) => { overlayOpen = v; }).catch(() => {});
 </script>
 
 {#if config}
@@ -56,15 +81,12 @@
       <div class="flex flex-col gap-2 text-sm">
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Always on top</span>
-          <button class="ed-btn text-xs" onclick={toggleAlwaysOnTop}>
-            {config.window.panel_always_on_top ? "On" : "Off"}
-          </button>
+          <input type="checkbox" checked={config.window.panel_always_on_top}
+                 onchange={toggleAlwaysOnTop} />
         </label>
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Overlay window</span>
-          <button class="ed-btn text-xs" onclick={toggleOverlay}>
-            {overlayOpen ? "Close" : "Open"}
-          </button>
+          <input type="checkbox" use:overlayToggle />
         </label>
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Overlay opacity</span>

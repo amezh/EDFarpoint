@@ -12,6 +12,14 @@ export default defineConfig({
       $lib: path.resolve("./src/lib"),
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve("./index.html"),
+        overlay: path.resolve("./overlay.html"),
+      },
+    },
+  },
   clearScreen: false,
   server: {
     port: 1420,
