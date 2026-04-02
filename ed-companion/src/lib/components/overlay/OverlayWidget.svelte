@@ -25,8 +25,60 @@
   const bodyRadius = $derived(bio?.bodyRadius ?? null);
   const lat = $derived(status?.latitude ?? null);
   const lon = $derived(status?.longitude ?? null);
+
+  // Find the matching body from system store to get predictions
+  const currentBody = $derived(
+    bio?.bodyId ? bodies.find((b: any) => b.bodyId === bio.bodyId) : null
+  );
+
+  // Merge actual scans with predicted species (same logic as BioTracker)
+  const mergedSpecies = $derived((() => {
+    const result: any[] = [];
+    const seen = new Set<string>();
+    const confirmedGenera = new Set<string>();
+
+    // 1. Actual scans from bio store
+    for (const s of bioSpecies) {
+      const genus = s.genus || s.localName?.split(" ")[0] || "";
+      result.push({ ...s, predicted: false, genus });
+      seen.add((s.localName || "").toLowerCase().split(" - ")[0].trim());
+      confirmedGenera.add(genus.toLowerCase());
+    }
+
+    // 2. Predicted species not yet scanned (skip genera already confirmed)
+    if (currentBody?.bioSpeciesPredicted) {
+      for (const pred of currentBody.bioSpeciesPredicted) {
+        const key = pred.name.toLowerCase();
+        if (seen.has(key)) continue;
+        const genus = pred.name.split(" ")[0];
+        if (confirmedGenera.has(genus.toLowerCase())) continue;
+        seen.add(key);
+        result.push({
+          name: pred.codex_name ?? pred.name,
+          localName: pred.name,
+          genus,
+          value: pred.value,
+          clonalRange: pred.clonal_range,
+          samples: 0,
+          analysed: false,
+          scanPositions: [],
+          predicted: true,
+        });
+      }
+    }
+
+    // Sort: active first, then unscanned by value desc, analysed last
+    return result.sort((a: any, b: any) => {
+      if (a.analysed !== b.analysed) return a.analysed ? 1 : -1;
+      if ((a.samples > 0) !== (b.samples > 0)) return a.samples > 0 ? -1 : 1;
+      return (b.value ?? 0) - (a.value ?? 0);
+    });
+  })());
+
   const onPlanet = $derived(
-    (status?.parsed?.landed || status?.parsed?.onFoot || status?.parsed?.onFootOnPlanet) && bioSpecies.length > 0
+    !!(status?.parsed?.landed || status?.parsed?.onFoot || status?.parsed?.onFootOnPlanet) &&
+    lat != null && lon != null &&
+    mergedSpecies.length > 0
   );
 
   const CLONAL: Record<string, number> = {
@@ -115,20 +167,28 @@
   {#if onPlanet}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
       <div class="text-green-400 font-bold text-[10px] mb-0.5">{bio?.bodyName}</div>
-      {#each bioSpecies as sp (sp.name)}
+      {#each mergedSpecies as sp (sp.localName)}
         {@const done = sp.analysed}
         {@const active = sp.samples > 0 && !done}
+        {@const predicted = sp.predicted}
         {@const genus = sp.genus || sp.localName?.split(" ")[0] || ""}
         {@const range = sp.clonalRange ?? CLONAL[genus] ?? 200}
         <div class="flex items-center gap-1 py-0.5 {done ? 'opacity-30' : ''}">
-          <span class="flex-1 truncate {done ? 'line-through text-gray-600' : active ? 'text-green-400' : 'text-gray-300'}">
+          {#if predicted}
+            <span class="text-amber-400 shrink-0">?</span>
+          {/if}
+          <span class="flex-1 truncate {done ? 'line-through text-gray-600' : active ? 'text-green-400' : predicted ? 'text-amber-300' : 'text-gray-300'}">
             {sp.localName}
           </span>
-          <span class="flex gap-px">
-            {#each [0, 1, 2] as j}
-              <span class="w-2 h-2 rounded-full inline-block {j < sp.samples ? 'bg-green-500' : 'bg-gray-700'}"></span>
-            {/each}
-          </span>
+          {#if !predicted}
+            <span class="flex gap-px">
+              {#each [0, 1, 2] as j}
+                <span class="w-2 h-2 rounded-full inline-block {j < sp.samples ? 'bg-green-500' : 'bg-gray-700'}"></span>
+              {/each}
+            </span>
+          {:else}
+            <span class="text-[9px] text-amber-400/60 font-mono">{fmt(sp.value ?? 0)}</span>
+          {/if}
         </div>
         {#if active && sp.scanPositions?.length > 0 && lat != null && bodyRadius}
           {@const dists = sp.scanPositions.map((p: any) => haversine(p.latitude, p.longitude, lat, lon, bodyRadius))}
@@ -179,7 +239,7 @@
   {#if !onPlanet && system}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
       <div class="text-amber-400 font-bold text-[10px]">{system?.name}</div>
-      <div class="text-[9px] text-gray-500">{bodies.length}/{system?.bodyCount ?? "?"} bodies</div>
+      <div class="text-[9px] text-gray-500">{bodies.filter((b: any) => !b.starType && b.planetClass).length}/{system?.bodyCount ?? "?"} bodies</div>
       {#each bioBodies.slice(0, 6) as body}
         <div class="flex items-center gap-1 py-0.5 text-[10px]">
           <span class="{STATUS_COLOR[body.personalStatus] ?? 'text-gray-500'}">{STATUS_ICON[body.personalStatus] ?? "○"}</span>
