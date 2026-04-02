@@ -317,6 +317,14 @@ pub fn run() {
                 ]
             }
         })
+        .on_window_event(|window, event| {
+            // Exit process when main window is closed
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                if window.label() == "main" {
+                    std::process::exit(0);
+                }
+            }
+        })
         .setup(move |app| {
             let app_handle = app.handle().clone();
 

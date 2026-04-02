@@ -27,9 +27,8 @@
     }
   }
 
-  $effect(() => {
-    invoke<boolean>("is_overlay_open").then((v) => { overlayOpen = v; }).catch(() => {});
-  });
+  // Check initial overlay state once
+  invoke<boolean>("is_overlay_open").then((v) => { overlayOpen = v; }).catch(() => {});
 </script>
 
 {#if config}

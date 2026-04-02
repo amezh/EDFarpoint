@@ -40,7 +40,7 @@ export interface Body {
   wasDiscovered: boolean;
   wasMapped: boolean;     // someone else mapped before us (from journal)
   wasFootfalled: boolean;
-  personalStatus: "unvisited" | "fss" | "dss" | "landed" | "bio_complete";
+  personalStatus: "unvisited" | "fss" | "visited" | "dss" | "landed" | "bio_complete";
   parents: Array<Record<string, number>>;
   rings: RingInfo[];
   confirmedGenuses: string[]; // from SAASignalsFound Genuses array (e.g. ["Bacterium", "Stratum"])

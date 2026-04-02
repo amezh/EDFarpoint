@@ -85,15 +85,17 @@
 
   function statusIcon(b: Body): string {
     if (b.personalStatus === "bio_complete") return "✓";
-    if (b.personalStatus === "dss") return "◉";
     if (b.personalStatus === "landed") return "▼";
+    if (b.personalStatus === "dss") return "◉";
+    if (b.personalStatus === "visited") return "◎";
     return "○";
   }
 
   function statusColor(b: Body): string {
     if (b.personalStatus === "bio_complete") return "text-ed-green";
-    if (b.personalStatus === "dss") return "text-ed-blue";
     if (b.personalStatus === "landed") return "text-ed-amber";
+    if (b.personalStatus === "dss") return "text-ed-blue";
+    if (b.personalStatus === "visited") return "text-ed-cyan";
     return "text-ed-dim";
   }
 

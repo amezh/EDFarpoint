@@ -37,12 +37,18 @@
     return v.toString();
   }
 
-  // Push state to remote WebSocket server when stores change
-  $effect(() => { pushRemoteState("system", systemStore.current); });
-  $effect(() => { pushRemoteState("route", routeStore.current); });
+  // Push state to remote WebSocket server and overlay window
+  $effect(() => { pushRemoteState("system", systemStore.current); emitToOverlay("system-state", systemStore.current); });
+  $effect(() => { pushRemoteState("route", routeStore.current); emitToOverlay("route-state", routeStore.current); });
   $effect(() => { pushRemoteState("expedition", expeditionStore.visited); });
-  $effect(() => { pushRemoteState("trip", tripStore.current); });
-  $effect(() => { pushRemoteState("status", statusStore.current); });
+  $effect(() => { pushRemoteState("trip", tripStore.current); emitToOverlay("trip-state", tripStore.current); });
+  $effect(() => { pushRemoteState("status", statusStore.current); emitToOverlay("status-state", statusStore.current); });
+  $effect(() => { if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet); });
+
+  import { emit } from "@tauri-apps/api/event";
+  function emitToOverlay(event: string, payload: unknown) {
+    emit(event, payload).catch(() => {});
+  }
 
   // Track body discovery status: key = "systemAddr:bodyId" => wasDiscovered
   const bodyDiscoveryMap = new Map<string, boolean>();
@@ -293,6 +299,10 @@
       case "ApproachBody": {
         const approachBodyId = data.BodyID as number;
         const approachBody = systemStore.current?.bodies.find((b) => b.bodyId === approachBodyId);
+        // Mark as visited if only FSS'd or unvisited before
+        if (approachBody && (approachBody.personalStatus === "fss" || approachBody.personalStatus === "unvisited")) {
+          approachBody.personalStatus = "visited";
+        }
         bioStore.setPlanet(
           data.Body as string,
           approachBodyId,
