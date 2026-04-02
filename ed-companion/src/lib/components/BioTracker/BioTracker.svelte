@@ -1,13 +1,121 @@
 <script lang="ts">
   import { bioStore, haversineDistance, type BioSpecies } from "$lib/stores/bio.svelte";
+  import { configStore } from "$lib/stores/config.svelte";
   import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
   import { playReady } from "$lib/utils/sounds";
 
-  // Track which species already triggered the "ready" sound to avoid repeats
   let readySounded = $state(new Set<string>());
 
-  // Play sound when bio scan distance is reached
+  const tracker = $derived(bioStore.currentPlanet);
+  const status = $derived(statusStore.current);
+  const bioThreshold = $derived(configStore.current?.bio.value_threshold ?? 0);
+
+  // Find the body data for the current planet (for predictions)
+  const currentBody = $derived(
+    tracker ? systemStore.current?.bodies.find(b => b.bodyId === tracker.bodyId) ?? null : null
+  );
+
+  // Merge predictions with actual scans:
+  // - Show all predicted species (even unscanned)
+  // - If we've scanned one, update its status from the tracker
+  // - If analysed, mark as done
+  interface MergedSpecies {
+    name: string;
+    localName: string;
+    genus: string;
+    value: number;
+    clonalRange: number;
+    samples: number; // 0 = predicted only, 1-3 = scanning/done
+    analysed: boolean;
+    scanPositions: { latitude: number; longitude: number }[];
+    predicted: boolean; // true = from predictions, false = only from scan
+    aboveThreshold: boolean;
+  }
+
+  const mergedSpecies = $derived(buildMerged());
+
+  function buildMerged(): MergedSpecies[] {
+    const result: MergedSpecies[] = [];
+    const seen = new Set<string>();
+    const mult = currentBody && !currentBody.wasDiscovered ? 5 : 1;
+
+    // Start with actual scans from the tracker
+    if (tracker) {
+      for (const s of tracker.species) {
+        const genus = s.genus || s.localName.split(" ")[0];
+        const range = s.clonalRange ?? CLONAL_RANGES[genus] ?? 200;
+        const value = s.value ?? 0;
+        result.push({
+          name: s.name,
+          localName: s.localName,
+          genus,
+          value,
+          clonalRange: range,
+          samples: s.samples,
+          analysed: s.analysed,
+          scanPositions: s.scanPositions,
+          predicted: false,
+          aboveThreshold: (value * mult) >= bioThreshold,
+        });
+        // Use localName for matching since predictions use English names
+        seen.add(s.localName.toLowerCase());
+        // Also match by genus+species pattern
+        const baseName = s.localName.split(" - ")[0].trim();
+        seen.add(baseName.toLowerCase());
+      }
+    }
+
+    // Collect genera already identified by scanning — only one species per genus on a planet
+    const confirmedGenera = new Set<string>();
+    for (const r of result) {
+      if (!r.predicted) confirmedGenera.add(r.genus.toLowerCase());
+    }
+
+    // Add predicted species that haven't been scanned yet
+    // Skip predictions from genera we've already identified (one per genus rule)
+    if (currentBody) {
+      for (const pred of currentBody.bioSpeciesPredicted) {
+        const key = pred.name.toLowerCase();
+        if (seen.has(key)) continue;
+        const genus = pred.name.split(" ")[0];
+        if (confirmedGenera.has(genus.toLowerCase())) continue; // genus already identified
+        seen.add(key);
+        result.push({
+          name: pred.codex_name ?? pred.name,
+          localName: pred.name,
+          genus,
+          value: pred.value,
+          clonalRange: pred.clonal_range,
+          samples: 0,
+          analysed: false,
+          scanPositions: [],
+          predicted: true,
+          aboveThreshold: (pred.value * mult) >= bioThreshold,
+        });
+      }
+    }
+
+    // Sort: active scans first, then unscanned predictions by value desc, then completed
+    return result.sort((a, b) => {
+      if (a.analysed !== b.analysed) return a.analysed ? 1 : -1;
+      if ((a.samples > 0) !== (b.samples > 0)) return a.samples > 0 ? -1 : 1;
+      return b.value - a.value;
+    });
+  }
+
+  // Count what matters for "safe to leave"
+  const speciesAboveThreshold = $derived(mergedSpecies.filter(s => s.aboveThreshold));
+  const allValueableScanned = $derived(speciesAboveThreshold.every(s => s.analysed));
+  const scannedCount = $derived(mergedSpecies.filter(s => s.analysed).length);
+  const totalCount = $derived(currentBody?.bioSignals ?? mergedSpecies.length);
+
+  // Show all bodies with bio across the system when not on a planet
+  const systemBioBodies = $derived(
+    systemStore.current?.bodies.filter((b) => b.bioSignals > 0) ?? []
+  );
+
+  // Sound effect when distance threshold crossed
   $effect(() => {
     if (!tracker) return;
     for (const species of tracker.species) {
@@ -21,20 +129,11 @@
         readySounded = new Set(readySounded);
         playReady();
       } else if (!allFar && readySounded.has(species.name)) {
-        // Reset if player moved back within range
         readySounded.delete(species.name);
         readySounded = new Set(readySounded);
       }
     }
   });
-
-  const tracker = $derived(bioStore.currentPlanet);
-  const status = $derived(statusStore.current);
-
-  // Show all bodies with bio across the system when not on a planet
-  const systemBioBodies = $derived(
-    systemStore.current?.bodies.filter((b) => b.bioSignals > 0) ?? []
-  );
 
   function fmt(v: number): string {
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
@@ -64,7 +163,7 @@
   }
 
   /** Distance from current position to each previous scan, in meters */
-  function distancesToScans(species: BioSpecies): number[] {
+  function distancesToScans(species: { scanPositions: { latitude: number; longitude: number }[] }): number[] {
     if (species.scanPositions.length === 0) return [];
     if (status.latitude == null || status.longitude == null) return [];
     if (!tracker?.bodyRadius) return [];
@@ -81,87 +180,87 @@
   }
 </script>
 
-{#if tracker && tracker.species.length > 0}
+{#if tracker || (currentBody && currentBody.bioSpeciesPredicted.length > 0)}
   <!-- Active planet bio tracking -->
-  <div class="flex flex-col gap-2">
-    <div class="ed-card">
-      <div class="flex items-center justify-between">
-        <h2 class="text-ed-green font-bold">{tracker.bodyName}</h2>
-        <span class="text-xs text-ed-text-muted">{tracker.species.length} species</span>
-      </div>
+  <div class="flex flex-col gap-1.5">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="text-ed-green font-bold text-sm">{tracker?.bodyName ?? currentBody?.shortName}</h2>
+      <span class="text-[10px] text-ed-text-muted">{scannedCount}/{totalCount} scanned</span>
     </div>
 
-    {#each tracker.species as species (species.name)}
+    {#each mergedSpecies as species (species.name)}
       {@const done = species.analysed}
       {@const active = species.samples > 0 && !done}
+      {@const predicted = species.predicted && species.samples === 0}
       {@const dists = active ? distancesToScans(species) : []}
-      {@const range = getClonalRange(species)}
-      {@const farEnough = dists.length > 0 && dists.every(d => d >= range)}
-      <div
-        class="rounded-lg p-3 border-l-3 {done ? 'bg-ed-surface/40 border-ed-dim' : active ? 'bg-ed-surface border-ed-green' : 'bg-ed-surface border-ed-border'}"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="font-semibold text-sm {done ? 'text-ed-dim line-through' : active ? 'text-ed-green' : 'text-ed-text'}">
-              {species.localName}
-            </p>
-            <p class="text-xs {done ? 'text-ed-dim' : 'text-ed-amber'}">
-              {species.value ? fmt(species.value) + " Cr" : species.genus}
-              {#if species.clonalRange && !done}
-                <span class="text-ed-text-muted ml-1">· {species.clonalRange}m range</span>
-              {/if}
-            </p>
-          </div>
+      {@const farEnough = dists.length > 0 && dists.every(d => d >= species.clonalRange)}
+      {@const mult = currentBody && !currentBody.wasDiscovered ? 5 : 1}
 
-          <!-- Sample dots -->
-          <div class="flex items-center gap-1.5">
-            {#each [0, 1, 2] as i}
-              <div
-                class="w-4 h-4 rounded-full border-2 flex items-center justify-center text-[9px] font-bold
-                  {i < species.samples ? 'bg-ed-green border-ed-green text-black' : 'border-ed-dim'}"
-              >
-                {#if i < species.samples}{i + 1}{/if}
-              </div>
-            {/each}
-          </div>
+      {#if done}
+        <!-- Completed: compact crossed-out row -->
+        <div class="flex items-center gap-2 px-2 py-1 rounded bg-ed-surface/20 opacity-35">
+          <span class="text-ed-dim text-[10px]">✓</span>
+          <span class="text-ed-dim text-xs line-through flex-1">{species.localName}</span>
+          <span class="text-ed-dim text-[10px] font-mono">{fmt(species.value * mult)} Cr</span>
         </div>
+      {:else if predicted}
+        <!-- Predicted but not scanned yet -->
+        <div class="flex items-center gap-2 px-2 py-1.5 rounded bg-ed-surface/40 border-l-2 {species.aboveThreshold ? 'border-ed-amber' : 'border-ed-border'}">
+          <span class="text-[10px] text-ed-text-muted">?</span>
+          <span class="text-xs flex-1 {species.aboveThreshold ? 'text-ed-amber' : 'text-ed-text-muted'}">{species.localName}</span>
+          <span class="text-[10px] font-mono {species.aboveThreshold ? 'text-ed-amber' : 'text-ed-text-muted'}">{fmt(species.value * mult)} Cr</span>
+          <span class="text-[10px] text-ed-text-muted">{species.clonalRange}m</span>
+        </div>
+      {:else}
+        <!-- Active scan in progress -->
+        <div class="rounded p-2 border-l-3 bg-ed-surface border-ed-green">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-semibold text-sm text-ed-green">{species.localName}</p>
+              <p class="text-[10px] text-ed-amber">
+                {fmt(species.value * mult)} Cr · {species.clonalRange}m range
+              </p>
+            </div>
+            <div class="flex items-center gap-1">
+              {#each [0, 1, 2] as i}
+                <div class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center text-[8px] font-bold
+                  {i < species.samples ? 'bg-ed-green border-ed-green text-black' : 'border-ed-dim'}">
+                  {#if i < species.samples}{i + 1}{/if}
+                </div>
+              {/each}
+            </div>
+          </div>
 
-        <!-- Distance to each previous scan -->
-        {#if active && dists.length > 0}
-          <div class="mt-2 flex items-center gap-2 text-xs">
-            <span class="text-ed-text-muted shrink-0">{range}m</span>
-            {#each dists as d}
-              <span class="font-mono font-bold px-1.5 py-0.5 rounded {d >= range ? 'bg-ed-green/20 text-ed-green' : 'bg-red-900/30 text-red-400'}">
-                {fmtDist(d)}
+          {#if dists.length > 0}
+            <div class="mt-1.5 flex items-center gap-1.5 text-[10px]">
+              {#each dists as d}
+                <span class="font-mono font-bold px-1 py-0.5 rounded {d >= species.clonalRange ? 'bg-ed-green/20 text-ed-green' : 'bg-red-900/30 text-red-400'}">
+                  {fmtDist(d)}
+                </span>
+              {/each}
+              <span class="ml-auto font-bold {farEnough ? 'text-ed-green' : 'text-red-400'}">
+                {farEnough ? "Scan!" : "Move away"}
               </span>
-            {/each}
-            <span class="ml-auto font-bold {farEnough ? 'text-ed-green' : 'text-red-400'}">
-              {farEnough ? "Scan!" : "Move away"}
-            </span>
-          </div>
-        {:else if !done}
-          <div class="mt-2 flex items-center justify-between text-xs">
-            <span class="{active ? 'text-ed-amber' : 'text-ed-text-muted'}">
-              {sampleLabel(species.samples)}
-            </span>
-            {#if active}
-              <span class="font-mono text-ed-amber font-bold">
-                &ge; {range}m apart
-              </span>
-            {/if}
-          </div>
-        {/if}
-      </div>
+            </div>
+          {:else}
+            <div class="mt-1.5 text-[10px] text-ed-amber">{sampleLabel(species.samples)}</div>
+          {/if}
+        </div>
+      {/if}
     {/each}
 
     <!-- Summary -->
-    {#if tracker.species.every((s) => s.analysed) && tracker.species.length > 0}
-      <div class="text-center text-ed-green font-bold text-sm py-2">
-        All species complete — safe to leave
+    {#if allValueableScanned && scannedCount >= totalCount}
+      <div class="text-center text-ed-green font-bold text-xs py-1">
+        All complete — safe to leave
+      </div>
+    {:else if allValueableScanned}
+      <div class="text-center text-ed-amber text-xs py-1">
+        Valuable species done — {totalCount - scannedCount} low-value remaining
       </div>
     {:else}
-      <div class="text-center text-xs text-ed-text-muted py-1">
-        {tracker.species.filter((s) => s.analysed).length}/{tracker.species.length} species analysed
+      <div class="text-center text-[10px] text-ed-text-muted py-1">
+        {scannedCount}/{totalCount} · {speciesAboveThreshold.filter(s => !s.analysed).length} valuable unscanned
       </div>
     {/if}
   </div>

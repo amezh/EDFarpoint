@@ -200,7 +200,13 @@
           <!-- Species -->
           {#if body.bioSpeciesPredicted.length > 0}
             {#each body.bioSpeciesPredicted as species}
-              <div class="flex items-center gap-1 text-[10px] leading-tight" class:opacity-40={species.confidence === "low"}>
+              <div class="flex items-center gap-1 text-[10px] leading-tight
+                {species.confidence === 'analysed' ? 'opacity-30 line-through' : species.confidence === 'scanned' ? 'text-ed-green' : species.confidence === 'low' ? 'opacity-40' : ''}">
+                {#if species.confidence === "analysed"}
+                  <span class="shrink-0">✓</span>
+                {:else if species.confidence === "scanned"}
+                  <span class="shrink-0 text-ed-green">●</span>
+                {/if}
                 <span class="truncate flex-1">{species.name}</span>
                 <span class="font-mono text-ed-green/50 shrink-0">{formatCredits(species.value * mult)}</span>
                 <span class="text-ed-text-muted shrink-0">{species.clonal_range}m</span>

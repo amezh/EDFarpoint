@@ -63,7 +63,7 @@
     <div class="text-ed-amber mb-1">
       {route.remainingJumps} jumps · {route.remainingLy.toFixed(0)} LY → {route.destination}
     </div>
-    {#each route.systems.slice(0, 3) as sys, i}
+    {#each route.systems.slice(0, 3) as sys}
       <div class="flex justify-between py-0.5">
         <span>{sys.name}</span>
         <span class:text-ed-amber={SCOOPABLE.has(sys.starClass)}

@@ -253,12 +253,40 @@
           const bodyId = data.Body as number;
           const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bodyId)) ?? true;
           tripStore.addBioAnalysis(baseValue, !wasDisc);
+          // Mark species as analysed in predictions
+          const analyseBody = systemStore.current?.bodies.find(b => b.bodyId === bodyId);
+          if (analyseBody) {
+            const spLower = speciesName.toLowerCase().split(" - ")[0].trim();
+            for (const p of analyseBody.bioSpeciesPredicted) {
+              if (p.name.toLowerCase() === spLower) p.confidence = "analysed";
+            }
+          }
           if (systemStore.current?.name) {
             const totalBioValue = !wasDisc ? baseValue * 5 : baseValue;
             expeditionStore.addBioValue(systemStore.current.name, totalBioValue);
           }
         } else if ((data.ScanType as string) === "Log") {
           tripStore.addBioScan();
+          // We now know the exact species — remove other predictions from the same genus
+          const logBodyId = data.Body as number;
+          const logSpecies = (data.Species_Localised as string) ?? (data.Species as string) ?? "";
+          const logGenus = (data.Genus_Localised as string) ?? logSpecies.split(" ")[0];
+          const logBody = systemStore.current?.bodies.find(b => b.bodyId === logBodyId);
+          if (logBody && logGenus) {
+            const genusLower = logGenus.toLowerCase();
+            const speciesLower = logSpecies.toLowerCase().split(" - ")[0].trim();
+            logBody.bioSpeciesPredicted = logBody.bioSpeciesPredicted.filter(p => {
+              const pGenus = p.name.split(" ")[0].toLowerCase();
+              if (pGenus === genusLower) {
+                if (p.name.toLowerCase() === speciesLower) {
+                  p.confidence = "scanned"; // confirmed, scanning in progress
+                  return true;
+                }
+                return false; // remove other species from same genus
+              }
+              return true;
+            });
+          }
         }
         break;
 
@@ -277,6 +305,17 @@
       case "LeaveBody":
         bioStore.leavePlanet();
         break;
+
+      case "Touchdown": {
+        const tdBodyId = data.Body as number;
+        if (tdBodyId != null) {
+          const tdBody = systemStore.current?.bodies.find(b => b.bodyId === tdBodyId);
+          if (tdBody && tdBody.personalStatus !== "bio_complete") {
+            tdBody.personalStatus = "landed";
+          }
+        }
+        break;
+      }
 
       case "Docked":
         tripStore.reset();

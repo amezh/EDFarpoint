@@ -102,21 +102,37 @@ function createBioStore() {
         planet.species = [...planet.species, species];
       }
 
-      // Record position for this scan
-      if (latitude != null && longitude != null) {
-        species.scanPositions.push({ latitude, longitude });
+      // Starting a new scan (Log) on a DIFFERENT species resets all incomplete scans
+      // because the game discards partial progress when you switch species
+      if (scanType === "Log") {
+        for (const s of planet.species) {
+          if (s.name !== speciesName && !s.analysed && s.samples > 0) {
+            s.samples = 0;
+            s.scanPositions = [];
+          }
+        }
       }
 
       switch (scanType) {
         case "Log":
-          species.samples = Math.max(species.samples, 1);
+          // First sample — reset positions, start fresh
+          species.samples = 1;
+          species.scanPositions = (latitude != null && longitude != null)
+            ? [{ latitude, longitude }]
+            : [];
           break;
         case "Sample":
-          species.samples = Math.max(species.samples, 2);
+          species.samples = 2;
+          if (latitude != null && longitude != null) {
+            species.scanPositions.push({ latitude, longitude });
+          }
           break;
         case "Analyse":
           species.samples = 3;
           species.analysed = true;
+          if (latitude != null && longitude != null) {
+            species.scanPositions.push({ latitude, longitude });
+          }
           break;
       }
 
