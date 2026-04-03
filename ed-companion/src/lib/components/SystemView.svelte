@@ -2,7 +2,7 @@
   import { configStore } from "$lib/stores/config.svelte";
   import { systemStore, type Body } from "$lib/stores/system.svelte";
   import { formatCredits } from "$lib/utils/bioPredict";
-  import { estimateCartoValue } from "$lib/utils/valueCalc";
+  import { cartoBreakdown, estimateCartoValue } from "$lib/utils/valueCalc";
   import SystemMap from "./SystemMap.svelte";
 
   let viewMode: "cards" | "map" = $state("cards");
@@ -83,10 +83,6 @@
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
     if (v >= 1_000) return (v / 1_000).toFixed(0) + "K";
     return v.toString();
-  }
-
-  function bodyValue(b: Body): number {
-    return estimateCartoValue({ bodyType: b.type, terraformable: b.terraformable, wasDiscovered: b.wasDiscovered, wasMapped: b.wasMapped, withDSS: !b.mapped });
   }
 
   /** Compute bio value range including confirmed (analysed) species.
@@ -214,7 +210,7 @@
           <div class="flex items-center gap-1 mb-0.5">
             <span class="{statusColor(body)} text-[10px]">{statusIcon(body)}</span>
             <span class="font-mono font-bold text-xs">{body.shortName}</span>
-            <span class="text-[10px] text-ed-text-muted ml-auto">{typeShort(body.type)} {body.gravity?.toFixed(1)}g</span>
+            <span class="text-[10px] text-ed-text-muted ml-auto">{typeShort(body.type)} {body.gravity != null ? (body.gravity < 0.1 ? body.gravity.toFixed(2) : body.gravity.toFixed(1)) : '?'}g</span>
           </div>
           <!-- Tags -->
           <div class="flex items-center gap-1 flex-wrap mb-0.5 text-[10px]">
@@ -277,18 +273,18 @@
     <div class="text-[10px] text-ed-amber font-bold uppercase tracking-wider px-1 mb-1">
       Map these — high value
     </div>
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-1.5 mb-3">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-1.5 mb-3">
       {#each valuableCarto as body (body.bodyId)}
+        {@const bd = cartoBreakdown({ bodyType: body.type, terraformable: body.terraformable, wasDiscovered: body.wasDiscovered, wasMapped: body.wasMapped, massEM: body.massEM ?? undefined, mapped: body.mapped, mappedByUs: body.mappedByUs })}
         <div class="rounded border border-ed-amber/30 bg-ed-bg/80 p-2">
           <div class="flex items-center gap-1 mb-0.5">
             <span class="{statusColor(body)} text-[10px]">{statusIcon(body)}</span>
             <span class="font-mono font-bold text-xs">{body.shortName}</span>
             <span class="text-[10px] text-ed-amber ml-auto">{typeShort(body.type)}</span>
           </div>
-          <div class="flex items-center gap-1 flex-wrap text-[10px]">
-            <span class="font-mono text-ed-amber font-bold">~{fmt(bodyValue(body))} Cr</span>
+          <div class="flex items-center gap-1 flex-wrap mb-1 text-[10px]">
             <span class="text-ed-text-muted">{body.distanceLs?.toFixed(0)} Ls</span>
-            {#if !body.wasDiscovered}<span class="text-ed-amber">1st</span>{/if}
+            {#if !body.wasDiscovered}<span class="text-ed-amber font-bold">1st</span>{/if}
             {#if body.terraformable}<span class="text-ed-green">terra</span>{/if}
             {#if body.rings.length > 0}<span class="text-ed-cyan">{body.rings.length}R</span>{/if}
             {#if !body.mapped}
@@ -296,6 +292,26 @@
             {:else if mapLabel(body)}
               <span class="{mapColor(body)}">{mapLabel(body)}</span>
             {/if}
+          </div>
+          <!-- Value breakdown -->
+          <div class="text-[10px] font-mono space-y-px">
+            <div class="flex justify-between"><span class="text-ed-text-muted">Base value:</span><span>{fmt(bd.baseValue)} Cr</span></div>
+            {#if bd.firstDiscBonus}
+              <div class="flex justify-between"><span class="text-ed-text-muted">1st disc bonus:</span><span class="text-ed-amber">{fmt(bd.firstDiscBonus[0])} – {fmt(bd.firstDiscBonus[1])} Cr</span></div>
+            {/if}
+            {#if bd.surfaceScanValue > 0}
+              <div class="flex justify-between"><span class="text-ed-text-muted">Surface scan:</span><span>{fmt(bd.surfaceScanValue)} Cr</span></div>
+            {/if}
+            {#if bd.firstSurfaceScanBonus > 0}
+              <div class="flex justify-between"><span class="text-ed-text-muted">1st map bonus:</span><span>{fmt(bd.firstSurfaceScanBonus)} Cr</span></div>
+            {/if}
+            {#if bd.efficiencyBonus > 0}
+              <div class="flex justify-between"><span class="text-ed-text-muted">Efficiency bonus:</span><span>{fmt(bd.efficiencyBonus)} Cr</span></div>
+            {/if}
+            <div class="border-t border-ed-amber/20 mt-0.5 pt-0.5">
+              <div class="flex justify-between"><span class="text-ed-text-muted">Value achieved:</span><span class="text-ed-green font-bold">{fmt(bd.valueAchieved)} Cr</span></div>
+              <div class="flex justify-between"><span class="text-ed-text-muted">Achievable:</span><span class="text-ed-amber font-bold">{fmt(bd.achievableValue)} Cr</span></div>
+            </div>
           </div>
           {#if body.edsmDiscoverer}
             <div class="text-[9px] text-ed-text-muted mt-0.5 truncate">{body.edsmDiscoverer}</div>
@@ -307,19 +323,50 @@
 
 
 
-  <!-- OTHER BODIES — always open, compact card grid -->
+  <!-- OTHER BODIES — card grid with value breakdown -->
   {#if otherBodies.length > 0}
     <div class="text-[10px] text-ed-text-muted font-bold uppercase tracking-wider px-1 mb-1">
       {otherBodies.length} other bodies
     </div>
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-1">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-1.5">
       {#each otherBodies as body (body.bodyId)}
-        <div class="text-[10px] text-ed-text-muted bg-ed-bg/40 rounded px-2 py-1 flex items-center gap-1">
-          <span class="font-mono truncate flex-1">{body.shortName}</span>
-          <span>{typeShort(body.type)}</span>
-          {#if !body.wasDiscovered}<span class="text-ed-amber">1st</span>{/if}
-          {#if body.rings.length > 0}<span class="text-ed-cyan">{body.rings.length}R</span>{/if}
-          {#if bodyValue(body) > 0}<span class="font-mono">~{fmt(bodyValue(body))}</span>{/if}
+        {@const bd = cartoBreakdown({ bodyType: body.type, terraformable: body.terraformable, wasDiscovered: body.wasDiscovered, wasMapped: body.wasMapped, massEM: body.massEM ?? undefined, mapped: body.mapped, mappedByUs: body.mappedByUs })}
+        <div class="rounded border border-ed-dim/20 bg-ed-bg/40 p-2">
+          <div class="flex items-center gap-1 mb-0.5">
+            <span class="{statusColor(body)} text-[10px]">{statusIcon(body)}</span>
+            <span class="font-mono font-bold text-xs">{body.shortName}</span>
+            <span class="text-[10px] text-ed-text-muted ml-auto">{typeShort(body.type)}</span>
+          </div>
+          <div class="flex items-center gap-1 flex-wrap mb-1 text-[10px]">
+            <span class="text-ed-text-muted">{body.distanceLs?.toFixed(0)} Ls</span>
+            {#if !body.wasDiscovered}<span class="text-ed-amber font-bold">1st</span>{/if}
+            {#if body.terraformable}<span class="text-ed-green">terra</span>{/if}
+            {#if body.rings.length > 0}<span class="text-ed-cyan">{body.rings.length}R</span>{/if}
+            {#if !body.mapped}
+              <span class="bg-ed-dim/20 text-ed-text-muted px-0.5 rounded">DSS</span>
+            {:else if mapLabel(body)}
+              <span class="{mapColor(body)}">{mapLabel(body)}</span>
+            {/if}
+          </div>
+          <div class="text-[10px] font-mono space-y-px">
+            <div class="flex justify-between"><span class="text-ed-text-muted">Base value:</span><span>{fmt(bd.baseValue)} Cr</span></div>
+            {#if bd.firstDiscBonus}
+              <div class="flex justify-between"><span class="text-ed-text-muted">1st disc bonus:</span><span class="text-ed-amber">{fmt(bd.firstDiscBonus[0])} – {fmt(bd.firstDiscBonus[1])} Cr</span></div>
+            {/if}
+            {#if bd.surfaceScanValue > 0}
+              <div class="flex justify-between"><span class="text-ed-text-muted">Surface scan:</span><span>{fmt(bd.surfaceScanValue)} Cr</span></div>
+            {/if}
+            {#if bd.firstSurfaceScanBonus > 0}
+              <div class="flex justify-between"><span class="text-ed-text-muted">1st map bonus:</span><span>{fmt(bd.firstSurfaceScanBonus)} Cr</span></div>
+            {/if}
+            {#if bd.efficiencyBonus > 0}
+              <div class="flex justify-between"><span class="text-ed-text-muted">Efficiency bonus:</span><span>{fmt(bd.efficiencyBonus)} Cr</span></div>
+            {/if}
+            <div class="border-t border-ed-dim/20 mt-0.5 pt-0.5">
+              <div class="flex justify-between"><span class="text-ed-text-muted">Value achieved:</span><span class="text-ed-green font-bold">{fmt(bd.valueAchieved)} Cr</span></div>
+              <div class="flex justify-between"><span class="text-ed-text-muted">Achievable:</span><span class="text-ed-amber font-bold">{fmt(bd.achievableValue)} Cr</span></div>
+            </div>
+          </div>
         </div>
       {/each}
     </div>

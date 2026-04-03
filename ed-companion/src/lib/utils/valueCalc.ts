@@ -139,3 +139,110 @@ export function estimateCartoValue(params: CartoValueParams): number {
 }
 
 // Class III-V gas giants, helium/water giants, etc. all use DEFAULT_BODY_K (k=300)
+
+export interface CartoBreakdown {
+  baseValue: number;
+  firstDiscBonus: [number, number] | null; // [min, max] – null if already discovered
+  surfaceScanValue: number;
+  firstSurfaceScanBonus: number;
+  efficiencyBonus: number;
+  valueAchieved: number;
+  achievableValue: number;
+}
+
+/**
+ * Decompose exploration value into labeled components.
+ */
+export function cartoBreakdown(p: {
+  bodyType: string;
+  terraformable: boolean;
+  wasDiscovered: boolean;
+  wasMapped: boolean;
+  massEM?: number;
+  mapped: boolean;
+  mappedByUs: boolean;
+}): CartoBreakdown {
+  const shared = {
+    bodyType: p.bodyType,
+    terraformable: p.terraformable,
+    massEM: p.massEM,
+  };
+
+  // Base FSS-only value (no first-discovery bonus)
+  const baseValue = estimateCartoValue({
+    ...shared,
+    wasDiscovered: true, wasMapped: true,
+    withDSS: false,
+  });
+
+  // First discovery bonus range (null if already discovered)
+  let firstDiscBonus: [number, number] | null = null;
+  if (!p.wasDiscovered) {
+    const fssFirstDisc = estimateCartoValue({
+      ...shared, wasDiscovered: false, wasMapped: true,
+      withDSS: false,
+    });
+    const optFull = estimateCartoValue({
+      ...shared, wasDiscovered: false, wasMapped: false,
+      withDSS: true, efficiencyBonus: true,
+    });
+    const optNoDisc = estimateCartoValue({
+      ...shared, wasDiscovered: true, wasMapped: false,
+      withDSS: true, efficiencyBonus: true,
+    });
+    firstDiscBonus = [fssFirstDisc - baseValue, optFull - optNoDisc];
+  }
+
+  // Surface scan value (DSS, no first-map, no efficiency)
+  const valDssNoFirst = estimateCartoValue({
+    ...shared, wasDiscovered: true, wasMapped: true,
+    withDSS: true, efficiencyBonus: false,
+  });
+  const surfaceScanValue = valDssNoFirst - baseValue;
+
+  // First surface scan bonus
+  let firstSurfaceScanBonus = 0;
+  if (!p.wasMapped) {
+    const valDssFirst = estimateCartoValue({
+      ...shared, wasDiscovered: true, wasMapped: false,
+      withDSS: true, efficiencyBonus: false,
+    });
+    firstSurfaceScanBonus = valDssFirst - valDssNoFirst;
+  }
+
+  // Efficiency bonus
+  const bestWithoutEff = estimateCartoValue({
+    ...shared, wasDiscovered: true, wasMapped: p.wasMapped,
+    withDSS: true, efficiencyBonus: false,
+  });
+  const bestWithEff = estimateCartoValue({
+    ...shared, wasDiscovered: true, wasMapped: p.wasMapped,
+    withDSS: true, efficiencyBonus: true,
+  });
+  const efficiencyBonus = bestWithEff - bestWithoutEff;
+
+  // Value achieved: based on current player scan state
+  const valueAchieved = estimateCartoValue({
+    ...shared,
+    wasDiscovered: p.wasDiscovered, wasMapped: p.wasMapped,
+    withDSS: p.mapped,
+    isFirstMapper: p.mappedByUs,
+  });
+
+  // Achievable value: max if player does everything optimally
+  const achievableValue = estimateCartoValue({
+    ...shared,
+    wasDiscovered: p.wasDiscovered, wasMapped: p.wasMapped,
+    withDSS: true, efficiencyBonus: true,
+  });
+
+  return {
+    baseValue,
+    firstDiscBonus,
+    surfaceScanValue,
+    firstSurfaceScanBonus,
+    efficiencyBonus,
+    valueAchieved,
+    achievableValue,
+  };
+}

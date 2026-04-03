@@ -36,6 +36,7 @@ export interface Body {
   bioSpeciesPredicted: PredictedSpecies[];
   bioValueMin: number | null;
   bioValueMax: number | null;
+  massEM: number | null;
   estimatedValue: number | null;
   wasDiscovered: boolean;
   wasMapped: boolean;     // someone else mapped before us (from journal)
@@ -184,6 +185,7 @@ function createSystemStore() {
         bioSpeciesPredicted: existing >= 0 ? state.bodies[existing].bioSpeciesPredicted : [],
         bioValueMin: existing >= 0 ? state.bodies[existing].bioValueMin : null,
         bioValueMax: existing >= 0 ? state.bodies[existing].bioValueMax : null,
+        massEM: (scan.MassEM as number) ?? null,
         estimatedValue: null,
         wasDiscovered: (scan.WasDiscovered as boolean) ?? false,
         wasMapped: (scan.WasMapped as boolean) ?? false,
@@ -247,6 +249,7 @@ function createSystemStore() {
           bioSpeciesPredicted: [],
           bioValueMin: null,
           bioValueMax: null,
+          massEM: null,
           estimatedValue: null,
           wasDiscovered: false,
           wasMapped: false,
