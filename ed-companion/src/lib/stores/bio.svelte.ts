@@ -1,4 +1,5 @@
 // Bio tracker store — per-planet species tracking
+import { getSpeciesValue } from "$lib/utils/bioValues";
 
 export interface ScanPosition {
   latitude: number;
@@ -93,7 +94,7 @@ function createBioStore() {
           localName: speciesLocal,
           genus,
           variant,
-          value: null,
+          value: getSpeciesValue(speciesLocal),
           clonalRange: null,
           samples: 0,
           analysed: false,
@@ -101,6 +102,9 @@ function createBioStore() {
         };
         planet.species = [...planet.species, species];
       }
+
+      // Fill value if it was null (journal replay / legacy data)
+      if (species.value === null) species.value = getSpeciesValue(speciesLocal);
 
       // Starting a new scan (Log) on a DIFFERENT species resets all incomplete scans
       // because the game discards partial progress when you switch species

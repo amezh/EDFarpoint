@@ -237,6 +237,11 @@
             if (isFirst) expeditionStore.markFirstDiscoveryBody(systemStore.current.name);
           }
 
+          // Play sound for valuable planet discovery (only during live play)
+          if (appReady && fssValue >= (configStore.current?.poi?.min_carto_value ?? 2_000_000)) {
+            playDiscovery();
+          }
+
           // Trigger bio prediction for this body
           const scannedBody = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
           if (scannedBody) {
@@ -502,6 +507,7 @@
     invoke<Record<string, unknown> | null>("get_journal_history").then((result) => {
       if (!result) {
         ready = true;
+        appReady = true;
         statsLoading = false;
         return;
       }
@@ -550,6 +556,7 @@
       requestAnimationFrame(processLifetimeChunk);
     }).catch(() => {
       ready = true;
+      appReady = true;
       statsLoading = false;
     });
 
