@@ -7,6 +7,12 @@
 
   let viewMode: "cards" | "map" = $state("cards");
 
+  const CLONAL: Record<string, number> = {
+    Aleoida: 150, Bacterium: 500, Cactoida: 300, Clypeus: 150, Concha: 150,
+    Electricae: 1000, Fonticulua: 500, Frutexa: 150, Fumerola: 100,
+    Fungoida: 300, Osseus: 800, Recepta: 150, Stratum: 500, Tubus: 800, Tussock: 200,
+  };
+
   const system = $derived(systemStore.current);
   const bioThreshold = $derived(configStore.current?.bio.value_threshold ?? 0);
   const dimBelowThreshold = $derived(configStore.current?.bio.dim_below_threshold ?? false);
@@ -84,11 +90,19 @@
   }
 
   /** Compute live bio value range from remaining (non-analysed) predictions.
-   *  Returns { min, max } summing values of species still to pick up. */
+   *  Returns { min, max } summing values of species still to pick up.
+   *  Excludes entire genera that have an analysed species (genus is resolved). */
   function liveBioRange(b: Body): { min: number; max: number } | null {
     const preds = b.bioSpeciesPredicted;
     if (!preds || preds.length === 0) return null;
-    const remaining = preds.filter((s: any) => s.confidence !== 'analysed');
+    const doneGenera = new Set<string>();
+    for (const s of preds) {
+      if (s.confidence === 'analysed') doneGenera.add(s.name.split(" ")[0].toLowerCase());
+    }
+    const remaining = preds.filter((s: any) => {
+      const g = s.name.split(" ")[0].toLowerCase();
+      return !doneGenera.has(g);
+    });
     if (remaining.length === 0) return { min: 0, max: 0 };
     // Group by genus — pick min/max value per genus, then sum across genera
     const byGenus = new Map<string, number[]>();
@@ -237,7 +251,7 @@
                 {/if}
                 <span class="truncate flex-1">{species.name}</span>
                 <span class="font-mono shrink-0 {species.confidence === 'analysed' ? 'text-ed-amber' : 'text-ed-green/50'}">{formatCredits(species.value * mult)}</span>
-                <span class="text-ed-text-muted shrink-0">{species.clonal_range}m</span>
+                <span class="text-ed-text-muted shrink-0">{CLONAL[species.name.split(' ')[0]] ?? species.clonal_range}m</span>
               </div>
             {/each}
           {/if}

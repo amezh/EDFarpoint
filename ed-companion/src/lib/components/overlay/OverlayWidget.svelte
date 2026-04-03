@@ -30,17 +30,26 @@
     return remainingSpecies(body).length === 0;
   }
 
-  // Bio targets: planets with bio signals, not completed, value above threshold
+  function isBioDone(b: any): boolean {
+    return b.personalStatus === "bio_complete" || allBioAnalysed(b);
+  }
+
+  // Bio targets: planets with bio signals, completed ones sorted to end
   const bioTargets = $derived(
     bodies.filter((b: any) => {
       if (!b.planetClass || b.bioSignals <= 0) return false;
-      if (b.personalStatus === "bio_complete" || allBioAnalysed(b)) return false;
+      if (isBioDone(b)) return true; // keep completed, sort to end
       if (bioThreshold > 0 && b.bioValueMax != null) {
         const eff = b.bioValueMax * (!b.wasDiscovered ? 5 : 1);
         if (eff < bioThreshold) return false;
       }
       return true;
-    }).sort((a: any, b: any) => (b.bioValueMax ?? 0) - (a.bioValueMax ?? 0))
+    }).sort((a: any, b: any) => {
+      const aDone = isBioDone(a) ? 1 : 0;
+      const bDone = isBioDone(b) ? 1 : 0;
+      if (aDone !== bDone) return aDone - bDone;
+      return (b.bioValueMax ?? 0) - (a.bioValueMax ?? 0);
+    })
   );
 
   function cartoVal(b: any): number {
@@ -84,17 +93,23 @@
     const seen = new Set<string>();
     const confirmedGenera = new Set<string>();
 
-    // 1. Actual scans from bio store
+    // 1. Actual scans from bio store (skip fully analysed — they're done)
     for (const s of bioSpecies) {
       const genus = s.genus || s.localName?.split(" ")[0] || "";
+      if (s.analysed) {
+        // Track analysed genera so we also skip their predictions
+        confirmedGenera.add(genus.toLowerCase());
+        continue;
+      }
       result.push({ ...s, predicted: false, genus });
       seen.add((s.localName || "").toLowerCase().split(" - ")[0].trim());
       confirmedGenera.add(genus.toLowerCase());
     }
 
-    // 2. Predicted species not yet scanned (skip genera already confirmed)
+    // 2. Predicted species not yet scanned (skip genera already confirmed/analysed)
     if (currentBody?.bioSpeciesPredicted) {
       for (const pred of currentBody.bioSpeciesPredicted) {
+        if (pred.confidence === "analysed") continue;
         const key = pred.name.toLowerCase();
         if (seen.has(key)) continue;
         const genus = pred.name.split(" ")[0];
@@ -114,16 +129,16 @@
       }
     }
 
-    // Sort: active first, then unscanned by value desc, analysed last
+    // Sort: active first, then unscanned by value desc
     return result.sort((a: any, b: any) => {
-      if (a.analysed !== b.analysed) return a.analysed ? 1 : -1;
       if ((a.samples > 0) !== (b.samples > 0)) return a.samples > 0 ? -1 : 1;
       return (b.value ?? 0) - (a.value ?? 0);
     });
   })());
 
   const onPlanet = $derived(
-    !!(bio?.bodyId) || (currentBody != null && currentBody.bioSpeciesPredicted?.length > 0)
+    (!!(bio?.bodyId) || (currentBody != null && currentBody.bioSpeciesPredicted?.length > 0))
+    && mergedSpecies.length > 0  // fall through to system view when all bio is done
   );
 
   const CLONAL: Record<string, number> = {
@@ -271,6 +286,7 @@
           <span class="flex-1 truncate {done ? 'line-through text-gray-600' : active ? 'text-green-400' : predicted ? 'text-amber-300' : 'text-gray-300'}">
             {sp.localName}
           </span>
+          <span class="text-[9px] text-amber-400/60 font-mono shrink-0">{fmt((sp.value ?? 0) * bioMult)}</span>
           <span class="text-[9px] text-gray-500 shrink-0">{fmtDist(range)}</span>
           {#if !predicted}
             <span class="flex gap-px">
@@ -278,8 +294,6 @@
                 <span class="w-2 h-2 rounded-full inline-block {j < sp.samples ? 'bg-green-500' : 'bg-gray-700'}"></span>
               {/each}
             </span>
-          {:else}
-            <span class="text-[9px] text-amber-400/60 font-mono">{fmt((sp.value ?? 0) * bioMult)}</span>
           {/if}
         </div>
         {#if active && sp.scanPositions?.length > 0 && lat != null && bodyRadius}
@@ -336,23 +350,34 @@
       <!-- Bio targets -->
       {#if bioTargets.length > 0}
         <div class="text-green-400 font-bold text-[9px] uppercase tracking-wider mt-1 mb-0.5">Bio targets</div>
-        {#each bioTargets.slice(0, 5) as body}
+        {#each bioTargets.slice(0, 8) as body}
+          {@const done = isBioDone(body)}
           {@const mult = !body.wasDiscovered ? 5 : 1}
           {@const dot = statusDot(body)}
           {@const remVal = remainingValue(body)}
           {@const remSpecies = remainingSpecies(body)}
-          <div class="flex items-center gap-1 py-0.5 text-[10px]">
+          {@const doneSpecies = done ? (body.bioSpeciesPredicted ?? []).filter((s: any) => s.confidence === 'analysed') : []}
+          {@const doneVal = doneSpecies.reduce((sum: number, s: any) => sum + (s.value ?? 0), 0)}
+          <div class="flex items-center gap-1 py-0.5 text-[10px] {done ? 'opacity-50' : ''}">
             <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke={dot.ring} stroke-width="1.5"/>{#if dot.fill !== 'none'}<circle cx="5" cy="5" r="2.5" fill={dot.fill}/>{/if}</svg>
-            <span class="truncate flex-1">{body.shortName}</span>
+            <span class="truncate flex-1 {done ? 'line-through' : ''}">{body.shortName}</span>
             <span class="text-green-400 shrink-0">{body.bioSignals}bio</span>
             {#if !body.mapped}<span class="text-blue-400 shrink-0 text-[9px]">DSS</span>{/if}
             {#if body.landable}<span class="text-amber-400 shrink-0 text-[9px]">L</span>{/if}
-            {#if remVal > 0}
+            {#if done}
+              <span class="text-green-400/60 font-mono shrink-0">{fmt(doneVal * mult)}</span>
+            {:else if remVal > 0}
               <span class="text-green-400/60 font-mono shrink-0">{fmt(remVal * mult)}</span>
             {/if}
           </div>
-          <!-- Species list (only remaining, not picked genera) -->
-          {#if remSpecies.length > 0}
+          {#if done && doneSpecies.length > 0}
+            {#each doneSpecies as sp}
+              <div class="flex items-center gap-1 text-[9px] ml-3 leading-tight opacity-50">
+                <span class="truncate flex-1 line-through">{sp.name}</span>
+                <span class="font-mono shrink-0 text-green-400/50">{fmt(sp.value * mult)}</span>
+              </div>
+            {/each}
+          {:else if !done && remSpecies.length > 0}
             {#each remSpecies as sp}
               <div class="flex items-center gap-1 text-[9px] ml-3 leading-tight
                 {sp.confidence === 'scanned' ? 'text-green-400' : ''}">

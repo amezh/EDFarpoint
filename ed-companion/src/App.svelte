@@ -47,7 +47,7 @@
   $effect(() => { pushRemoteState("expedition", expeditionStore.visited); });
   $effect(() => { pushRemoteState("trip", tripStore.current); emitToOverlay("trip-state", tripStore.current); });
   $effect(() => { pushRemoteState("status", statusStore.current); emitToOverlay("status-state", statusStore.current); });
-  $effect(() => { if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet); });
+  $effect(() => { emitToOverlay("bio-state", bioStore.currentPlanet ?? null); });
   $effect(() => { if (configStore.current) emitToOverlay("config-state", configStore.current); });
 
 
@@ -97,6 +97,20 @@
           }
         }
       }
+    }
+    // Check if all bio on this body is now complete
+    checkBioComplete(body);
+  }
+
+  function checkBioComplete(body: Body) {
+    if (body.bioSignals <= 0 || body.personalStatus === "bio_complete") return;
+    const analysedGenera = new Set(
+      body.bioSpeciesPredicted
+        .filter((p) => p.confidence === "analysed")
+        .map((p) => p.name.split(" ")[0].toLowerCase())
+    );
+    if (analysedGenera.size >= body.bioSignals) {
+      body.personalStatus = "bio_complete";
     }
   }
 
@@ -311,6 +325,7 @@
             for (const p of analyseBody.bioSpeciesPredicted) {
               if (p.name.toLowerCase() === spLower) p.confidence = "analysed";
             }
+            checkBioComplete(analyseBody);
           }
           if (systemStore.current?.name) {
             const totalBioValue = !wasDisc ? baseValue * 5 : baseValue;
