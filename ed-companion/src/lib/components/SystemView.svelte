@@ -19,8 +19,12 @@
 
   const allBio = $derived(
     system?.bodies
-      .filter((b) => b.bioSignals > 0 && b.personalStatus !== "bio_complete")
+      .filter((b) => b.bioSignals > 0)
       .sort((a, b) => {
+        // completed bodies go to end
+        const ac = a.personalStatus === "bio_complete" ? 1 : 0;
+        const bc = b.personalStatus === "bio_complete" ? 1 : 0;
+        if (ac !== bc) return ac - bc;
         const va = b.bioValueMax ?? 0;
         const vb = a.bioValueMax ?? 0;
         if (va !== vb) return va - vb;
@@ -65,10 +69,6 @@
       }) ?? []
   );
 
-  const completedBio = $derived(
-    system?.bodies.filter((b) => b.personalStatus === "bio_complete") ?? []
-  );
-
   const otherBodies = $derived(
     system?.bodies.filter(
       (b) => !b.starType && b.bioSignals === 0 && b.personalStatus !== "bio_complete" && !isPoiBody(b),
@@ -89,29 +89,33 @@
     return estimateCartoValue({ bodyType: b.type, terraformable: b.terraformable, wasDiscovered: b.wasDiscovered, wasMapped: b.wasMapped, withDSS: !b.mapped });
   }
 
-  /** Compute live bio value range from remaining (non-analysed) predictions.
-   *  Returns { min, max } summing values of species still to pick up.
-   *  Excludes entire genera that have an analysed species (genus is resolved). */
+  /** Compute bio value range including confirmed (analysed) species.
+   *  Analysed species contribute their exact value to both min and max.
+   *  Remaining genera contribute min/max of their candidates. */
   function liveBioRange(b: Body): { min: number; max: number } | null {
     const preds = b.bioSpeciesPredicted;
     if (!preds || preds.length === 0) return null;
+    let min = 0, max = 0;
+    // Add confirmed (analysed) species values
     const doneGenera = new Set<string>();
     for (const s of preds) {
-      if (s.confidence === 'analysed') doneGenera.add(s.name.split(" ")[0].toLowerCase());
+      if (s.confidence === 'analysed') {
+        doneGenera.add(s.name.split(" ")[0].toLowerCase());
+        min += s.value;
+        max += s.value;
+      }
     }
+    // Add remaining (unresolved) genera min/max
     const remaining = preds.filter((s: any) => {
       const g = s.name.split(" ")[0].toLowerCase();
       return !doneGenera.has(g);
     });
-    if (remaining.length === 0) return { min: 0, max: 0 };
-    // Group by genus — pick min/max value per genus, then sum across genera
     const byGenus = new Map<string, number[]>();
     for (const s of remaining) {
       const g = s.name.split(" ")[0].toLowerCase();
       if (!byGenus.has(g)) byGenus.set(g, []);
       byGenus.get(g)!.push(s.value);
     }
-    let min = 0, max = 0;
     for (const vals of byGenus.values()) {
       min += Math.min(...vals);
       max += Math.max(...vals);
@@ -120,7 +124,7 @@
   }
 
   function statusIcon(b: Body): string {
-    if (b.personalStatus === "bio_complete") return "✓";
+    if (b.personalStatus === "bio_complete") return "●";
     if (b.personalStatus === "landed") return "▼";
     if (b.personalStatus === "dss") return "◉";
     if (b.personalStatus === "visited") return "◎";
@@ -232,7 +236,11 @@
           <!-- Value -->
           {#if liveRange}
             <div class="text-[10px] font-mono mb-0.5 {allAnalysed ? 'text-ed-amber' : 'text-ed-green/70'}">
-              ~{formatCredits(liveRange.min * mult)} – {formatCredits(liveRange.max * mult)} Cr
+              {#if liveRange.min === liveRange.max}
+                {formatCredits(liveRange.min * mult)} Cr
+              {:else}
+                ~{formatCredits(liveRange.min * mult)} – {formatCredits(liveRange.max * mult)} Cr
+              {/if}
               {#if !body.wasDiscovered}<span class="text-ed-amber">(5x)</span>{/if}
               {#if allAnalysed}<span class="text-ed-amber"> ✓</span>{/if}
             </div>
@@ -297,17 +305,7 @@
     </div>
   {/if}
 
-  <!-- COMPLETED — compact chips -->
-  {#if completedBio.length > 0}
-    <div class="text-[10px] text-ed-dim font-bold uppercase tracking-wider px-1 mb-1">Completed</div>
-    <div class="flex flex-wrap gap-1 mb-2">
-      {#each completedBio as body (body.bodyId)}
-        <span class="text-[10px] text-ed-dim bg-ed-surface/40 px-1.5 py-0.5 rounded">
-          ✓ {body.shortName} · {body.bioSignals} bio
-        </span>
-      {/each}
-    </div>
-  {/if}
+
 
   <!-- OTHER BODIES — always open, compact card grid -->
   {#if otherBodies.length > 0}

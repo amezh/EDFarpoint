@@ -119,6 +119,11 @@ pnpm build          # Frontend only
 cargo check         # Rust only (from src-tauri/)
 ```
 
+## Design Philosophy
+- **Show the best info we have right now, and refine as more data arrives.** Start with predictions/estimates, then update with confirmed values as the player scans. Players should get a dopamine hit as numbers become more accurate and totals grow.
+- Always prefer actual scan data over predictions when available.
+- Values should be as accurate as possible at every moment in time.
+
 ## Don't
 - Don't sort journal files by filename — use modification time
 - Don't use `$state` in plain `.ts` files — must be `.svelte.ts`
