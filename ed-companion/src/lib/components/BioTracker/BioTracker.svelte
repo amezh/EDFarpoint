@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { bioStore, haversineDistance, type BioSpecies } from "$lib/stores/bio.svelte";
+  import { bioStore, haversineDistance } from "$lib/stores/bio.svelte";
   import { configStore } from "$lib/stores/config.svelte";
   import { statusStore } from "$lib/stores/status.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
+  import { buildMergedSpecies, formatCredits, formatDistance, getClonalRange } from "$lib/utils/overlayCalc";
   import { playReady } from "$lib/utils/sounds";
 
   let readySounded = $state(new Set<string>());
@@ -16,93 +17,7 @@
     tracker ? systemStore.current?.bodies.find(b => b.bodyId === tracker.bodyId) ?? null : null
   );
 
-  // Merge predictions with actual scans:
-  // - Show all predicted species (even unscanned)
-  // - If we've scanned one, update its status from the tracker
-  // - If analysed, mark as done
-  interface MergedSpecies {
-    name: string;
-    localName: string;
-    genus: string;
-    value: number;
-    clonalRange: number;
-    samples: number; // 0 = predicted only, 1-3 = scanning/done
-    analysed: boolean;
-    scanPositions: { latitude: number; longitude: number }[];
-    predicted: boolean; // true = from predictions, false = only from scan
-    aboveThreshold: boolean;
-  }
-
-  const mergedSpecies = $derived(buildMerged());
-
-  function buildMerged(): MergedSpecies[] {
-    const result: MergedSpecies[] = [];
-    const seen = new Set<string>();
-    const mult = currentBody && !currentBody.wasDiscovered ? 5 : 1;
-
-    // Start with actual scans from the tracker
-    if (tracker) {
-      for (const s of tracker.species) {
-        const genus = s.genus || s.localName.split(" ")[0];
-        const range = s.clonalRange ?? CLONAL_RANGES[genus] ?? 200;
-        const value = s.value ?? 0;
-        result.push({
-          name: s.name,
-          localName: s.localName,
-          genus,
-          value,
-          clonalRange: range,
-          samples: s.samples,
-          analysed: s.analysed,
-          scanPositions: s.scanPositions,
-          predicted: false,
-          aboveThreshold: (value * mult) >= bioThreshold,
-        });
-        // Use localName for matching since predictions use English names
-        seen.add(s.localName.toLowerCase());
-        // Also match by genus+species pattern
-        const baseName = s.localName.split(" - ")[0].trim();
-        seen.add(baseName.toLowerCase());
-      }
-    }
-
-    // Collect genera already identified by scanning — only one species per genus on a planet
-    const confirmedGenera = new Set<string>();
-    for (const r of result) {
-      if (!r.predicted) confirmedGenera.add(r.genus.toLowerCase());
-    }
-
-    // Add predicted species that haven't been scanned yet
-    // Skip predictions from genera we've already identified (one per genus rule)
-    if (currentBody) {
-      for (const pred of currentBody.bioSpeciesPredicted) {
-        const key = pred.name.toLowerCase();
-        if (seen.has(key)) continue;
-        const genus = pred.name.split(" ")[0];
-        if (confirmedGenera.has(genus.toLowerCase())) continue; // genus already identified
-        seen.add(key);
-        result.push({
-          name: pred.codex_name ?? pred.name,
-          localName: pred.name,
-          genus,
-          value: pred.value,
-          clonalRange: pred.clonal_range,
-          samples: 0,
-          analysed: false,
-          scanPositions: [],
-          predicted: true,
-          aboveThreshold: (pred.value * mult) >= bioThreshold,
-        });
-      }
-    }
-
-    // Sort: active scans first, then unscanned predictions by value desc, then completed
-    return result.sort((a, b) => {
-      if (a.analysed !== b.analysed) return a.analysed ? 1 : -1;
-      if ((a.samples > 0) !== (b.samples > 0)) return a.samples > 0 ? -1 : 1;
-      return b.value - a.value;
-    });
-  }
+  const mergedSpecies = $derived(buildMergedSpecies(tracker, currentBody, bioThreshold));
 
   // Count what matters for "safe to leave"
   const speciesAboveThreshold = $derived(mergedSpecies.filter(s => s.aboveThreshold));
@@ -135,25 +50,8 @@
     }
   });
 
-  function fmt(v: number): string {
-    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
-    if (v >= 1_000) return (v / 1_000).toFixed(0) + "K";
-    return v.toString();
-  }
-
-  // Fallback clonal ranges by genus when species.clonalRange is null
-  const CLONAL_RANGES: Record<string, number> = {
-    Aleoida: 150, Bacterium: 500, Cactoida: 300, Clypeus: 150, Concha: 150,
-    Electricae: 1000, Fonticulua: 500, Frutexa: 150, Fumerola: 100,
-    Fungoida: 300, Osseus: 800, Recepta: 150, Stratum: 500, Tubus: 800, Tussock: 200,
-  };
-
-  function getClonalRange(species: BioSpecies): number {
-    if (species.clonalRange) return species.clonalRange;
-    // Look up by genus name
-    const genus = species.genus || species.localName.split(" ")[0];
-    return CLONAL_RANGES[genus] ?? 200;
-  }
+  const fmt = formatCredits;
+  const fmtDist = formatDistance;
 
   function sampleLabel(samples: number): string {
     if (samples === 0) return "Not started";
@@ -171,12 +69,6 @@
     return species.scanPositions.map(pos =>
       haversineDistance(pos.latitude, pos.longitude, status.latitude!, status.longitude!, tracker!.bodyRadius!),
     );
-  }
-
-
-  function fmtDist(meters: number): string {
-    if (meters >= 1000) return (meters / 1000).toFixed(1) + " km";
-    return Math.round(meters) + " m";
   }
 </script>
 

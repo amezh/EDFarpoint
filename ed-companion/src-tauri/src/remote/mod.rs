@@ -27,6 +27,7 @@ pub struct RemoteState {
     pub lifetime_stats: RwLock<LifetimeStats>,
     pub current_bio: RwLock<Value>,
     pub current_expedition: RwLock<Value>,
+    pub overlay_viewmodel: RwLock<Value>,
     pub event_tx: broadcast::Sender<String>,
     pub auth_token: RwLock<Option<String>>,
 }
@@ -42,6 +43,7 @@ impl RemoteState {
             lifetime_stats: RwLock::new(LifetimeStats::default()),
             current_bio: RwLock::new(Value::Null),
             current_expedition: RwLock::new(Value::Null),
+            overlay_viewmodel: RwLock::new(Value::Null),
             event_tx: tx,
             auth_token: RwLock::new(None),
         });

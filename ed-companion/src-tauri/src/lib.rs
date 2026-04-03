@@ -136,15 +136,11 @@ async fn is_overlay_open(app: tauri::AppHandle) -> bool {
     window::is_overlay_open(&app)
 }
 
-/// Return all cached state so the overlay can hydrate on open
+/// Return cached overlay view model so the overlay can hydrate on open
 #[tauri::command]
 fn get_overlay_state(state: tauri::State<'_, Arc<AppState>>) -> Value {
     serde_json::json!({
-        "system": *state.remote.current_system.read(),
-        "bio": *state.remote.current_bio.read(),
-        "trip": serde_json::to_value(&*state.remote.trip_stats.read()).unwrap_or(Value::Null),
-        "route": *state.remote.current_route.read(),
-        "status": *state.remote.current_status.read(),
+        "overlay": *state.remote.overlay_viewmodel.read(),
     })
 }
 
@@ -161,6 +157,7 @@ fn push_remote_state(
         "route" => *state.remote.current_route.write() = value.clone(),
         "bio" => *state.remote.current_bio.write() = value.clone(),
         "expedition" => *state.remote.current_expedition.write() = value.clone(),
+        "overlay" => *state.remote.overlay_viewmodel.write() = value.clone(),
         "trip" => {
             if let Ok(trip) = serde_json::from_value::<TripStats>(value.clone()) {
                 *state.remote.trip_stats.write() = trip;

@@ -9,6 +9,7 @@
   import { expeditionStore } from "$lib/stores/expedition.svelte";
   import { journalStore } from "$lib/stores/journal.svelte";
   import { lifetimeStore } from "$lib/stores/lifetime.svelte";
+  import { overlayViewModelStore } from "$lib/stores/overlayViewModel.svelte";
   import { routeStore } from "$lib/stores/route.svelte";
   import { statusStore } from "$lib/stores/status.svelte";
   import type { Body } from "$lib/stores/system.svelte";
@@ -41,14 +42,16 @@
     return v.toString();
   }
 
-  // Push state to remote WebSocket server and overlay window
-  $effect(() => { pushRemoteState("system", systemStore.current); emitToOverlay("system-state", systemStore.current); });
-  $effect(() => { pushRemoteState("route", routeStore.current); emitToOverlay("route-state", routeStore.current); });
+  // Push state to remote WebSocket server
+  $effect(() => { pushRemoteState("system", systemStore.current); });
+  $effect(() => { pushRemoteState("route", routeStore.current); });
   $effect(() => { pushRemoteState("expedition", expeditionStore.visited); });
-  $effect(() => { pushRemoteState("trip", tripStore.current); emitToOverlay("trip-state", tripStore.current); });
-  $effect(() => { pushRemoteState("status", statusStore.current); emitToOverlay("status-state", statusStore.current); });
-  $effect(() => { emitToOverlay("bio-state", bioStore.currentPlanet ?? null); });
-  $effect(() => { if (configStore.current) emitToOverlay("config-state", configStore.current); });
+  $effect(() => { pushRemoteState("trip", tripStore.current); });
+  $effect(() => { pushRemoteState("status", statusStore.current); });
+
+  // Push pre-computed view model to overlay window and Rust cache (single event replaces 6 individual pushes)
+  $effect(() => { const vm = overlayViewModelStore.current; emitToOverlay("overlay-viewmodel", vm); pushRemoteState("overlay", vm); });
+  $effect(() => { if (configStore.current) emitToOverlay("overlay-opacity", configStore.current.window?.overlay_opacity ?? 1); });
 
 
   // Track body discovery status: key = "systemAddr:bodyId" => wasDiscovered
@@ -567,12 +570,7 @@
     // "overlay-ready".  Respond by pushing the current state snapshot so the
     // overlay has data immediately without waiting for the next state change.
     const unlistenOverlayReady = listen<boolean>("overlay-ready", () => {
-      emitToOverlay("system-state", systemStore.current);
-      emitToOverlay("route-state",  routeStore.current);
-      emitToOverlay("trip-state",   tripStore.current);
-      emitToOverlay("status-state", statusStore.current);
-      if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet);
-      if (configStore.current) emitToOverlay("config-state", configStore.current);
+      emitToOverlay("overlay-viewmodel", overlayViewModelStore.current);
       emitToOverlay("overlay-opacity", configStore.current?.window?.overlay_opacity ?? 1);
     });
 

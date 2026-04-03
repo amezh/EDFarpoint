@@ -1,239 +1,42 @@
 <script lang="ts">
-  import { estimateCartoValue } from "$lib/utils/valueCalc";
+  import type { OverlayViewModel } from "$lib/types/overlay";
+  import { haversineDistance } from "$lib/stores/bio.svelte";
+  import { formatCredits, formatDistance, SCOOPABLE_STARS } from "$lib/utils/overlayCalc";
   import { invoke } from "@tauri-apps/api/core";
   import { emit, listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
 
-  let system = $state<any>(null);
-  let bio = $state<any>(null);
-  let trip = $state<any>(null);
-  let route = $state<any>(null);
-  let status = $state<any>(null);
-  let config = $state<any>(null);
-
-  const SCOOPABLE = new Set(["K", "G", "B", "F", "O", "A", "M"]);
-
-  const totalValue = $derived(
-    (trip?.cartoFSSValue ?? 0) + (trip?.cartoDSSValue ?? 0) +
-    (trip?.bioValueBase ?? 0) + (trip?.bioValueBonus ?? 0)
-  );
-  const crPerHour = $derived(
-    (trip?.playTimeSeconds ?? 0) > 60 ? totalValue / ((trip?.playTimeSeconds ?? 1) / 3600) : 0
-  );
-  const bodies = $derived((system?.bodies ?? []) as any[]);
-  const bioThreshold = $derived(config?.bio?.value_threshold ?? 0);
-  const cartoThreshold = $derived(config?.poi?.min_carto_value ?? 2_000_000);
-
-  function allBioAnalysed(body: any): boolean {
-    if (body.bioSignals <= 0) return false;
-    // Consider complete when no remaining unresolved species
-    return remainingSpecies(body).length === 0;
-  }
-
-  function isBioDone(b: any): boolean {
-    return b.personalStatus === "bio_complete" || allBioAnalysed(b);
-  }
-
-  // Bio targets: planets with bio signals, completed ones sorted to end
-  const bioTargets = $derived(
-    bodies.filter((b: any) => {
-      if (!b.planetClass || b.bioSignals <= 0) return false;
-      if (isBioDone(b)) return true; // keep completed, sort to end
-      if (bioThreshold > 0 && b.bioValueMax != null) {
-        const eff = b.bioValueMax * (!b.wasDiscovered ? 5 : 1);
-        if (eff < bioThreshold) return false;
-      }
-      return true;
-    }).sort((a: any, b: any) => {
-      const aDone = isBioDone(a) ? 1 : 0;
-      const bDone = isBioDone(b) ? 1 : 0;
-      if (aDone !== bDone) return aDone - bDone;
-      return (b.bioValueMax ?? 0) - (a.bioValueMax ?? 0);
-    })
-  );
-
-  function cartoVal(b: any): number {
-    return estimateCartoValue({
-      bodyType: b.type ?? b.planetClass ?? "",
-      terraformable: !!b.terraformable,
-      wasDiscovered: !!b.wasDiscovered,
-      wasMapped: !!b.wasMapped,
-      isFirstDiscoverer: !b.wasDiscovered,
-      isFirstMapper: !!b.mappedByUs || !b.wasMapped,
-      withDSS: true,
-      efficiencyBonus: true,
-    });
-  }
-
-  // Carto targets: high-value DSS planets (no bio), need mapping
-  const POI_TYPES = new Set(["Earthlike body", "Earth-like world", "Water world", "Ammonia world"]);
-  const cartoTargets = $derived(
-    bodies.filter((b: any) => {
-      if (b.starType || !b.planetClass || b.bioSignals > 0) return false;
-      if (b.personalStatus === "bio_complete") return false;
-      if (POI_TYPES.has(b.type)) return true;
-      if (b.terraformable) return true;
-      return cartoVal(b) >= cartoThreshold;
-    }).sort((a: any, b: any) => cartoVal(b) - cartoVal(a))
-  );
-  const routeSystems = $derived((route?.systems ?? []) as any[]);
-  const bioSpecies = $derived((bio?.species ?? []) as any[]);
-  const bodyRadius = $derived(bio?.bodyRadius ?? null);
-  const lat = $derived(status?.latitude ?? null);
-  const lon = $derived(status?.longitude ?? null);
-
-  // Find the matching body from system store to get predictions
-  const currentBody = $derived(
-    bio?.bodyId ? bodies.find((b: any) => b.bodyId === bio.bodyId) : null
-  );
-
-  // Merge actual scans with predicted species (same logic as BioTracker)
-  const mergedSpecies = $derived((() => {
-    const result: any[] = [];
-    const seen = new Set<string>();
-    const confirmedGenera = new Set<string>();
-
-    // 1. Actual scans from bio store (skip fully analysed — they're done)
-    for (const s of bioSpecies) {
-      const genus = s.genus || s.localName?.split(" ")[0] || "";
-      if (s.analysed) {
-        // Track analysed genera so we also skip their predictions
-        confirmedGenera.add(genus.toLowerCase());
-        continue;
-      }
-      result.push({ ...s, predicted: false, genus });
-      seen.add((s.localName || "").toLowerCase().split(" - ")[0].trim());
-      confirmedGenera.add(genus.toLowerCase());
-    }
-
-    // 2. Predicted species not yet scanned (skip genera already confirmed/analysed)
-    if (currentBody?.bioSpeciesPredicted) {
-      for (const pred of currentBody.bioSpeciesPredicted) {
-        if (pred.confidence === "analysed") continue;
-        const key = pred.name.toLowerCase();
-        if (seen.has(key)) continue;
-        const genus = pred.name.split(" ")[0];
-        if (confirmedGenera.has(genus.toLowerCase())) continue;
-        seen.add(key);
-        result.push({
-          name: pred.codex_name ?? pred.name,
-          localName: pred.name,
-          genus,
-          value: pred.value,
-          clonalRange: pred.clonal_range,
-          samples: 0,
-          analysed: false,
-          scanPositions: [],
-          predicted: true,
-        });
-      }
-    }
-
-    // Sort: active first, then unscanned by value desc
-    return result.sort((a: any, b: any) => {
-      if ((a.samples > 0) !== (b.samples > 0)) return a.samples > 0 ? -1 : 1;
-      return (b.value ?? 0) - (a.value ?? 0);
-    });
-  })());
-
-  const onPlanet = $derived(
-    (!!(bio?.bodyId) || (currentBody != null && currentBody.bioSpeciesPredicted?.length > 0))
-    && mergedSpecies.length > 0  // fall through to system view when all bio is done
-  );
-
-  const CLONAL: Record<string, number> = {
-    Aleoida: 150, Bacterium: 500, Cactoida: 300, Clypeus: 150, Concha: 150,
-    Electricae: 1000, Fonticulua: 500, Frutexa: 150, Fumerola: 100,
-    Fungoida: 300, Osseus: 800, Recepta: 150, Stratum: 500, Tubus: 800, Tussock: 200,
-  };
-
-  // Status dot: ring = blue if DSS done, fill depends on bio progress
-  function statusDot(body: any): { ring: string; fill: string } {
-    const dssed = body.mapped || body.personalStatus === "dss";
-    const ring = dssed ? "#60a5fa" : "#6b7280"; // blue-400 / gray-500
-    let fill = "none";
-    if (body.bioSignals > 0) {
-      if (body.personalStatus === "bio_complete" || allBioAnalysed(body)) fill = "#4ade80"; // green-400
-      else if (body.personalStatus === "landed"
-        || body.bioSpeciesPredicted?.some((s: any) => s.confidence === 'scanned' || s.confidence === 'analysed')
-      ) fill = "#fbbf24"; // amber-400
-    } else {
-      if (dssed) fill = "#4ade80"; // green-400
-    }
-    return { ring, fill };
-  }
-
-  /** Get remaining (un-picked) species for a body, filtering out analysed
-   *  species AND other species from the same genus as an analysed one. */
-  function remainingSpecies(body: any): any[] {
-    const preds = body.bioSpeciesPredicted ?? [];
-    const doneGenera = new Set<string>();
-    for (const s of preds) {
-      if (s.confidence === 'analysed') doneGenera.add(s.name.split(" ")[0].toLowerCase());
-    }
-    return preds.filter((s: any) => {
-      const g = s.name.split(" ")[0].toLowerCase();
-      return !doneGenera.has(g);
-    });
-  }
-
-  /** Sum remaining species value (max per genus). */
-  function remainingValue(body: any): number {
-    const rem = remainingSpecies(body);
-    const byGenus = new Map<string, number>();
-    for (const s of rem) {
-      const g = s.name.split(" ")[0].toLowerCase();
-      byGenus.set(g, Math.max(byGenus.get(g) ?? 0, s.value ?? 0));
-    }
-    let total = 0;
-    for (const v of byGenus.values()) total += v;
-    return total;
-  }
-
-  function fmt(v: number): string {
-    if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
-    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
-    if (v >= 1_000) return (v / 1_000).toFixed(0) + "K";
-    return v.toString();
-  }
-
-  function fmtDist(m: number): string {
-    if (m >= 1000) return (m / 1000).toFixed(1) + "km";
-    return Math.round(m) + "m";
-  }
-
-  function haversine(lat1: number, lon1: number, lat2: number, lon2: number, rKm: number): number {
-    const toRad = (d: number) => (d * Math.PI) / 180;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-    return 2 * rKm * Math.asin(Math.sqrt(a)) * 1000;
-  }
-
+  let vm = $state<OverlayViewModel | null>(null);
   let opacity = $state(1);
+
+  const fmt = formatCredits;
+  const fmtDist = formatDistance;
+
+  // Live haversine distances — computed locally at 1Hz from position updates
+  const speciesDistances = $derived((() => {
+    if (!vm?.onPlanet || !vm.position || !vm.bodyRadius) return new Map<string, number[]>();
+    const result = new Map<string, number[]>();
+    for (const sp of vm.mergedSpecies) {
+      if (sp.samples <= 0 || sp.analysed || sp.scanPositions.length === 0) continue;
+      const dists = sp.scanPositions.map(p =>
+        haversineDistance(p.latitude, p.longitude, vm!.position!.lat, vm!.position!.lon, vm!.bodyRadius!),
+      );
+      result.set(sp.localName, dists);
+    }
+    return result;
+  })());
 
   onMount(() => {
     Promise.all([
-      listen("system-state", (e) => { system = e.payload; }),
-      listen("bio-state",    (e) => { bio    = e.payload; }),
-      listen("trip-state",   (e) => { trip   = e.payload; }),
-      listen("route-state",  (e) => { route  = e.payload; }),
-      listen("status-state", (e) => { status = e.payload; }),
-      listen("config-state", (e) => { config = e.payload; }),
+      listen<OverlayViewModel>("overlay-viewmodel", (e) => { vm = e.payload; }),
       listen<number>("overlay-opacity", (e) => { opacity = e.payload; }),
     ]).then(() => {
       emit("overlay-ready", true).catch(() => {});
     }).catch(() => {});
 
-    // Also hydrate from the backend cache as a fallback (handles
-    // system/route/bio/status which are stored as raw JSON).
+    // Hydrate from backend cache as fallback
     invoke("get_overlay_state").then((v: any) => {
-      if (v.system) system = v.system;
-      if (v.bio)    bio    = v.bio;
-      if (v.route)  route  = v.route;
-      if (v.status) status = v.status;
-      // Note: v.trip uses Rust snake_case fields that don't match the
-      // frontend TripState interface — rely on events for trip data instead.
+      if (v.overlay) vm = v.overlay;
     }).catch(() => {});
   });
 </script>
@@ -258,27 +61,28 @@
     </svg>
   </div>
 
+  {#if vm}
   <!-- Header -->
   <div class="flex items-center gap-2 mb-1.5">
-    <span class="text-orange-400 font-bold">{fmt(totalValue)} Cr</span>
-    {#if crPerHour > 0}
-      <span class="text-cyan-400">{fmt(crPerHour)}/h</span>
+    <span class="text-orange-400 font-bold">{fmt(vm.totalValue)} Cr</span>
+    {#if vm.crPerHour > 0}
+      <span class="text-cyan-400">{fmt(vm.crPerHour)}/h</span>
     {/if}
-    <span class="text-gray-500">{trip?.systemsVisited ?? 0} sys</span>
-    <span class="text-gray-500">{trip?.bioSpeciesAnalysed ?? 0} bio</span>
+    <span class="text-gray-500">{vm.systemsVisited} sys</span>
+    <span class="text-gray-500">{vm.bioSpeciesAnalysed} bio</span>
   </div>
 
   <!-- Bio tracker — only when on planet surface -->
-  {#if onPlanet}
-    {@const bioMult = currentBody && !currentBody.wasDiscovered ? 5 : 1}
+  {#if vm.onPlanet}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
-      <div class="text-green-400 font-bold text-[10px] mb-0.5">{bio?.bodyName}</div>
-      {#each mergedSpecies as sp (sp.localName)}
+      <div class="text-green-400 font-bold text-[10px] mb-0.5">{vm.bioBodyName}</div>
+      {#each vm.mergedSpecies as sp (sp.localName)}
         {@const done = sp.analysed}
         {@const active = sp.samples > 0 && !done}
         {@const predicted = sp.predicted}
-        {@const genus = sp.genus || sp.localName?.split(" ")[0] || ""}
-        {@const range = sp.clonalRange ?? CLONAL[genus] ?? 200}
+        {@const range = sp.clonalRange}
+        {@const dists = speciesDistances.get(sp.localName) ?? []}
+        {@const allFar = dists.length > 0 && dists.every((d) => d >= range)}
         <div class="flex items-center gap-1 py-0.5 {done ? 'opacity-30' : ''}">
           {#if predicted}
             <span class="text-amber-400 shrink-0">?</span>
@@ -286,7 +90,7 @@
           <span class="flex-1 truncate {done ? 'line-through text-gray-600' : active ? 'text-green-400' : predicted ? 'text-amber-300' : 'text-gray-300'}">
             {sp.localName}
           </span>
-          <span class="text-[9px] text-amber-400/60 font-mono shrink-0">{fmt((sp.value ?? 0) * bioMult)}</span>
+          <span class="text-[9px] text-amber-400/60 font-mono shrink-0">{fmt((sp.value ?? 0) * vm.bioMultiplier)}</span>
           <span class="text-[9px] text-gray-500 shrink-0">{fmtDist(range)}</span>
           {#if !predicted}
             <span class="flex gap-px">
@@ -296,9 +100,7 @@
             </span>
           {/if}
         </div>
-        {#if active && sp.scanPositions?.length > 0 && lat != null && bodyRadius}
-          {@const dists = sp.scanPositions.map((p: any) => haversine(p.latitude, p.longitude, lat, lon, bodyRadius))}
-          {@const allFar = dists.every((d: number) => d >= range)}
+        {#if active && dists.length > 0}
           <div class="flex gap-1 text-[9px] ml-2 mb-0.5">
             {#each dists as d}
               <span class="font-bold {d >= range ? 'text-green-400' : 'text-red-400'}">{fmtDist(d)}/{fmtDist(range)}</span>
@@ -311,99 +113,78 @@
   {/if}
 
   <!-- Expedition stats — when NOT on planet surface -->
-  {#if !onPlanet}
+  {#if !vm.onPlanet}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
       <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Expedition</div>
       <div class="flex items-center justify-between py-0.5 text-[10px]">
         <span class="text-gray-400">Carto (FSS)</span>
-        <span class="text-ed-amber font-mono">{fmt(trip?.cartoFSSValue ?? 0)} Cr</span>
+        <span class="text-ed-amber font-mono">{fmt(vm.trip.cartoFSSValue)} Cr</span>
       </div>
       <div class="flex items-center justify-between py-0.5 text-[10px]">
         <span class="text-gray-400">Carto (DSS)</span>
-        <span class="text-ed-amber font-mono">{fmt(trip?.cartoDSSValue ?? 0)} Cr</span>
+        <span class="text-ed-amber font-mono">{fmt(vm.trip.cartoDSSValue)} Cr</span>
       </div>
       <div class="flex items-center justify-between py-0.5 text-[10px]">
         <span class="text-gray-400">Bio scans</span>
-        <span class="text-green-400 font-mono">{fmt((trip?.bioValueBase ?? 0) + (trip?.bioValueBonus ?? 0))} Cr</span>
+        <span class="text-green-400 font-mono">{fmt(vm.trip.bioValue)} Cr</span>
       </div>
       <div class="flex items-center justify-between py-0.5 text-[10px]">
         <span class="text-gray-400">Species</span>
-        <span class="text-gray-300">{trip?.bioSpeciesAnalysed ?? 0} analysed</span>
+        <span class="text-gray-300">{vm.trip.bioSpeciesAnalysed} analysed</span>
       </div>
       <div class="flex items-center justify-between py-0.5 text-[10px]">
         <span class="text-gray-400">Systems</span>
-        <span class="text-gray-300">{trip?.systemsVisited ?? 0} visited</span>
+        <span class="text-gray-300">{vm.trip.systemsVisited} visited</span>
       </div>
       <div class="flex items-center justify-between py-0.5 text-[10px]">
         <span class="text-gray-400">Jumps</span>
-        <span class="text-gray-300">{trip?.jumps ?? 0}</span>
+        <span class="text-gray-300">{vm.trip.jumps}</span>
       </div>
     </div>
   {/if}
 
   <!-- System bodies -->
-  {#if !onPlanet && system}
+  {#if !vm.onPlanet && vm.systemName}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
-      <div class="text-amber-400 font-bold text-[10px]">{system?.name}</div>
-      <div class="text-[9px] text-gray-500">{bodies.filter((b: any) => b.starType || b.planetClass).length}/{system?.bodyCount ?? "?"} bodies</div>
+      <div class="text-amber-400 font-bold text-[10px]">{vm.systemName}</div>
+      <div class="text-[9px] text-gray-500">{vm.scannedBodyCount}/{vm.bodyCount ?? "?"} bodies</div>
 
       <!-- Bio targets -->
-      {#if bioTargets.length > 0}
+      {#if vm.bioTargets.length > 0}
         <div class="text-green-400 font-bold text-[9px] uppercase tracking-wider mt-1 mb-0.5">Bio targets</div>
-        {#each bioTargets.slice(0, 8) as body}
-          {@const done = isBioDone(body)}
-          {@const mult = !body.wasDiscovered ? 5 : 1}
-          {@const dot = statusDot(body)}
-          {@const remVal = remainingValue(body)}
-          {@const remSpecies = remainingSpecies(body)}
-          {@const doneSpecies = done ? (body.bioSpeciesPredicted ?? []).filter((s: any) => s.confidence === 'analysed') : []}
-          {@const doneVal = doneSpecies.reduce((sum: number, s: any) => sum + (s.value ?? 0), 0)}
-          <div class="flex items-center gap-1 py-0.5 text-[10px] {done ? 'opacity-50' : ''}">
-            <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke={dot.ring} stroke-width="1.5"/>{#if dot.fill !== 'none'}<circle cx="5" cy="5" r="2.5" fill={dot.fill}/>{/if}</svg>
-            <span class="truncate flex-1 {done ? 'line-through' : ''}">{body.shortName}</span>
-            <span class="text-green-400 shrink-0">{body.bioSignals}bio</span>
-            {#if !body.mapped}<span class="text-blue-400 shrink-0 text-[9px]">DSS</span>{/if}
-            {#if body.landable}<span class="text-amber-400 shrink-0 text-[9px]">L</span>{/if}
-            {#if done}
-              <span class="text-green-400/60 font-mono shrink-0">{fmt(doneVal * mult)}</span>
-            {:else if remVal > 0}
-              <span class="text-green-400/60 font-mono shrink-0">{fmt(remVal * mult)}</span>
+        {#each vm.bioTargets as target (target.bodyId)}
+          <div class="flex items-center gap-1 py-0.5 text-[10px] {target.done ? 'opacity-50' : ''}">
+            <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke={target.dot.ring} stroke-width="1.5"/>{#if target.dot.fill !== 'none'}<circle cx="5" cy="5" r="2.5" fill={target.dot.fill}/>{/if}</svg>
+            <span class="truncate flex-1 {target.done ? 'line-through' : ''}">{target.shortName}</span>
+            <span class="text-green-400 shrink-0">{target.bioSignals}bio</span>
+            {#if !target.mapped}<span class="text-blue-400 shrink-0 text-[9px]">DSS</span>{/if}
+            {#if target.landable}<span class="text-amber-400 shrink-0 text-[9px]">L</span>{/if}
+            {#if target.displayValue > 0}
+              <span class="text-green-400/60 font-mono shrink-0">{fmt(target.displayValue)}</span>
             {/if}
           </div>
-          {#if done && doneSpecies.length > 0}
-            {#each doneSpecies as sp}
-              <div class="flex items-center gap-1 text-[9px] ml-3 leading-tight opacity-50">
-                <span class="truncate flex-1 line-through">{sp.name}</span>
-                <span class="font-mono shrink-0 text-green-400/50">{fmt(sp.value * mult)}</span>
-              </div>
-            {/each}
-          {:else if !done && remSpecies.length > 0}
-            {#each remSpecies as sp}
-              <div class="flex items-center gap-1 text-[9px] ml-3 leading-tight
-                {sp.confidence === 'scanned' ? 'text-green-400' : ''}">
-                <span class="truncate flex-1">{sp.name}</span>
-                <span class="font-mono shrink-0 text-green-400/50">{fmt(sp.value * mult)}</span>
-              </div>
-            {/each}
-          {/if}
+          {#each target.species as sp}
+            <div class="flex items-center gap-1 text-[9px] ml-3 leading-tight
+              {target.done ? 'opacity-50' : ''} {sp.confidence === 'scanned' ? 'text-green-400' : ''}">
+              <span class="truncate flex-1 {target.done ? 'line-through' : ''}">{sp.name}</span>
+              <span class="font-mono shrink-0 text-green-400/50">{fmt(sp.value)}</span>
+            </div>
+          {/each}
         {/each}
       {/if}
 
       <!-- Carto targets (DSS) -->
-      {#if cartoTargets.length > 0}
+      {#if vm.cartoTargets.length > 0}
         <div class="text-amber-400 font-bold text-[9px] uppercase tracking-wider mt-1 mb-0.5">Map these</div>
-        {#each cartoTargets.slice(0, 5) as body}
-          {@const val = cartoVal(body)}
-          {@const dot = statusDot(body)}
-          {@const dssed = body.mapped || body.personalStatus === "dss"}
+        {#each vm.cartoTargets as target}
           <div class="flex items-center gap-1 py-0.5 text-[10px]">
-            <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke={dot.ring} stroke-width="1.5"/>{#if dot.fill !== 'none'}<circle cx="5" cy="5" r="2.5" fill={dot.fill}/>{/if}</svg>
-            <span class="truncate flex-1">{body.shortName}</span>
-            {#if body.type === "Water world" || body.type === "Ammonia world" || body.type === "Earthlike body" || body.type === "Earth-like world"}
-              <span class="text-amber-400 shrink-0 text-[9px]">{body.type === "Water world" ? "WW" : body.type === "Ammonia world" ? "AW" : "ELW"}</span>
+            <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke={target.dot.ring} stroke-width="1.5"/>{#if target.dot.fill !== 'none'}<circle cx="5" cy="5" r="2.5" fill={target.dot.fill}/>{/if}</svg>
+            <span class="truncate flex-1">{target.shortName}</span>
+            {#if target.typeTag}
+              <span class="text-amber-400 shrink-0 text-[9px]">{target.typeTag}</span>
             {/if}
-            {#if !dssed}<span class="text-blue-400 shrink-0 text-[9px]">DSS</span>{/if}
-            <span class="text-amber-400/60 font-mono shrink-0">{fmt(val)}</span>
+            {#if !target.mapped}<span class="text-blue-400 shrink-0 text-[9px]">DSS</span>{/if}
+            <span class="text-amber-400/60 font-mono shrink-0">{fmt(target.displayValue)}</span>
           </div>
         {/each}
       {/if}
@@ -411,19 +192,19 @@
   {/if}
 
   <!-- Route -->
-  {#if routeSystems.length > 1}
+  {#if vm.route.nextSystems.length > 1}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
-      <div class="text-[9px] text-gray-500">{route?.remainingJumps} jumps → {route?.destination}</div>
-      {#each routeSystems.slice(0, 3) as sys}
+      <div class="text-[9px] text-gray-500">{vm.route.remainingJumps} jumps → {vm.route.destination}</div>
+      {#each vm.route.nextSystems as sys}
         <div class="flex items-center justify-between py-0.5 text-[10px]">
-          <span class="truncate flex-1 {SCOOPABLE.has(sys.starClass) ? 'text-amber-400' : 'text-gray-400'}">{sys.name}</span>
-          <span class="{sys.starClass === 'N' ? 'text-cyan-400' : SCOOPABLE.has(sys.starClass) ? 'text-amber-400' : 'text-gray-500'}">{sys.starClass}</span>
+          <span class="truncate flex-1 {SCOOPABLE_STARS.has(sys.starClass) ? 'text-amber-400' : 'text-gray-400'}">{sys.name}</span>
+          <span class="{sys.starClass === 'N' ? 'text-cyan-400' : SCOOPABLE_STARS.has(sys.starClass) ? 'text-amber-400' : 'text-gray-500'}">{sys.starClass}</span>
         </div>
       {/each}
     </div>
   {/if}
 
-  {#if !onPlanet && !system && routeSystems.length === 0}
+  {:else}
     <div class="text-gray-500 text-center py-4">Waiting for data from main window...</div>
   {/if}
 
