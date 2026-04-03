@@ -1,5 +1,6 @@
 <script lang="ts">
   import { systemStore, type Body, type RingInfo } from "$lib/stores/system.svelte";
+  import { estimateCartoValue } from "$lib/utils/valueCalc";
 
   let svgEl: SVGSVGElement | undefined = $state();
   let cW = $state(800);
@@ -140,7 +141,8 @@
     const moonStep = maxMoons > 0 ? Math.min(moonZoneH / maxMoons, cW / nPlanets * 0.9) : 40;
 
     const planetGapW = cW / (Math.max(nPlanets, 1) + 0.5);
-    const starR = Math.min(starZone * 0.7, planetGapW * 0.6);
+    const bodyScale = 0.75;
+    const starR = Math.min(starZone * 0.7, planetGapW * 0.6) * bodyScale;
     const planetR = Math.min(planetGapW * 0.35, starR * 0.7);
     const moonR = Math.min(moonStep * 0.35, planetR * 0.8);
 
@@ -266,6 +268,45 @@
     if (b.starType) return b.starType + (b.starSubclass ?? "");
     return { "Earthlike body": "ELW", "Earth-like world": "ELW", "Water world": "WW", "Ammonia world": "AW", "High metal content world": "HMC", "High metal content body": "HMC", "Rocky body": "Rk", "Rocky ice body": "RI", "Rocky Ice world": "RI", "Icy body": "Icy" }[b.planetClass] ?? "";
   }
+
+  function statusTag(b: Body): string {
+    if (b.starType) return "";
+    const s = b.personalStatus;
+    if (s === "bio_complete") return "Bio \u2713";
+    if (s === "dss" || b.mapped) return b.bioSignals > 0 ? "DSS" : "DSS \u2713";
+    if (s === "landed" || s === "visited") return "FSS";
+    if (s === "fss") return "FSS";
+    return "";
+  }
+
+  function statusColor(b: Body): string {
+    const s = b.personalStatus;
+    if (s === "bio_complete") return "#22cc66";
+    if (s === "dss" || b.mapped) return "#4a9eff";
+    if (s === "fss" || s === "visited" || s === "landed") return "#e88c00";
+    return "rgba(255,255,255,0.3)";
+  }
+
+  function formatCr(n: number): string {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    if (n >= 1_000) return (n / 1_000).toFixed(0) + "K";
+    return n.toString();
+  }
+
+  function bodyCrValue(b: Body): string {
+    if (b.starType) return "";
+    if (!b.planetClass) return "";
+    const val = estimateCartoValue({
+      bodyType: b.planetClass,
+      terraformable: b.terraformable,
+      wasDiscovered: b.wasDiscovered,
+      wasMapped: b.wasMapped,
+      massEM: b.massEM ?? undefined,
+      withDSS: b.mapped,
+      efficiencyBonus: false,
+    });
+    return formatCr(val) + " Cr";
+  }
 </script>
 
 <div class="w-full h-full overflow-hidden">
@@ -324,6 +365,20 @@
           <text x={p.x} y={p.y + p.r + Math.max(7, p.r * 0.35) * 2 + 2}
             text-anchor="middle" fill="rgba(255,255,255,0.25)"
             font-size={Math.max(5, p.r * 0.26)} font-family="monospace">{typeLabel(p.body)}{p.body.terraformable ? " T" : ""}</text>
+
+          <!-- Status tag (FSS / DSS / Bio) -->
+          {#if statusTag(p.body)}
+            <text x={p.x} y={p.y + p.r + Math.max(7, p.r * 0.35) * 3 + 2}
+              text-anchor="middle" fill={statusColor(p.body)}
+              font-size={Math.max(5, p.r * 0.24)} font-family="monospace" font-weight="bold">{statusTag(p.body)}</text>
+          {/if}
+
+          <!-- CR value -->
+          {#if bodyCrValue(p.body)}
+            <text x={p.x} y={p.y + p.r + Math.max(7, p.r * 0.35) * (statusTag(p.body) ? 4 : 3) + 2}
+              text-anchor="middle" fill="rgba(255,255,255,0.35)"
+              font-size={Math.max(5, p.r * 0.22)} font-family="monospace">{bodyCrValue(p.body)}</text>
+          {/if}
         </g>
       {/each}
     </svg>
