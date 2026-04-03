@@ -64,7 +64,7 @@
           temperature: null, volcanism: "", landable: false, terraformable: false,
           mapped: false, mappedByUs: false, bioSignals: 0, geoSignals: 0,
           bioSpeciesPredicted: [], bioValueMin: null, bioValueMax: null,
-          estimatedValue: null, wasDiscovered: false, wasMapped: false, wasFootfalled: false,
+          massEM: null, estimatedValue: null, wasDiscovered: false, wasMapped: false, wasFootfalled: false,
           personalStatus: "unvisited", parents: [], rings: [], confirmedGenuses: [],
           semiMajorAxis: null, eccentricity: null, orbitalInclination: null, orbitalPeriod: null,
           edsmDiscoverer: null, edsmDiscoveryDate: null,

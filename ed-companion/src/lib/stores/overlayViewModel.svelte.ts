@@ -57,10 +57,12 @@ function buildViewModel(
   // Merged species
   const merged = buildMergedSpecies(bio, currentBody, bioThreshold);
 
-  // On-planet check: same logic as overlay had
+  // On-planet check: show bio tracker when there are unfinished species.
+  // Fall through to system view when all bio on this body is complete.
+  const hasUnfinishedBio = merged.some((s) => !s.analysed);
   const onPlanet =
     (!!bio?.bodyId || (currentBody != null && (currentBody.bioSpeciesPredicted?.length ?? 0) > 0)) &&
-    merged.length > 0;
+    hasUnfinishedBio;
 
   const bioMult = currentBody && !currentBody.wasDiscovered ? 5 : 1;
 
