@@ -56,6 +56,8 @@
 
   // Track body discovery status: key = "systemAddr:bodyId" => wasDiscovered
   const bodyDiscoveryMap = new Map<string, boolean>();
+  const lifetimeBodyDiscoveryMap = new Map<string, boolean>();
+  let lifetimeReady = false; // true after initial lifetime processing completes
 
   function bodyKey(systemAddr: number, bodyId: number) {
     return `${systemAddr}:${bodyId}`;
@@ -170,6 +172,7 @@
     switch (event) {
       case "FSDJump":
       case "Location":
+        bioStore.leavePlanet(); // Clear any active planet tracker on system change
         systemStore.setSystem(data);
         expeditionStore.enterSystem(data);
         // Fetch EDSM body data in background for discoverer info
@@ -213,7 +216,6 @@
             }
           }
         } else {
-          systemStore.addOrUpdateBody(data);
           const wasDiscovered = !!(data.WasDiscovered);
           const isFirst = !wasDiscovered;
 
@@ -300,6 +302,7 @@
             terraformable: body.terraformable,
             wasDiscovered: body.wasDiscovered,
             wasMapped: body.wasMapped,
+            massEM: body.massEM ?? undefined,
           };
           const dssValue = estimateCartoValue({ ...common, withDSS: true });
           const fssValue = estimateCartoValue({ ...common, withDSS: false });
@@ -383,6 +386,7 @@
       }
 
       case "LeaveBody":
+      case "SupercruiseEntry":
         bioStore.leavePlanet();
         break;
 
@@ -443,9 +447,9 @@
           const bid = data.BodyID as number;
           const bk = bodyKey(sysAddr, bid);
 
-          // Track for bio bonus
+          // Track for bio bonus (use lifetime-specific map)
           if (sysAddr && bid) {
-            bodyDiscoveryMap.set(bk, wasDiscovered);
+            lifetimeBodyDiscoveryMap.set(bk, wasDiscovered);
           }
 
           const planetClass = (data.PlanetClass as string) ?? "";
@@ -494,7 +498,7 @@
           const baseValue = getSpeciesValue(lsName);
           const sysAddr = data.SystemAddress as number;
           const bid = data.Body as number;
-          const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bid)) ?? true;
+          const wasDisc = lifetimeBodyDiscoveryMap.get(bodyKey(sysAddr, bid)) ?? true;
           lifetimeStore.addBioSpecies(lsName, baseValue, !wasDisc);
         }
         break;
@@ -552,6 +556,7 @@
         } else {
           statsLoading = false;
           statsProgress = "";
+          lifetimeReady = true;
         }
       }
 
@@ -564,7 +569,9 @@
 
     // Live events (after startup)
     const unlistenJournal = listen<unknown>("journal-event", (event) => {
-      handleJournalEvent(event.payload as Record<string, unknown>);
+      const data = event.payload as Record<string, unknown>;
+      handleJournalEvent(data);
+      if (lifetimeReady) handleLifetimeEvent(data);
     });
 
     const unlistenStatus = listen<unknown>("status-update", (event) => {

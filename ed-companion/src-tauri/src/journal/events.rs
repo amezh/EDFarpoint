@@ -20,6 +20,7 @@ pub enum JournalEvent {
     ScanOrganic(ScanOrganicEvent),
     ApproachBody(ApproachBodyEvent),
     LeaveBody(LeaveBodyEvent),
+    SupercruiseEntry(SupercruiseEntryEvent),
     Touchdown(TouchdownEvent),
     Liftoff(LiftoffEvent),
     Docked(DockedEvent),
@@ -249,6 +250,13 @@ pub struct LeaveBodyEvent {
     pub SystemAddress: u64,
     pub Body: String,
     pub BodyID: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupercruiseEntryEvent {
+    pub timestamp: String,
+    pub StarSystem: String,
+    pub SystemAddress: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

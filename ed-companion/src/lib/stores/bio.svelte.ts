@@ -126,7 +126,7 @@ function createBioStore() {
             : [];
           break;
         case "Sample":
-          species.samples = 2;
+          species.samples = species.samples === 0 ? 1 : 2;
           if (latitude != null && longitude != null) {
             species.scanPositions.push({ latitude, longitude });
           }
@@ -140,8 +140,10 @@ function createBioStore() {
           break;
       }
 
-      // Update current planet ref if it matches
-      if (currentPlanetState && currentPlanetState.systemAddress === systemAddress && currentPlanetState.bodyId === bodyId) {
+      // If we're currently on this planet, ensure currentPlanetState stays in sync.
+      // Only reassign if it's a different reference (e.g. planet was created fresh above).
+      if (currentPlanetState && currentPlanetState.systemAddress === systemAddress && currentPlanetState.bodyId === bodyId
+          && currentPlanetState !== planet) {
         currentPlanetState = planet;
       }
     },

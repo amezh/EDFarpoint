@@ -86,7 +86,7 @@ function createExpeditionStore() {
       currentSystemName = name;
 
       // Don't add duplicate (e.g. Location event for same system)
-      if (visited.some(s => s.name === name)) return;
+      if (visited.some(s => s.address === address)) return;
 
       const entry: VisitedSystem = {
         name,

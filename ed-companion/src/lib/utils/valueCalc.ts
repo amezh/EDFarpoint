@@ -184,11 +184,11 @@ export function cartoBreakdown(p: {
     });
     const optFull = estimateCartoValue({
       ...shared, wasDiscovered: false, wasMapped: false,
-      withDSS: true, efficiencyBonus: true,
+      isFirstMapper: true, withDSS: true, efficiencyBonus: true,
     });
     const optNoDisc = estimateCartoValue({
       ...shared, wasDiscovered: true, wasMapped: false,
-      withDSS: true, efficiencyBonus: true,
+      isFirstMapper: true, withDSS: true, efficiencyBonus: true,
     });
     firstDiscBonus = [fssFirstDisc - baseValue, optFull - optNoDisc];
   }

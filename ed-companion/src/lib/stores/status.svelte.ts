@@ -49,6 +49,7 @@ export interface StatusFlags {
 
 export interface StatusState {
   flags: number;
+  flags2: number;
   parsed: Partial<StatusFlags>;
   fuel: { main: number; reserve: number } | null;
   cargo: number;
@@ -59,32 +60,61 @@ export interface StatusState {
   bodyName: string | null;
 }
 
-function parseFlags(flags: number): Partial<StatusFlags> {
+function parseFlags(flags: number, flags2: number): Partial<StatusFlags> {
   return {
+    // Flags (bits 0-30)
     docked: !!(flags & (1 << 0)),
     landed: !!(flags & (1 << 1)),
     landingGear: !!(flags & (1 << 2)),
     shields: !!(flags & (1 << 3)),
     supercruise: !!(flags & (1 << 4)),
+    faSoff: !!(flags & (1 << 5)),
     hardpoints: !!(flags & (1 << 6)),
     inWing: !!(flags & (1 << 7)),
     lights: !!(flags & (1 << 8)),
+    cargoScoop: !!(flags & (1 << 9)),
+    silentRunning: !!(flags & (1 << 10)),
     scooping: !!(flags & (1 << 11)),
+    srvHandbrake: !!(flags & (1 << 12)),
+    srvTurret: !!(flags & (1 << 13)),
+    srvNearShip: !!(flags & (1 << 14)),
+    srvDriveAssist: !!(flags & (1 << 15)),
+    massLocked: !!(flags & (1 << 16)),
     fsdCharging: !!(flags & (1 << 18)),
+    fsdCooldown: !!(flags & (1 << 17)),
     lowFuel: !!(flags & (1 << 19)),
     overheating: !!(flags & (1 << 20)),
     hasLatLon: !!(flags & (1 << 21)),
+    inDanger: !!(flags & (1 << 22)),
+    interdicted: !!(flags & (1 << 23)),
     inMainShip: !!(flags & (1 << 24)),
+    inFighter: !!(flags & (1 << 25)),
     inSRV: !!(flags & (1 << 26)),
     analysisMode: !!(flags & (1 << 27)),
-    onFoot: !!(flags & (1 << 30)),
-    onFootOnPlanet: !!(flags & (1 << 34)),
+    nightVision: !!(flags & (1 << 28)),
+    altFromAvgRadius: !!(flags & (1 << 29)),
+    fsdJump: !!(flags & (1 << 30)),
+    srvHighBeam: !!(flags & (1 << 31)),
+    // Flags2 (Odyssey on-foot flags)
+    onFoot: !!(flags2 & (1 << 0)),
+    inTaxi: !!(flags2 & (1 << 1)),
+    inMulticrew: !!(flags2 & (1 << 2)),
+    onFootInStation: !!(flags2 & (1 << 3)),
+    onFootOnPlanet: !!(flags2 & (1 << 4)),
+    aimDownSight: !!(flags2 & (1 << 5)),
+    lowOxygen: !!(flags2 & (1 << 6)),
+    lowHealth: !!(flags2 & (1 << 7)),
+    cold: !!(flags2 & (1 << 8)),
+    hot: !!(flags2 & (1 << 9)),
+    veryCold: !!(flags2 & (1 << 10)),
+    veryHot: !!(flags2 & (1 << 11)),
   };
 }
 
 function createStatusStore() {
   let state = $state<StatusState>({
     flags: 0,
+    flags2: 0,
     parsed: {},
     fuel: null,
     cargo: 0,
@@ -108,7 +138,8 @@ function createStatusStore() {
       if (!data) return;
 
       state.flags = (data.Flags as number) ?? 0;
-      state.parsed = parseFlags(state.flags);
+      state.flags2 = (data.Flags2 as number) ?? 0;
+      state.parsed = parseFlags(state.flags, state.flags2);
 
       if (data.Fuel && typeof data.Fuel === "object") {
         const fuel = data.Fuel as Record<string, number>;
