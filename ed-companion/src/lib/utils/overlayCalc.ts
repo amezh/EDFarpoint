@@ -121,10 +121,15 @@ export function buildBioTargets(bodies: Body[], bioThreshold: number): Body[] {
       return true;
     })
     .sort((a, b) => {
-      const aDone = isBioDone(a) ? 1 : 0;
-      const bDone = isBioDone(b) ? 1 : 0;
-      if (aDone !== bDone) return aDone - bDone;
-      return (b.bioValueMax ?? 0) - (a.bioValueMax ?? 0);
+      const aMult = !a.wasDiscovered ? 5 : 1;
+      const bMult = !b.wasDiscovered ? 5 : 1;
+      const aVal = isBioDone(a)
+        ? (a.bioSpeciesPredicted ?? []).filter(s => s.confidence === 'analysed').reduce((sum, s) => sum + (s.value ?? 0), 0) * aMult
+        : computeRemainingValue(a) * aMult;
+      const bVal = isBioDone(b)
+        ? (b.bioSpeciesPredicted ?? []).filter(s => s.confidence === 'analysed').reduce((sum, s) => sum + (s.value ?? 0), 0) * bMult
+        : computeRemainingValue(b) * bMult;
+      return bVal - aVal;
     });
 }
 
