@@ -65,6 +65,8 @@ export function computeRemainingValue(body: Body): number {
 
 export function allBioAnalysed(body: Body): boolean {
   if (body.bioSignals <= 0) return false;
+  const preds = body.bioSpeciesPredicted ?? [];
+  if (preds.length === 0) return false; // no predictions yet — can't be done
   return computeRemainingSpecies(body).length === 0;
 }
 

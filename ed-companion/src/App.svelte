@@ -72,13 +72,15 @@
 
   /** Cross-reference bio store's actual scan data with predictions to restore confidence */
   function syncPredictionConfidence(body: Body) {
+    const sysAddr = systemStore.current?.address;
+    if (!sysAddr) return;
     const planet = bioStore.currentPlanet;
-    if (!planet || planet.bodyId !== body.bodyId) {
+    if (!planet || planet.bodyId !== body.bodyId || planet.systemAddress !== sysAddr) {
       // Check allPlanets map for historical data
       const planets = bioStore.planets;
       if (!planets) return;
       for (const [, p] of planets) {
-        if (p.bodyId === body.bodyId) {
+        if (p.bodyId === body.bodyId && p.systemAddress === sysAddr) {
           applyConfidenceFromScans(body, p.species);
           return;
         }
