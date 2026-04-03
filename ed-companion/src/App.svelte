@@ -48,6 +48,7 @@
   $effect(() => { pushRemoteState("trip", tripStore.current); emitToOverlay("trip-state", tripStore.current); });
   $effect(() => { pushRemoteState("status", statusStore.current); emitToOverlay("status-state", statusStore.current); });
   $effect(() => { if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet); });
+  $effect(() => { if (configStore.current) emitToOverlay("config-state", configStore.current); });
 
 
   // Track body discovery status: key = "systemAddr:bodyId" => wasDiscovered
@@ -252,42 +253,46 @@
         }
 
         if (event === "SAASignalsFound") {
-          const bodyId = data.BodyID as number;
-          systemStore.markBodyMapped(bodyId);
-
           // Re-trigger bio prediction with confirmed genuses from DSS
+          const bodyId = data.BodyID as number;
           const dssBody = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
           if (dssBody && dssBody.confirmedGenuses.length > 0) {
             // Clear old predictions and re-predict with genus filter
             dssBody.bioSpeciesPredicted = [];
             triggerBioPrediction(dssBody);
           }
+        }
+        break;
 
-          // Calculate DSS mapping bonus (full mapped value minus FSS-only)
-          const body = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
-          if (body) {
-            const common = {
-              bodyType: body.planetClass || body.type,
-              terraformable: body.terraformable,
-              wasDiscovered: body.wasDiscovered,
-              wasMapped: body.wasMapped,
-            };
-            const dssValue = estimateCartoValue({ ...common, withDSS: true });
-            const fssValue = estimateCartoValue({ ...common, withDSS: false });
-            const dssBonus = Math.max(0, dssValue - fssValue);
-            tripStore.addBodyMapped(dssBonus);
-            if (systemStore.current?.name) {
-              expeditionStore.addCartoValue(systemStore.current.name, dssBonus);
-              expeditionStore.addBodyMapped(systemStore.current.name);
-            }
-          } else {
-            tripStore.addBodyMapped(0);
-            if (systemStore.current?.name) {
-              expeditionStore.addBodyMapped(systemStore.current.name);
-            }
+      case "SAAScanComplete": {
+        const bodyId = data.BodyID as number;
+        systemStore.markBodyMapped(bodyId);
+
+        // Calculate DSS mapping bonus (full mapped value minus FSS-only)
+        const body = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
+        if (body) {
+          const common = {
+            bodyType: body.planetClass || body.type,
+            terraformable: body.terraformable,
+            wasDiscovered: body.wasDiscovered,
+            wasMapped: body.wasMapped,
+          };
+          const dssValue = estimateCartoValue({ ...common, withDSS: true });
+          const fssValue = estimateCartoValue({ ...common, withDSS: false });
+          const dssBonus = Math.max(0, dssValue - fssValue);
+          tripStore.addBodyMapped(dssBonus);
+          if (systemStore.current?.name) {
+            expeditionStore.addCartoValue(systemStore.current.name, dssBonus);
+            expeditionStore.addBodyMapped(systemStore.current.name);
+          }
+        } else {
+          tripStore.addBodyMapped(0);
+          if (systemStore.current?.name) {
+            expeditionStore.addBodyMapped(systemStore.current.name);
           }
         }
         break;
+      }
 
       case "ScanOrganic":
         bioStore.handleScanOrganic(data, statusStore.current.latitude, statusStore.current.longitude);
@@ -437,7 +442,7 @@
         }
         break;
       }
-      case "SAASignalsFound": {
+      case "SAAScanComplete": {
         // Calculate DSS mapping bonus using cached body scan data
         const sysAddr = data.SystemAddress as number;
         const bid = data.BodyID as number;
@@ -552,6 +557,7 @@
       emitToOverlay("trip-state",   tripStore.current);
       emitToOverlay("status-state", statusStore.current);
       if (bioStore.currentPlanet) emitToOverlay("bio-state", bioStore.currentPlanet);
+      if (configStore.current) emitToOverlay("config-state", configStore.current);
       emitToOverlay("overlay-opacity", configStore.current?.window?.overlay_opacity ?? 1);
     });
 

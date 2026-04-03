@@ -1,5 +1,32 @@
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri::window::Color;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use crate::AppState;
+
+/// Helper: persist current config to disk
+fn save_config(app: &AppHandle) {
+    if let Some(state) = app.try_state::<Arc<AppState>>() {
+        let config = state.config.read().clone();
+        if let Some(config_dir) = dirs::config_dir() {
+            let path = config_dir.join("ed-farpoint").join("config.json");
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            if let Ok(json) = serde_json::to_string_pretty(&config) {
+                let _ = std::fs::write(&path, json);
+            }
+        }
+    }
+}
+
+/// Update overlay_enabled in config and persist
+fn set_overlay_enabled(app: &AppHandle, enabled: bool) {
+    if let Some(state) = app.try_state::<Arc<AppState>>() {
+        state.config.write().window.overlay_enabled = enabled;
+        save_config(app);
+    }
+}
 
 /// Create the overlay window (compact HUD)
 pub fn create_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
@@ -12,49 +39,86 @@ pub fn create_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::
         return Ok(());
     }
 
-    // Load the same index.html that works for the main window.
-    // main.ts detects the window label "overlay" and mounts OverlayWidget instead of App.
-    let url = WebviewUrl::App("index.html".into());
-    log::info!("[overlay] using WebviewUrl::App(index.html) — JS will detect label");
+    // Read saved geometry from config
+    let (width, height, pos_x, pos_y) = {
+        if let Some(state) = app.try_state::<Arc<AppState>>() {
+            let cfg = state.config.read();
+            (cfg.window.overlay_width, cfg.window.overlay_height,
+             cfg.window.overlay_x, cfg.window.overlay_y)
+        } else {
+            (350.0, 750.0, None, None)
+        }
+    };
 
-    log::info!("[overlay] building window…");
-    let window = WebviewWindowBuilder::new(app, "overlay", url)
+    let url = WebviewUrl::App("index.html".into());
+
+    let mut builder = WebviewWindowBuilder::new(app, "overlay", url)
         .title("ED Farpoint Overlay")
-        .inner_size(350.0, 250.0)
+        .inner_size(width, height)
         .always_on_top(true)
         .decorations(false)
         .shadow(false)
         .resizable(true)
         .skip_taskbar(true)
         .transparent(true)
-        .background_color(Color(0, 0, 0, 0))
-        .build()
-        .map_err(|e| {
-            log::error!("[overlay] WebviewWindowBuilder::build FAILED: {}", e);
-            e
-        })?;
+        .background_color(Color(0, 0, 0, 0));
+
+    // Restore position if saved
+    if let (Some(x), Some(y)) = (pos_x, pos_y) {
+        builder = builder.position(x, y);
+    }
+
+    let window = builder.build().map_err(|e| {
+        log::error!("[overlay] WebviewWindowBuilder::build FAILED: {}", e);
+        e
+    })?;
 
     log::info!("[overlay] window built OK, label={}", window.label());
 
-    // Log window lifecycle events
+    // Mark overlay as enabled
+    set_overlay_enabled(app, true);
+
+    // Track move/resize with 1s debounce to save geometry
     let app_handle = app.clone();
+    let save_pending = Arc::new(AtomicBool::new(false));
     window.on_window_event(move |event| {
         match event {
-            tauri::WindowEvent::Focused(focused) => {
-                log::info!("[overlay] window focused={}", focused);
+            tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) => {
+                // Debounce: only spawn timer if not already pending
+                if !save_pending.swap(true, Ordering::SeqCst) {
+                    let app2 = app_handle.clone();
+                    let pending2 = save_pending.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+                        pending2.store(false, Ordering::SeqCst);
+                        if let Some(win) = app2.get_webview_window("overlay") {
+                            if let Some(state) = app2.try_state::<Arc<AppState>>() {
+                                let mut cfg = state.config.write();
+                                let scale = win.scale_factor().unwrap_or(1.0);
+                                if let Ok(pos) = win.outer_position() {
+                                    cfg.window.overlay_x = Some(pos.x as f64 / scale);
+                                    cfg.window.overlay_y = Some(pos.y as f64 / scale);
+                                }
+                                if let Ok(size) = win.inner_size() {
+                                    cfg.window.overlay_width = size.width as f64 / scale;
+                                    cfg.window.overlay_height = size.height as f64 / scale;
+                                }
+                                drop(cfg);
+                                save_config(&app2);
+                                log::info!("[overlay] geometry saved");
+                            }
+                        }
+                    });
+                }
             }
             tauri::WindowEvent::Destroyed => {
                 log::info!("[overlay] window destroyed");
                 let _ = app_handle.emit("overlay-state", false);
             }
-            tauri::WindowEvent::CloseRequested { .. } => {
-                log::info!("[overlay] window close requested");
-            }
             _ => {}
         }
     });
 
-    log::info!("[overlay] create_overlay_window done");
     Ok(())
 }
 
@@ -68,6 +132,7 @@ pub fn close_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::E
     } else {
         log::warn!("[overlay] close requested but no overlay window found");
     }
+    set_overlay_enabled(app, false);
     Ok(())
 }
 

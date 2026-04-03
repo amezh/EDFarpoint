@@ -10,6 +10,10 @@ export interface AppConfig {
     panel_always_on_top: boolean;
     overlay_opacity: number;
     overlay_click_through: boolean;
+    overlay_x: number | null;
+    overlay_y: number | null;
+    overlay_width: number;
+    overlay_height: number;
   };
   remote: { enabled: boolean; port: number; auth_token: string };
   bio: { value_threshold: number; highlight_color: string; dim_below_threshold: boolean };

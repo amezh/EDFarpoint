@@ -69,7 +69,7 @@
     ) ?? []
   );
 
-  const fssScanned = $derived(system?.bodies.filter((b) => !b.starType && b.planetClass !== "").length ?? 0);
+  const fssScanned = $derived(system?.bodies.filter((b) => b.starType || b.planetClass).length ?? 0);
   const totalBodies = $derived(system?.bodyCount ?? 0);
   const explorationPct = $derived(totalBodies > 0 ? Math.round((fssScanned / totalBodies) * 100) : 0);
 
@@ -81,6 +81,28 @@
 
   function bodyValue(b: Body): number {
     return estimateCartoValue({ bodyType: b.type, terraformable: b.terraformable, wasDiscovered: b.wasDiscovered, wasMapped: b.wasMapped, withDSS: !b.mapped });
+  }
+
+  /** Compute live bio value range from remaining (non-analysed) predictions.
+   *  Returns { min, max } summing values of species still to pick up. */
+  function liveBioRange(b: Body): { min: number; max: number } | null {
+    const preds = b.bioSpeciesPredicted;
+    if (!preds || preds.length === 0) return null;
+    const remaining = preds.filter((s: any) => s.confidence !== 'analysed');
+    if (remaining.length === 0) return { min: 0, max: 0 };
+    // Group by genus — pick min/max value per genus, then sum across genera
+    const byGenus = new Map<string, number[]>();
+    for (const s of remaining) {
+      const g = s.name.split(" ")[0].toLowerCase();
+      if (!byGenus.has(g)) byGenus.set(g, []);
+      byGenus.get(g)!.push(s.value);
+    }
+    let min = 0, max = 0;
+    for (const vals of byGenus.values()) {
+      min += Math.min(...vals);
+      max += Math.max(...vals);
+    }
+    return { min, max };
   }
 
   function statusIcon(b: Body): string {
@@ -166,6 +188,8 @@
         {@const mult = !body.wasDiscovered ? 5 : 1}
         {@const isLow = lowValueBio.includes(body)}
         {@const allAnalysed = body.bioSpeciesPredicted.length > 0 && body.bioSpeciesPredicted.every((s: any) => s.confidence === 'analysed')}
+        {@const liveRange = liveBioRange(body)}
+        {@const doneGenera = new Set(body.bioSpeciesPredicted.filter((s: any) => s.confidence === 'analysed').map((s: any) => s.name.split(" ")[0].toLowerCase()))}
         <div class="rounded border border-ed-green/30 bg-ed-bg/80 p-2"
              class:opacity-40={isLow && dimBelowThreshold}>
           <!-- Name + type -->
@@ -192,9 +216,9 @@
             {/if}
           </div>
           <!-- Value -->
-          {#if body.bioValueMin != null && body.bioValueMax != null}
+          {#if liveRange}
             <div class="text-[10px] font-mono mb-0.5 {allAnalysed ? 'text-ed-amber' : 'text-ed-green/70'}">
-              ~{formatCredits(body.bioValueMin * mult)} – {formatCredits(body.bioValueMax * mult)} Cr
+              ~{formatCredits(liveRange.min * mult)} – {formatCredits(liveRange.max * mult)} Cr
               {#if !body.wasDiscovered}<span class="text-ed-amber">(5x)</span>{/if}
               {#if allAnalysed}<span class="text-ed-amber"> ✓</span>{/if}
             </div>
@@ -203,7 +227,7 @@
           {/if}
           <!-- Species -->
           {#if body.bioSpeciesPredicted.length > 0}
-            {#each body.bioSpeciesPredicted as species}
+            {#each body.bioSpeciesPredicted.filter((s: any) => { const g = s.name.split(" ")[0].toLowerCase(); return s.confidence === 'analysed' || !doneGenera.has(g); }) as species}
               <div class="flex items-center gap-1 text-[10px] leading-tight
                 {species.confidence === 'analysed' ? 'opacity-30 line-through' : species.confidence === 'scanned' ? 'text-ed-green' : species.confidence === 'low' ? 'opacity-40' : ''}">
                 {#if species.confidence === "analysed"}

@@ -25,7 +25,18 @@ pub struct WindowConfig {
     pub panel_always_on_top: bool,
     pub overlay_opacity: f64,
     pub overlay_click_through: bool,
+    #[serde(default)]
+    pub overlay_x: Option<f64>,
+    #[serde(default)]
+    pub overlay_y: Option<f64>,
+    #[serde(default = "default_overlay_width")]
+    pub overlay_width: f64,
+    #[serde(default = "default_overlay_height")]
+    pub overlay_height: f64,
 }
+
+fn default_overlay_width() -> f64 { 350.0 }
+fn default_overlay_height() -> f64 { 750.0 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RemoteConfig {
@@ -80,6 +91,10 @@ impl Default for AppConfig {
                 panel_always_on_top: true,
                 overlay_opacity: 0.75,
                 overlay_click_through: true,
+                overlay_x: None,
+                overlay_y: None,
+                overlay_width: 350.0,
+                overlay_height: 750.0,
             },
             remote: RemoteConfig {
                 enabled: false,

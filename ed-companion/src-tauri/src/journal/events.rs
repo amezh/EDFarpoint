@@ -16,6 +16,7 @@ pub enum JournalEvent {
     FSSDiscoveryScan(FSSDiscoveryScanEvent),
     FSSBodySignals(FSSBodySignalsEvent),
     SAASignalsFound(SAASignalsFoundEvent),
+    SAAScanComplete(SAAScanCompleteEvent),
     ScanOrganic(ScanOrganicEvent),
     ApproachBody(ApproachBodyEvent),
     LeaveBody(LeaveBodyEvent),
@@ -206,6 +207,16 @@ pub struct SignalEntry {
 pub struct GenusEntry {
     pub Genus: String,
     pub Genus_Localised: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SAAScanCompleteEvent {
+    pub timestamp: String,
+    pub BodyName: String,
+    pub SystemAddress: u64,
+    pub BodyID: u32,
+    pub ProbesUsed: u32,
+    pub EfficiencyTarget: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

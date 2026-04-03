@@ -279,6 +279,7 @@ pub fn run() {
 
     let remote_enabled = config.remote.enabled;
     let remote_port = config.remote.port;
+    let overlay_enabled = config.window.overlay_enabled;
 
     let app_state = Arc::new(AppState {
         config: RwLock::new(config),
@@ -380,6 +381,15 @@ pub fn run() {
             // Emit initial state to frontend
             let _ = app_handle.emit("trip-stats", serde_json::to_value(&*state_for_setup.trip.read()).unwrap_or(Value::Null));
             let _ = app_handle.emit("lifetime-stats", serde_json::to_value(&*state_for_setup.lifetime.read()).unwrap_or(Value::Null));
+
+            // Auto-open overlay if it was enabled when the app last closed
+            #[cfg(not(target_os = "android"))]
+            if overlay_enabled {
+                log::info!("[setup] Restoring overlay window (was enabled)");
+                if let Err(e) = window::create_overlay_window(&app_handle) {
+                    log::warn!("[setup] Failed to restore overlay: {}", e);
+                }
+            }
 
             Ok(())
         })
