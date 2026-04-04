@@ -391,7 +391,7 @@
         break;
 
       case "Touchdown": {
-        const tdBodyId = data.Body as number;
+        const tdBodyId = data.BodyID as number;
         if (tdBodyId != null) {
           const tdBody = systemStore.current?.bodies.find(b => b.bodyId === tdBodyId);
           if (tdBody && tdBody.personalStatus !== "bio_complete") {

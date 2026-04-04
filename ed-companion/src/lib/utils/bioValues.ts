@@ -115,6 +115,7 @@ export function getSpeciesValue(speciesLocalised: string): number {
     if (BIO_VALUES[base]) return BIO_VALUES[base];
   }
 
+  console.warn(`[bioValues] Unknown species: "${speciesLocalised}" — value defaulting to 0`);
   return 0;
 }
 

@@ -125,17 +125,28 @@ function createBioStore() {
             ? [{ latitude, longitude }]
             : [];
           break;
-        case "Sample":
-          species.samples = species.samples === 0 ? 1 : 2;
+        case "Sample": {
+          const newCount = species.samples === 0 ? 1 : 2;
+          species.samples = newCount;
           if (latitude != null && longitude != null) {
-            species.scanPositions.push({ latitude, longitude });
+            // Replace position for this sample stage instead of appending
+            // (handles re-scans from "too close" rejections)
+            species.scanPositions = [
+              ...species.scanPositions.slice(0, newCount - 1),
+              { latitude, longitude },
+            ];
           }
           break;
+        }
         case "Analyse":
           species.samples = 3;
           species.analysed = true;
           if (latitude != null && longitude != null) {
-            species.scanPositions.push({ latitude, longitude });
+            // Keep only the first 2 positions + this final one
+            species.scanPositions = [
+              ...species.scanPositions.slice(0, 2),
+              { latitude, longitude },
+            ];
           }
           break;
       }
