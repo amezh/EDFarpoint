@@ -1,7 +1,7 @@
 [package]
 name = "ed-companion"
 version = "0.1.0"
-description = "Elite Dangerous Companion - Exploration & Exobiology"
+description = "ED Farpoint - Elite Dangerous Exploration & Exobiology Companion"
 authors = ["Lazy Cat"]
 license = "MIT"
 edition = "2021"
