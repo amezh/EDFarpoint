@@ -57,12 +57,13 @@ function buildViewModel(
   // Merged species
   const merged = buildMergedSpecies(bio, currentBody, bioThreshold);
 
-  // On-planet check: show bio tracker when there are unfinished species.
-  // Fall through to system view when all bio on this body is complete.
+  // On-planet check: show bio tracker when on a planet with unfinished species.
+  // Uses multiple signals: bio store state, system body predictions, AND status flags
+  // (landed/onFoot/inSRV + has lat/lon) so we switch correctly even after a fresh login.
   const hasUnfinishedBio = merged.some((s) => !s.analysed);
-  const onPlanet =
-    (!!bio?.bodyId || (currentBody != null && (currentBody.bioSpeciesPredicted?.length ?? 0) > 0)) &&
-    hasUnfinishedBio;
+  const hasBioContext = !!bio?.bodyId || (currentBody != null && (currentBody.bioSpeciesPredicted?.length ?? 0) > 0);
+  const statusOnSurface = !!(status.parsed.landed || status.parsed.onFootOnPlanet || status.parsed.inSRV) && status.latitude != null;
+  const onPlanet: boolean = hasUnfinishedBio && (hasBioContext || (statusOnSurface && merged.length > 0));
 
   const bioMult = currentBody && !currentBody.wasDiscovered ? 5 : 1;
 
@@ -121,6 +122,7 @@ function buildViewModel(
       shortName: body.shortName,
       type: body.type,
       mapped: dssed,
+      wasDiscovered: body.wasDiscovered,
       personalStatus: body.personalStatus,
       displayValue: val,
       dot: computeStatusDot(body),
@@ -159,6 +161,7 @@ function buildViewModel(
     mergedSpecies: overlaySpecies,
 
     systemName: system?.name ?? null,
+    systemFirstDiscovery: system?.firstDiscovery ?? false,
     bodyCount: system?.bodyCount ?? null,
     scannedBodyCount: bodies.filter((b) => b.starType || b.planetClass).length,
     bioTargets,

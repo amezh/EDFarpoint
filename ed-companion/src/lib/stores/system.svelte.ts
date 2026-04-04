@@ -209,6 +209,11 @@ function createSystemStore() {
           (a, b) => (a.distanceLs ?? 0) - (b.distanceLs ?? 0)
         );
       }
+
+      // Mark system as first discovery if any body is undiscovered
+      if (!body.wasDiscovered) {
+        state.firstDiscovery = true;
+      }
     },
 
     updateBodySignals(data: Record<string, unknown>) {

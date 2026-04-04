@@ -24,6 +24,21 @@
   import { emitTo, listen } from "@tauri-apps/api/event";
   import { onMount } from "svelte";
 
+  // Events that indicate active player input — used for Cr/h play time tracking.
+  // Excludes passive/ambient events (Music, ReceiveText, Friends, Status, etc.)
+  // that fire while AFK and would inflate the timer.
+  const ACTIVE_EVENTS = new Set([
+    "FSDJump", "FSDTarget", "StartJump",
+    "Scan", "FSSDiscoveryScan", "FSSBodySignals", "FSSAllBodiesFound",
+    "SAAScanComplete", "SAASignalsFound",
+    "ScanOrganic",
+    "ApproachBody", "LeaveBody", "Touchdown", "Liftoff",
+    "SupercruiseEntry", "SupercruiseExit",
+    "Location", "Undocked", "Docked",
+    "LaunchSRV", "DockSRV",
+    "NavRoute", "NavRouteClear",
+  ]);
+
   function emitToOverlay(event: string, payload: unknown) {
     emitTo("overlay", event, payload).catch(() => {});
   }
@@ -162,8 +177,10 @@
     const event = data.event as string;
     if (!event) return;
 
-    // Track play time from event timestamps
-    if (data.timestamp) {
+    // Track play time — only from events that indicate active player input.
+    // Passive events (Music, ReceiveText, Friends, etc.) fire while AFK
+    // and would incorrectly inflate play time.
+    if (data.timestamp && ACTIVE_EVENTS.has(event)) {
       tripStore.trackTimestamp(data.timestamp as string);
     }
 
@@ -186,6 +203,15 @@
         } else {
           // Location event (game load) — register system without counting a jump
           tripStore.addSystemVisit(data.StarSystem as string);
+          // If player is on a planet surface (logged in while landed/on foot),
+          // restore the active planet so bio tracker works immediately
+          const locBodyId = data.BodyID as number;
+          const locBodyName = data.Body as string;
+          const locSysAddr = data.SystemAddress as number;
+          if (locBodyId != null && locBodyName && data.BodyType === "Planet") {
+            const locBody = systemStore.current?.bodies.find(b => b.bodyId === locBodyId);
+            bioStore.setPlanet(locBodyName, locBodyId, locSysAddr, locBody?.radius ?? null);
+          }
         }
         break;
 
@@ -327,7 +353,20 @@
         break;
       }
 
-      case "ScanOrganic":
+      case "ScanOrganic": {
+        // Ensure planet is active — covers edge cases where ApproachBody/Location
+        // didn't set it (e.g. history replay, late event ordering)
+        const scanOrgBodyId = data.Body as number;
+        const scanOrgSysAddr = data.SystemAddress as number;
+        if (!bioStore.currentPlanet || bioStore.currentPlanet.bodyId !== scanOrgBodyId) {
+          const scanOrgBody = systemStore.current?.bodies.find(b => b.bodyId === scanOrgBodyId);
+          bioStore.setPlanet(
+            scanOrgBody?.name ?? `Body ${scanOrgBodyId}`,
+            scanOrgBodyId,
+            scanOrgSysAddr,
+            scanOrgBody?.radius ?? null,
+          );
+        }
         bioStore.handleScanOrganic(data, statusStore.current.latitude, statusStore.current.longitude);
         if ((data.ScanType as string) === "Analyse") {
           const speciesName = (data.Species_Localised as string) ?? (data.Species as string) ?? "";
@@ -374,6 +413,7 @@
           }
         }
         break;
+      }
 
       case "ApproachBody": {
         const approachBodyId = data.BodyID as number;

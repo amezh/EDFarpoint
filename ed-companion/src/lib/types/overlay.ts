@@ -16,6 +16,7 @@ export interface OverlayViewModel {
 
   // System view (when onPlanet = false)
   systemName: string | null;
+  systemFirstDiscovery: boolean;
   bodyCount: number | null;
   scannedBodyCount: number;
   bioTargets: OverlayBioTarget[];
@@ -69,6 +70,7 @@ export interface OverlayCartoTarget {
   shortName: string;
   type: string;
   mapped: boolean;
+  wasDiscovered: boolean;
   personalStatus: string;
   displayValue: number;
   dot: { ring: string; fill: string };

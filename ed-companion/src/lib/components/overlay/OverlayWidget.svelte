@@ -146,7 +146,10 @@
   <!-- System bodies -->
   {#if !vm.onPlanet && vm.systemName}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
-      <div class="text-amber-400 font-bold text-[10px]">{vm.systemName}</div>
+      <div class="text-amber-400 font-bold text-[10px]">
+        {vm.systemName}
+        {#if vm.systemFirstDiscovery}<span class="text-cyan-400 ml-1">1st!</span>{/if}
+      </div>
       <div class="text-[9px] text-gray-500">{vm.scannedBodyCount}/{vm.bodyCount ?? "?"} bodies</div>
 
       <!-- Bio targets -->
@@ -156,6 +159,7 @@
           <div class="flex items-center gap-1 py-0.5 text-[10px] {target.done ? 'opacity-50' : ''}">
             <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke={target.dot.ring} stroke-width="1.5"/>{#if target.dot.fill !== 'none'}<circle cx="5" cy="5" r="2.5" fill={target.dot.fill}/>{/if}</svg>
             <span class="truncate flex-1 {target.done ? 'line-through' : ''}">{target.shortName}</span>
+            {#if !target.wasDiscovered}<span class="text-cyan-400 shrink-0 text-[9px]">1st</span>{/if}
             <span class="text-green-400 shrink-0">{target.bioSignals}bio</span>
             {#if !target.mapped}<span class="text-blue-400 shrink-0 text-[9px]">DSS</span>{/if}
             {#if target.landable}<span class="text-amber-400 shrink-0 text-[9px]">L</span>{/if}
@@ -180,6 +184,7 @@
           <div class="flex items-center gap-1 py-0.5 text-[10px]">
             <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="none" stroke={target.dot.ring} stroke-width="1.5"/>{#if target.dot.fill !== 'none'}<circle cx="5" cy="5" r="2.5" fill={target.dot.fill}/>{/if}</svg>
             <span class="truncate flex-1">{target.shortName}</span>
+            {#if !target.wasDiscovered}<span class="text-cyan-400 shrink-0 text-[9px]">1st</span>{/if}
             {#if target.typeTag}
               <span class="text-amber-400 shrink-0 text-[9px]">{target.typeTag}</span>
             {/if}
