@@ -177,12 +177,15 @@
         expeditionStore.enterSystem(data);
         // Fetch EDSM body data in background for discoverer info
         fetchEdsmBodies(data.StarSystem as string);
-        tripStore.addSystem(
-          data.StarSystem as string,
-          (data.JumpDist as number) ?? 0,
-        );
         if (event === "FSDJump") {
+          tripStore.addSystem(
+            data.StarSystem as string,
+            (data.JumpDist as number) ?? 0,
+          );
           routeStore.advanceRoute(data.StarSystem as string);
+        } else {
+          // Location event (game load) — register system without counting a jump
+          tripStore.addSystemVisit(data.StarSystem as string);
         }
         break;
 
@@ -297,6 +300,9 @@
         // Calculate DSS mapping bonus (full mapped value minus FSS-only)
         const body = systemStore.current?.bodies.find((b) => b.bodyId === bodyId);
         if (body) {
+          const probesUsed = (data.ProbesUsed as number) ?? 0;
+          const effTarget = (data.EfficiencyTarget as number) ?? 0;
+          const efficient = effTarget > 0 && probesUsed <= effTarget;
           const common = {
             bodyType: body.planetClass || body.type,
             terraformable: body.terraformable,
@@ -304,7 +310,7 @@
             wasMapped: body.wasMapped,
             massEM: body.massEM ?? undefined,
           };
-          const dssValue = estimateCartoValue({ ...common, withDSS: true });
+          const dssValue = estimateCartoValue({ ...common, withDSS: true, efficiencyBonus: efficient });
           const fssValue = estimateCartoValue({ ...common, withDSS: false });
           const dssBonus = Math.max(0, dssValue - fssValue);
           tripStore.addBodyMapped(dssBonus);
@@ -477,6 +483,9 @@
         const bid = data.BodyID as number;
         const cached = bodyScanCache.get(bodyKey(sysAddr, bid));
         if (cached) {
+          const ltProbes = (data.ProbesUsed as number) ?? 0;
+          const ltEffTarget = (data.EfficiencyTarget as number) ?? 0;
+          const ltEfficient = ltEffTarget > 0 && ltProbes <= ltEffTarget;
           const common = {
             bodyType: cached.planetClass,
             terraformable: cached.terraformable,
@@ -484,7 +493,7 @@
             wasMapped: cached.wasMapped,
             massEM: cached.massEM,
           };
-          const dssValue = estimateCartoValue({ ...common, withDSS: true });
+          const dssValue = estimateCartoValue({ ...common, withDSS: true, efficiencyBonus: ltEfficient });
           const fssValue = estimateCartoValue({ ...common, withDSS: false });
           lifetimeStore.addBodyMap(Math.max(0, dssValue - fssValue));
         } else {

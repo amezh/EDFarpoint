@@ -78,6 +78,14 @@ function createTripStore() {
       distanceTravelled += jumpDist;
     },
 
+    /** Register a system visit without counting a jump (e.g. Location event on game load) */
+    addSystemVisit(name: string) {
+      if (!visitedSystems.has(name)) {
+        visitedSystems.add(name);
+        systemsVisited = visitedSystems.size;
+      }
+    },
+
     addStarScan(value: number) {
       starsScanned++;
       cartoFSSValue += value;
