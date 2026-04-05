@@ -20,7 +20,13 @@ export interface RouteState {
 const STORAGE_KEY = "routeStore";
 
 function saveToSession(s: RouteState) {
-  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      console.warn("Route sessionStorage quota exceeded.");
+    }
+  }
 }
 
 function loadFromSession(): RouteState | null {

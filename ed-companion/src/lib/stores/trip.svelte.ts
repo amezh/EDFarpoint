@@ -72,7 +72,7 @@ function createTripStore() {
     addSystem(name: string, jumpDist: number) {
       if (!visitedSystems.has(name)) {
         visitedSystems.add(name);
-        systemsVisited = visitedSystems.size;
+        systemsVisited++;
       }
       jumps++;
       distanceTravelled += jumpDist;
@@ -82,7 +82,7 @@ function createTripStore() {
     addSystemVisit(name: string) {
       if (!visitedSystems.has(name)) {
         visitedSystems.add(name);
-        systemsVisited = visitedSystems.size;
+        systemsVisited++;
       }
     },
 

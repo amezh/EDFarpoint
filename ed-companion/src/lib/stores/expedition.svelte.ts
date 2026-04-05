@@ -75,7 +75,11 @@ function createExpeditionStore() {
     /** Seed from cached data */
     seedFromCache(cachedVisited: unknown) {
       if (!Array.isArray(cachedVisited)) return;
-      visited = cachedVisited as VisitedSystem[];
+      visited = (cachedVisited as VisitedSystem[]).map(s => ({
+        ...s,
+        // Clear stale loading flags from interrupted EDSM fetches
+        edsmLoading: false,
+      }));
       if (visited.length > 0) {
         currentSystemName = visited[visited.length - 1].name;
       }
