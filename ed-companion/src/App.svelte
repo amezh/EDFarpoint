@@ -24,6 +24,7 @@
   import { estimateCartoValue, estimateStarValue } from "$lib/utils/valueCalc";
   import { invoke } from "@tauri-apps/api/core";
   import { emitTo, listen } from "@tauri-apps/api/event";
+  import { check } from "@tauri-apps/plugin-updater";
   import { onMount } from "svelte";
 
   // Events that indicate active player input — used for Cr/h play time tracking.
@@ -53,6 +54,7 @@
   let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
   let cacheFileInfo = { fileName: "", fileOffset: 0 }; // for cache saving
   let appVersion = $state("dev");
+  let updateAvailable = $state<string | null>(null);
 
   function fmtCr(v: number): string {
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
@@ -670,6 +672,11 @@
       appVersion = v === "0.0.0" ? "dev" : `v${v}`;
     }).catch(() => {});
 
+    // Check for updates on startup
+    check().then(update => {
+      if (update) updateAvailable = update.version;
+    }).catch(() => {});
+
     // Pull structured history from Rust backend
     invoke<Record<string, unknown> | null>("get_journal_history").then((result) => {
       if (!result) {
@@ -975,6 +982,13 @@
         </button>
       </div>
     </header>
+
+    {#if updateAvailable}
+      <div class="flex items-center justify-center gap-2 px-4 py-1 bg-ed-surface border-b border-ed-border text-xs">
+        <span class="text-ed-amber">Update available: v{updateAvailable}</span>
+        <a href="https://github.com/amezh/EDFarpoint/releases/latest" target="_blank" class="text-ed-orange underline hover:text-ed-amber">Download now</a>
+      </div>
+    {/if}
 
     <!-- Main dashboard: card grid -->
     {#if showSettings}

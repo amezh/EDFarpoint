@@ -45,7 +45,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUxQjRCRkMxMENBODFBMjEKUldRaEdxZ013YiswNFZqU3NiRVhXRHlwbXZpTlJlejlYSHZBRDhrVjRacXhUQlZzOUNJcTJSV3oK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ3MUVGQTlCNTIzNjY1Q0YKUldUUFpUWlNtL29lUnhjL0dSem9LdTM0eXMvVXRhaXVNMC9KcXpBLzR1K1VPblRIQXR6Nkw1UDUK",
       "endpoints": [
         "https://github.com/amezh/EDFarpoint/releases/latest/download/latest.json"
       ]
