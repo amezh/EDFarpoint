@@ -53,6 +53,7 @@
   let statsProgress = $state("");
   let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
   let cacheFileInfo = { fileName: "", fileOffset: 0 }; // for cache saving
+  let lastProcessedTimestamp = ""; // track latest event timestamp for cache
   let appVersion = $state("dev");
   let updateAvailable = $state<Awaited<ReturnType<typeof check>> | null>(null);
 
@@ -97,10 +98,6 @@
   function saveJournalCache() {
     const lt = lifetimeStore.toJSON();
     const tr = tripStore.current;
-    const lastEvents = journalStore.recentEvents;
-    const lastTimestamp = lastEvents.length > 0
-      ? (lastEvents[0]?.timestamp as string) ?? ""
-      : "";
 
     // Serialize system state (Map → array for JSON)
     const sys = systemStore.current;
@@ -110,8 +107,8 @@
 
     invoke("save_journal_cache", {
       cache: {
-        version: 2,
-        last_event_timestamp: lastTimestamp,
+        version: 3,
+        last_event_timestamp: lastProcessedTimestamp,
         last_file_name: cacheFileInfo.fileName,
         last_file_offset: cacheFileInfo.fileOffset,
         last_dock_timestamp: lastDockInfo?.timestamp ?? null,
@@ -151,6 +148,7 @@
         ship_type: null,
         system_state: systemStateJson,
         expedition: expeditionStore.visited,
+        bio: bioStore.toJSON(),
       },
     }).catch(() => {});
   }
@@ -282,6 +280,8 @@
       tripStore.trackTimestamp(timestamp);
       if (eventIsRecent) last24hStore.trackTimestamp(timestamp);
     }
+
+    if (timestamp) lastProcessedTimestamp = timestamp;
 
     journalStore.handleEvent(data);
 
@@ -747,6 +747,7 @@
         const cachedShipName = result.cachedShipName as string | null;
         const cachedSystemState = result.cachedSystemState as unknown;
         const cachedExpedition = result.cachedExpedition as unknown;
+        const cachedBio = result.cachedBio as unknown;
 
         if (cachedCommander || cachedShipName) {
           journalStore.seed(cachedCommander, cachedShipName);
@@ -757,20 +758,31 @@
         if (cachedExpedition) {
           expeditionStore.seedFromCache(cachedExpedition);
         }
+        if (cachedBio) {
+          bioStore.seedFromCache(cachedBio);
+        }
       }
 
       if (cachedLifetime) {
         // === CACHED PATH: fast startup ===
         // Lifetime + trip + system + expedition already seeded from cache above.
 
-        // Rebuild bodyDiscoveryMap from cached system bodies
+        // Rebuild bodyDiscoveryMap and bodyScanCache from cached system bodies
+        // so that DSS value calculations work for bodies scanned before the cache point
         if (systemStore.current) {
           for (const body of systemStore.current.bodies) {
             if (body.bodyId != null && systemStore.current.address) {
-              bodyDiscoveryMap.set(
-                bodyKey(systemStore.current.address, body.bodyId),
-                body.wasDiscovered,
-              );
+              const bk = bodyKey(systemStore.current.address, body.bodyId);
+              bodyDiscoveryMap.set(bk, body.wasDiscovered);
+              if (body.planetClass) {
+                bodyScanCache.set(bk, {
+                  planetClass: body.planetClass,
+                  terraformable: body.terraformable,
+                  wasDiscovered: body.wasDiscovered,
+                  wasMapped: body.wasMapped,
+                  massEM: body.massEM ?? undefined,
+                });
+              }
             }
           }
         }
@@ -794,7 +806,24 @@
 
         // Process last 24h events for the "Last 24h" stats panel.
         // These are pre-filtered by Rust to events within ~25h.
+        // Build a local body scan lookup so SAAScanComplete can calculate proper DSS values.
         const recent24h = (result.recent24hEvents ?? []) as Record<string, unknown>[];
+        const recent24hBodyScans = new Map<string, BodyInfo>();
+        for (const ev of recent24h) {
+          if (ev.event === "Scan" && !ev.StarType) {
+            const sysAddr = ev.SystemAddress as number;
+            const bid = ev.BodyID as number;
+            if (sysAddr && bid) {
+              recent24hBodyScans.set(bodyKey(sysAddr, bid), {
+                planetClass: (ev.PlanetClass as string) ?? "",
+                terraformable: (ev.TerraformState as string) === "Terraformable",
+                wasDiscovered: !!(ev.WasDiscovered),
+                wasMapped: !!(ev.WasMapped),
+                massEM: (ev.MassEM as number) ?? undefined,
+              });
+            }
+          }
+        }
         for (const ev of recent24h) {
           const ts = ev.timestamp as string | undefined;
           if (ts && last24hStore.isRecent(ts)) {
@@ -816,9 +845,29 @@
                   last24hStore.addBodyScan(!ev.WasDiscovered, fv);
                 }
                 break;
-              case "SAAScanComplete":
-                last24hStore.addBodyMapped(0); // approximate — no body lookup available
+              case "SAAScanComplete": {
+                const sysAddr = ev.SystemAddress as number;
+                const bid = ev.BodyID as number;
+                const scanInfo = recent24hBodyScans.get(bodyKey(sysAddr, bid));
+                if (scanInfo) {
+                  const probesUsed = (ev.ProbesUsed as number) ?? 0;
+                  const effTarget = (ev.EfficiencyTarget as number) ?? 0;
+                  const efficient = effTarget > 0 && probesUsed <= effTarget;
+                  const common = {
+                    bodyType: scanInfo.planetClass,
+                    terraformable: scanInfo.terraformable,
+                    wasDiscovered: scanInfo.wasDiscovered,
+                    wasMapped: scanInfo.wasMapped,
+                    massEM: scanInfo.massEM,
+                  };
+                  const dssValue = estimateCartoValue({ ...common, withDSS: true, efficiencyBonus: efficient });
+                  const fssValue = estimateCartoValue({ ...common, withDSS: false });
+                  last24hStore.addBodyMapped(Math.max(0, dssValue - fssValue));
+                } else {
+                  last24hStore.addBodyMapped(0);
+                }
                 break;
+              }
               case "ScanOrganic":
                 if ((ev.ScanType as string) === "Analyse") {
                   const spName = (ev.Species_Localised as string) ?? (ev.Species as string) ?? "";
@@ -833,12 +882,6 @@
         appReady = true;
         statsLoading = false;
         lifetimeReady = true;
-
-        // Batch-trigger bio predictions
-        for (const body of systemStore.current?.bodies ?? []) {
-          triggerBioPrediction(body);
-          syncPredictionConfidence(body);
-        }
 
         // Update cache with new state
         saveJournalCache();
@@ -913,8 +956,22 @@
       emitToOverlay("overlay-opacity", configStore.current?.window?.overlay_opacity ?? 1);
     });
 
+    // Periodic cache save every 5 minutes (protects against crash data loss)
+    const cacheInterval = setInterval(() => {
+      if (lifetimeReady) saveJournalCache();
+    }, 5 * 60 * 1000);
+
+    // Save cache on app close
+    const handleBeforeUnload = () => {
+      if (lifetimeReady) saveJournalCache();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
       clearInterval(updateInterval);
+      clearInterval(cacheInterval);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (lifetimeReady) saveJournalCache();
       unlistenJournal.then((fn) => fn());
       unlistenStatus.then((fn) => fn());
       unlistenNavRoute.then((fn) => fn());

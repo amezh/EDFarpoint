@@ -53,6 +53,20 @@ function createBioStore() {
       return allPlanets;
     },
 
+    /** Serialize to JSON-safe format for cache persistence */
+    toJSON(): { planets: [string, PlanetBioState][] } {
+      return { planets: Array.from(allPlanets.entries()) };
+    },
+
+    /** Restore from cached JSON */
+    seedFromCache(cached: unknown) {
+      if (!cached || typeof cached !== "object") return;
+      const c = cached as Record<string, unknown>;
+      if (!Array.isArray(c.planets)) return;
+      const restored = new Map<string, PlanetBioState>(c.planets as [string, PlanetBioState][]);
+      allPlanets = restored;
+    },
+
     setPlanet(bodyName: string, bodyId: number, systemAddress: number, bodyRadius: number | null) {
       const key = `${systemAddress}:${bodyId}`;
       if (allPlanets.has(key)) {

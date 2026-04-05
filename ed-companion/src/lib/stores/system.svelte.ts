@@ -85,7 +85,11 @@ function saveSystemToSession(s: SystemState | null) {
   try {
     const serializable = { ...s, stars: Array.from(s.stars.entries()) };
     sessionStorage.setItem(SYSTEM_STORAGE_KEY, JSON.stringify(serializable));
-  } catch { /* ignore */ }
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      console.warn("System sessionStorage quota exceeded — session data may be lost on refresh.");
+    }
+  }
 }
 
 function loadSystemFromSession(): SystemState | null {
@@ -117,7 +121,20 @@ function createSystemStore() {
     seedFromCache(cached: unknown) {
       if (!cached || typeof cached !== "object") return;
       const c = cached as Record<string, unknown>;
-      const parsed = { ...c, stars: new Map(c.stars as [number, string][] ?? []) } as SystemState;
+      if (typeof c.name !== "string" || typeof c.address !== "number") return;
+      const parsed: SystemState = {
+        name: c.name as string,
+        address: c.address as number,
+        starPos: (c.starPos as [number, number, number]) ?? [0, 0, 0],
+        starClass: (c.starClass as string | null) ?? null,
+        bodyCount: (c.bodyCount as number | null) ?? null,
+        nonBodyCount: (c.nonBodyCount as number | null) ?? null,
+        fssProgress: (c.fssProgress as number) ?? 0,
+        distanceFromSol: (c.distanceFromSol as number | null) ?? null,
+        bodies: Array.isArray(c.bodies) ? (c.bodies as Body[]) : [],
+        firstDiscovery: (c.firstDiscovery as boolean) ?? false,
+        stars: new Map(Array.isArray(c.stars) ? (c.stars as [number, string][]) : []),
+      };
       state = parsed;
     },
 

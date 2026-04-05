@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::num::NonZeroUsize;
+use std::time::{Duration, Instant};
 
 use lru::LruCache;
 use parking_lot::Mutex;
@@ -8,6 +9,22 @@ use serde::{Deserialize, Serialize};
 
 const EDSM_BASE_URL: &str = "https://www.edsm.net/api-v1";
 const CACHE_SIZE: usize = 500;
+const CACHE_TTL: Duration = Duration::from_secs(30 * 60); // 30 minutes
+
+/// Wrapper that tracks when a cache entry was inserted
+struct CacheEntry<T> {
+    value: T,
+    inserted_at: Instant,
+}
+
+impl<T> CacheEntry<T> {
+    fn new(value: T) -> Self {
+        Self { value, inserted_at: Instant::now() }
+    }
+    fn is_expired(&self) -> bool {
+        self.inserted_at.elapsed() > CACHE_TTL
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdsmSystemInfo {
@@ -81,8 +98,8 @@ pub struct EdsmBodiesResponse {
 pub struct EdsmClient {
     client: Client,
     api_key: Option<String>,
-    system_cache: Arc<Mutex<LruCache<String, Option<EdsmSystemInfo>>>>,
-    bodies_cache: Arc<Mutex<LruCache<String, Option<Vec<EdsmBodyInfo>>>>>,
+    system_cache: Arc<Mutex<LruCache<String, CacheEntry<Option<EdsmSystemInfo>>>>>,
+    bodies_cache: Arc<Mutex<LruCache<String, CacheEntry<Option<Vec<EdsmBodyInfo>>>>>>,
 }
 
 impl EdsmClient {
@@ -108,34 +125,44 @@ impl EdsmClient {
 
     /// Fetch system info from EDSM (cached)
     pub async fn get_system(&self, system_name: &str) -> Option<EdsmSystemInfo> {
-        // Check cache
+        // Check cache (honor TTL)
         {
             let mut cache = self.system_cache.lock();
-            if let Some(cached) = cache.get(system_name) {
-                return cached.clone();
+            if let Some(entry) = cache.get(system_name) {
+                if !entry.is_expired() {
+                    return entry.value.clone();
+                }
+                // Expired — remove and re-fetch
+                cache.pop(system_name);
             }
         }
 
         let mut url = format!("{}/system?systemName={}&showInformation=1&showPrimaryStar=1",
             EDSM_BASE_URL,
-            urlencoding_simple(system_name)
+            urlencoding::encode(system_name)
         );
         if let Some(ref key) = self.api_key {
-            url.push_str(&format!("&apiKey={}", key));
+            url.push_str(&format!("&apiKey={}", urlencoding::encode(key)));
         }
 
         let result = match self.client.get(&url).send().await {
-            Ok(resp) => resp.json::<EdsmSystemInfo>().await.ok(),
+            Ok(resp) => {
+                if !resp.status().is_success() {
+                    log::debug!("EDSM system fetch returned {}", resp.status());
+                    return None; // Don't cache HTTP errors (rate limits, server errors)
+                }
+                resp.json::<EdsmSystemInfo>().await.ok()
+            }
             Err(e) => {
                 log::debug!("EDSM system fetch failed: {}", e);
-                None
+                return None;
             }
         };
 
-        // Cache result
+        // Cache result (including None for "system not found" — valid API response with 200 OK)
         {
             let mut cache = self.system_cache.lock();
-            cache.put(system_name.to_string(), result.clone());
+            cache.put(system_name.to_string(), CacheEntry::new(result.clone()));
         }
 
         result
@@ -143,25 +170,32 @@ impl EdsmClient {
 
     /// Fetch bodies for a system from EDSM (cached)
     pub async fn get_bodies(&self, system_name: &str) -> Option<Vec<EdsmBodyInfo>> {
-        // Check cache
+        // Check cache (honor TTL)
         {
             let mut cache = self.bodies_cache.lock();
-            if let Some(cached) = cache.get(system_name) {
-                return cached.clone();
+            if let Some(entry) = cache.get(system_name) {
+                if !entry.is_expired() {
+                    return entry.value.clone();
+                }
+                cache.pop(system_name);
             }
         }
 
         let mut url = format!(
             "{}/system-bodies?systemName={}",
             EDSM_BASE_URL.replace("api-v1", "api-system-v1"),
-            urlencoding_simple(system_name)
+            urlencoding::encode(system_name)
         );
         if let Some(ref key) = self.api_key {
-            url.push_str(&format!("&apiKey={}", key));
+            url.push_str(&format!("&apiKey={}", urlencoding::encode(key)));
         }
 
         let result = match self.client.get(&url).send().await {
             Ok(resp) => {
+                if !resp.status().is_success() {
+                    log::debug!("EDSM bodies fetch returned {}", resp.status());
+                    return None;
+                }
                 resp.json::<EdsmBodiesResponse>()
                     .await
                     .ok()
@@ -169,14 +203,14 @@ impl EdsmClient {
             }
             Err(e) => {
                 log::debug!("EDSM bodies fetch failed: {}", e);
-                None
+                return None;
             }
         };
 
-        // Cache result
+        // Cache result (including None for valid 200 responses with no bodies)
         {
             let mut cache = self.bodies_cache.lock();
-            cache.put(system_name.to_string(), result.clone());
+            cache.put(system_name.to_string(), CacheEntry::new(result.clone()));
         }
 
         result
@@ -188,10 +222,3 @@ impl EdsmClient {
     }
 }
 
-/// Simple URL encoding for system names
-fn urlencoding_simple(s: &str) -> String {
-    s.replace(' ', "%20")
-        .replace('+', "%2B")
-        .replace('&', "%26")
-        .replace('#', "%23")
-}

@@ -31,7 +31,11 @@ function saveToSession() {
   try {
     const data = { visited: _visited, currentSystemName: _currentSystemName };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch { /* ignore quota errors */ }
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      console.warn("Expedition sessionStorage quota exceeded — session data may be lost on refresh. Consider docking to reset.");
+    }
+  }
 }
 
 function loadFromSession(): { visited: VisitedSystem[]; currentSystemName: string | null } | null {

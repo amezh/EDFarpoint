@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 /// Bump this when changing what data is cached or how events are processed.
 /// A mismatch forces a full re-read of all journal files.
-const CACHE_VERSION: u32 = 2;
+const CACHE_VERSION: u32 = 3;
 
 /// Cached journal processing state — allows incremental startup.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,6 +51,10 @@ pub struct JournalCache {
     /// Expedition visited systems — opaque JSON blob from frontend expeditionStore
     #[serde(default)]
     pub expedition: Option<serde_json::Value>,
+
+    /// Bio tracker state — opaque JSON blob from frontend bioStore
+    #[serde(default)]
+    pub bio: Option<serde_json::Value>,
 }
 
 /// Mirrors frontend LifetimeState
@@ -105,7 +109,7 @@ impl JournalCache {
         Some(cache)
     }
 
-    /// Save cache to disk.
+    /// Save cache to disk (atomic write-to-temp-then-rename to avoid corruption on crash).
     pub fn save(&self, cache_dir: &Path) {
         let path = cache_path(cache_dir);
         if let Some(parent) = path.parent() {
@@ -113,8 +117,15 @@ impl JournalCache {
         }
         match serde_json::to_string_pretty(self) {
             Ok(json) => {
-                if let Err(e) = fs::write(&path, json) {
-                    log::warn!("Failed to write journal cache: {}", e);
+                let tmp_path = path.with_extension("json.tmp");
+                if let Err(e) = fs::write(&tmp_path, &json) {
+                    log::warn!("Failed to write journal cache tmp: {}", e);
+                    return;
+                }
+                if let Err(e) = fs::rename(&tmp_path, &path) {
+                    log::warn!("Failed to rename journal cache tmp: {}", e);
+                    // Fallback: try direct write
+                    let _ = fs::write(&path, json);
                 }
             }
             Err(e) => log::warn!("Failed to serialize journal cache: {}", e),
@@ -137,6 +148,7 @@ impl JournalCache {
             ship_type: None,
             system_state: None,
             expedition: None,
+            bio: None,
         }
     }
 }
