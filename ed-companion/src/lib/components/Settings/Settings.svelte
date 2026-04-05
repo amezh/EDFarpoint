@@ -16,11 +16,7 @@
   async function checkForUpdate() {
     updateStatus = "Checking...";
     try {
-      const update = await check({
-        headers: {
-          Authorization: `Bearer ${config?.github?.token ?? ""}`,
-        },
-      });
+      const update = await check();
       if (update) {
         updateStatus = `Update available: v${update.version}`;
         if (confirm(`Update to v${update.version}?\n\n${update.body ?? ""}`)) {
@@ -41,31 +37,20 @@
     configStore.patch(() => {}); // trigger debounced save
   }
 
-  // Svelte action: imperative checkbox — checked = open window, unchecked = close window.
   function overlayToggle(node: HTMLInputElement) {
-    // Set initial state from backend
     invoke<boolean>("is_overlay_open")
       .then((v) => { node.checked = v; })
       .catch(() => {});
 
-    // External state changes (overlay closed via its own ✕ button, etc.)
     const unlistenPromise = listen<boolean>("overlay-state", (e) => {
       node.checked = e.payload;
     });
 
-    // Checkbox changed → read its value → open or close accordingly.
     function handleChange() {
-      console.log("[overlay] checkbox changed, checked=", node.checked);
       if (node.checked) {
-        console.log("[overlay] calling create_overlay");
-        invoke("create_overlay").then(() => {
-          console.log("[overlay] create_overlay succeeded");
-        }).catch((e) => { console.error("[overlay] create_overlay failed:", e); node.checked = false; });
+        invoke("create_overlay").catch((e) => { console.error("[overlay] create_overlay failed:", e); node.checked = false; });
       } else {
-        console.log("[overlay] calling toggle_overlay to close");
-        invoke("toggle_overlay").then((r) => {
-          console.log("[overlay] toggle_overlay returned:", r);
-        }).catch((e) => { console.error("[overlay] toggle_overlay failed:", e); });
+        invoke("toggle_overlay").catch((e) => { console.error("[overlay] toggle_overlay failed:", e); });
       }
     }
 
@@ -90,32 +75,9 @@
 
 {#if config}
   <div class="flex flex-col gap-4">
+    <!-- Updates -->
     <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">General</h3>
-      <div class="flex flex-col gap-2 text-sm">
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Journal directory</span>
-          <input type="text" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
-                 bind:value={config.paths.journal_dir} onchange={save}
-                 placeholder="Auto-detected" />
-        </label>
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">EDSM API key</span>
-          <input type="text" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
-                 bind:value={config.edsm.api_key} onchange={save}
-                 placeholder="Optional" />
-        </label>
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">GitHub token (for updates)</span>
-          <input type="password" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
-                 bind:value={config.github.token} onchange={save}
-                 placeholder="ghp_..." />
-        </label>
-      </div>
-    </div>
-
-    <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">About</h3>
+      <h3 class="text-ed-amber font-bold mb-3">Updates</h3>
       <div class="flex flex-col gap-2 text-sm">
         <div class="flex items-center justify-between">
           <span class="text-ed-text-muted">Version</span>
@@ -130,6 +92,7 @@
       </div>
     </div>
 
+    <!-- Window & Overlay -->
     <div class="ed-card">
       <h3 class="text-ed-amber font-bold mb-3">Window</h3>
       <div class="flex flex-col gap-2 text-sm">
@@ -139,7 +102,7 @@
                  onchange={toggleAlwaysOnTop} />
         </label>
         <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Overlay window</span>
+          <span class="text-ed-text-muted">Overlay</span>
           <input type="checkbox" use:overlayToggle />
         </label>
         <label class="flex items-center justify-between">
@@ -150,14 +113,20 @@
                  onchange={save}
                  class="w-32" />
         </label>
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Carrier values in header</span>
+          <input type="checkbox" bind:checked={config.carrier.enabled}
+                 onchange={save} />
+        </label>
       </div>
     </div>
 
+    <!-- Discovery & Bio -->
     <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">Exobiology</h3>
+      <h3 class="text-ed-amber font-bold mb-3">Exploration</h3>
       <div class="flex flex-col gap-2 text-sm">
         <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Value threshold</span>
+          <span class="text-ed-text-muted">Bio value threshold</span>
           <div class="flex items-center gap-1">
             <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-24 text-xs text-right"
                    bind:value={config.bio.value_threshold} onchange={save} />
@@ -169,12 +138,6 @@
           <input type="checkbox" bind:checked={config.bio.dim_below_threshold}
                  onchange={save} />
         </label>
-      </div>
-    </div>
-
-    <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">Discovery / POI</h3>
-      <div class="flex flex-col gap-2 text-sm">
         <label class="flex items-center justify-between">
           <span class="text-ed-text-muted">Min carto value</span>
           <div class="flex items-center gap-1">
@@ -184,7 +147,7 @@
           </div>
         </label>
         <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Highlight ringed bodies</span>
+          <span class="text-ed-text-muted">Highlight ringed</span>
           <input type="checkbox" bind:checked={config.poi.show_rings}
                  onchange={save} />
         </label>
@@ -208,52 +171,42 @@
       </div>
     </div>
 
+    <!-- Advanced -->
     <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">Data</h3>
+      <h3 class="text-ed-amber font-bold mb-3">Advanced</h3>
       <div class="flex flex-col gap-2 text-sm">
         <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Clear journal cache and reload</span>
-          <button class="ed-btn text-xs" onclick={() => {
-            invoke("clear_cache_and_restart").catch(() => {});
-          }}>Clear cache & restart</button>
-        </label>
-      </div>
-    </div>
-
-    <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">Fleet Carrier</h3>
-      <div class="flex flex-col gap-2 text-sm">
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Show carrier values</span>
-          <input type="checkbox" bind:checked={config.carrier.enabled}
-                 onchange={save} />
-        </label>
-        {#if config.carrier.enabled}
-          <p class="text-xs text-ed-text-muted">
-            Carrier payout: 75% base value, minus 12.5% transfer tax (65.6% net)
-          </p>
-        {/if}
-      </div>
-    </div>
-
-    <div class="ed-card">
-      <h3 class="text-ed-amber font-bold mb-3">Remote Access</h3>
-      <div class="flex flex-col gap-2 text-sm">
-        <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Enable remote server</span>
-          <input type="checkbox" bind:checked={config.remote.enabled}
-                 onchange={save} />
+          <span class="text-ed-text-muted">Journal directory</span>
+          <input type="text" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
+                 bind:value={config.paths.journal_dir} onchange={save}
+                 placeholder="Auto-detected" />
         </label>
         <label class="flex items-center justify-between">
-          <span class="text-ed-text-muted">Port</span>
-          <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-20 text-xs text-right"
-                 bind:value={config.remote.port} onchange={save} />
+          <span class="text-ed-text-muted">EDSM API key</span>
+          <input type="text" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
+                 bind:value={config.edsm.api_key} onchange={save}
+                 placeholder="Optional" />
+        </label>
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Remote server</span>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" bind:checked={config.remote.enabled}
+                   onchange={save} />
+            {#if config.remote.enabled}
+              <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-20 text-xs text-right"
+                     bind:value={config.remote.port} onchange={save} />
+            {/if}
+          </div>
         </label>
         {#if config.remote.enabled}
-          <p class="text-xs text-ed-green mt-1">
-            Server: http://localhost:{config.remote.port}/
-          </p>
+          <p class="text-xs text-ed-green">http://localhost:{config.remote.port}/</p>
         {/if}
+        <div class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Clear cache</span>
+          <button class="ed-btn text-xs" onclick={() => {
+            invoke("clear_cache_and_restart").catch(() => {});
+          }}>Clear & restart</button>
+        </div>
       </div>
     </div>
   </div>

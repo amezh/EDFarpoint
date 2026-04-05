@@ -54,7 +54,7 @@
   let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
   let cacheFileInfo = { fileName: "", fileOffset: 0 }; // for cache saving
   let appVersion = $state("dev");
-  let updateAvailable = $state<string | null>(null);
+  let updateAvailable = $state<Awaited<ReturnType<typeof check>> | null>(null);
 
   function fmtCr(v: number): string {
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
@@ -672,10 +672,14 @@
       appVersion = v === "0.0.0" ? "dev" : `v${v}`;
     }).catch(() => {});
 
-    // Check for updates on startup
-    check().then(update => {
-      if (update) updateAvailable = update.version;
-    }).catch(() => {});
+    // Check for updates on startup and every 10 minutes
+    function checkForUpdate() {
+      check().then(update => {
+        if (update) updateAvailable = update;
+      }).catch(() => {});
+    }
+    checkForUpdate();
+    const updateInterval = setInterval(checkForUpdate, 10 * 60 * 1000);
 
     // Pull structured history from Rust backend
     invoke<Record<string, unknown> | null>("get_journal_history").then((result) => {
@@ -910,6 +914,7 @@
     });
 
     return () => {
+      clearInterval(updateInterval);
       unlistenJournal.then((fn) => fn());
       unlistenStatus.then((fn) => fn());
       unlistenNavRoute.then((fn) => fn());
@@ -985,8 +990,11 @@
 
     {#if updateAvailable}
       <div class="flex items-center justify-center gap-2 px-4 py-1 bg-ed-surface border-b border-ed-border text-xs">
-        <span class="text-ed-amber">Update available: v{updateAvailable}</span>
-        <a href="https://github.com/amezh/EDFarpoint/releases/latest" target="_blank" class="text-ed-orange underline hover:text-ed-amber">Download now</a>
+        <span class="text-ed-amber">Update available: v{updateAvailable.version}</span>
+        <button class="text-ed-orange underline hover:text-ed-amber" onclick={async () => {
+          await updateAvailable!.downloadAndInstall();
+          await invoke("clear_cache_and_restart");
+        }}>Install now</button>
       </div>
     {/if}
 
