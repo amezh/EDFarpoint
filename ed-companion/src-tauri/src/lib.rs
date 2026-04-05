@@ -293,27 +293,27 @@ pub fn run() {
     log::info!("Journal directory: {}", journal_dir.display());
 
     // Determine data directory (where bio rules data lives)
-    // Look for: assets/ next to Cargo.toml, data/ next to exe, data/ in project root
+    // Dev: assets/ next to Cargo.toml. Release: assets/ next to exe (bundled via tauri.conf.json resources).
     let data_dir = {
-        // Dev: assets/ inside src-tauri
-        let assets = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
-        if assets.exists() {
-            assets
+        let dev_assets = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
+        if dev_assets.exists() {
+            dev_assets
+        } else if let Some(exe_assets) = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.join("assets")))
+            .filter(|p| p.exists())
+        {
+            exe_assets
         } else {
+            // Last resort: try data/ next to exe, or cwd
             std::env::current_exe()
                 .ok()
                 .and_then(|p| p.parent().map(|p| p.join("data")))
                 .filter(|p| p.exists())
-                .or_else(|| {
-                    // Fallback: data/ in project root
-                    let dev_data = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                        .parent()
-                        .map(|p| p.parent().unwrap_or(p).join("data"));
-                    dev_data.filter(|p| p.exists())
-                })
-                .unwrap_or_else(|| PathBuf::from("data"))
+                .unwrap_or_else(|| PathBuf::from("assets"))
         }
     };
+    log::info!("Data directory: {}", data_dir.display());
 
     // Load bio predictor
     let bio_predictor = match BioPredictor::load(&data_dir) {
