@@ -10,6 +10,10 @@ pub struct AppConfig {
     pub autoswitch: AutoswitchConfig,
     pub ui: UiConfig,
     pub edsm: EdsmConfig,
+    #[serde(default)]
+    pub carrier: CarrierConfig,
+    #[serde(default)]
+    pub github: GithubConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,6 +82,28 @@ pub struct EdsmConfig {
     pub api_key: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierConfig {
+    pub enabled: bool,
+}
+
+impl Default for CarrierConfig {
+    fn default() -> Self {
+        Self { enabled: false }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GithubConfig {
+    pub token: String,
+}
+
+impl Default for GithubConfig {
+    fn default() -> Self {
+        Self { token: String::new() }
+    }
+}
+
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
@@ -135,6 +161,8 @@ impl Default for AppConfig {
             edsm: EdsmConfig {
                 api_key: String::new(),
             },
+            carrier: CarrierConfig::default(),
+            github: GithubConfig::default(),
         }
     }
 }

@@ -114,6 +114,24 @@ function createTripStore() {
       }
     },
 
+    /** Seed from cached data (startup optimization) */
+    seed(cached: Partial<TripState>) {
+      if (cached.systemsVisited != null) systemsVisited = cached.systemsVisited;
+      if (cached.bodiesScanned != null) bodiesScanned = cached.bodiesScanned;
+      if (cached.starsScanned != null) starsScanned = cached.starsScanned;
+      if (cached.bodiesMapped != null) bodiesMapped = cached.bodiesMapped;
+      if (cached.firstDiscoveries != null) firstDiscoveries = cached.firstDiscoveries;
+      if (cached.cartoFSSValue != null) cartoFSSValue = cached.cartoFSSValue;
+      if (cached.cartoDSSValue != null) cartoDSSValue = cached.cartoDSSValue;
+      if (cached.bioValueBase != null) bioValueBase = cached.bioValueBase;
+      if (cached.bioValueBonus != null) bioValueBonus = cached.bioValueBonus;
+      if (cached.bioSpeciesFound != null) bioSpeciesFound = cached.bioSpeciesFound;
+      if (cached.bioSpeciesAnalysed != null) bioSpeciesAnalysed = cached.bioSpeciesAnalysed;
+      if (cached.distanceTravelled != null) distanceTravelled = cached.distanceTravelled;
+      if (cached.playTimeSeconds != null) playTimeSeconds = cached.playTimeSeconds;
+      if (cached.jumps != null) jumps = cached.jumps;
+    },
+
     reset() {
       systemsVisited = 0;
       bodiesScanned = 0;

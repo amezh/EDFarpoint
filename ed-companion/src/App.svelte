@@ -51,6 +51,8 @@
   let statsLoading = $state(true);
   let statsProgress = $state("");
   let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
+  let cacheFileInfo = { fileName: "", fileOffset: 0 }; // for cache saving
+  let appVersion = $state("dev");
 
   function fmtCr(v: number): string {
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
@@ -87,6 +89,68 @@
         systemStore.applyEdsmBodies(result as Array<{ body_id?: number; name?: string; discovery?: { commander?: string; date?: string } }>);
       }
     } catch { /* EDSM may be unreachable — silently ignore */ }
+  }
+
+  /** Save journal cache to disk for fast startup next time */
+  function saveJournalCache() {
+    const lt = lifetimeStore.toJSON();
+    const tr = tripStore.current;
+    const lastEvents = journalStore.recentEvents;
+    const lastTimestamp = lastEvents.length > 0
+      ? (lastEvents[0]?.timestamp as string) ?? ""
+      : "";
+
+    // Serialize system state (Map → array for JSON)
+    const sys = systemStore.current;
+    const systemStateJson = sys
+      ? { ...sys, stars: Array.from(sys.stars.entries()) }
+      : null;
+
+    invoke("save_journal_cache", {
+      cache: {
+        version: 2,
+        last_event_timestamp: lastTimestamp,
+        last_file_name: cacheFileInfo.fileName,
+        last_file_offset: cacheFileInfo.fileOffset,
+        last_dock_timestamp: lastDockInfo?.timestamp ?? null,
+        last_dock_station: lastDockInfo?.station ?? null,
+        lifetime: {
+          total_carto_fss: lt.totalCartoFSS,
+          total_carto_dss: lt.totalCartoDSS,
+          total_bio_base: lt.totalBioBase,
+          total_bio_bonus: lt.totalBioBonus,
+          total_systems: lt.totalSystems,
+          total_bodies_scanned: lt.totalBodiesScanned,
+          total_stars_scanned: lt.totalStarsScanned,
+          total_bodies_mapped: lt.totalBodiesMapped,
+          total_bio_species: lt.totalBioSpecies,
+          total_distance_ly: lt.totalDistanceLy,
+          rarest_species: lt.rarestSpecies,
+          rarest_species_value: lt.rarestSpeciesValue,
+        },
+        trip: {
+          systems_visited: tr.systemsVisited,
+          bodies_scanned: tr.bodiesScanned,
+          stars_scanned: tr.starsScanned,
+          bodies_mapped: tr.bodiesMapped,
+          first_discoveries: tr.firstDiscoveries,
+          carto_fss_value: tr.cartoFSSValue,
+          carto_dss_value: tr.cartoDSSValue,
+          bio_value_base: tr.bioValueBase,
+          bio_value_bonus: tr.bioValueBonus,
+          bio_species_found: tr.bioSpeciesFound,
+          bio_species_analysed: tr.bioSpeciesAnalysed,
+          distance_travelled: tr.distanceTravelled,
+          play_time_seconds: tr.playTimeSeconds,
+          jumps: tr.jumps,
+        },
+        commander: journalStore.commander,
+        ship_name: journalStore.shipName,
+        ship_type: null,
+        system_state: systemStateJson,
+        expedition: expeditionStore.visited,
+      },
+    }).catch(() => {});
   }
 
   /** Fetch EDSM discoverer info for the next N route systems */
@@ -602,6 +666,9 @@
   onMount(() => {
     // Load app config
     configStore.load();
+    invoke<string>("get_app_version").then(v => {
+      appVersion = v === "0.0.0" ? "dev" : `v${v}`;
+    }).catch(() => {});
 
     // Pull structured history from Rust backend
     invoke<Record<string, unknown> | null>("get_journal_history").then((result) => {
@@ -614,47 +681,174 @@
 
       const allEvents = result.allEvents as Record<string, unknown>[];
       const tripStartIdx = result.tripStartIdx as number;
+      cacheFileInfo = {
+        fileName: (result.latestFileName as string) ?? "",
+        fileOffset: (result.latestFileOffset as number) ?? 0,
+      };
       lastDockInfo = result.lastDockTimestamp
         ? { timestamp: result.lastDockTimestamp as string, station: (result.lastDockStation as string) ?? "" }
         : null;
 
-      // Phase 1: Process trip events immediately (post-dock → end)
-      // This is fast since it's typically just the recent sessions
-      for (let i = tripStartIdx; i < allEvents.length; i++) {
-        handleJournalEvent(allEvents[i]);
+      // Seed stores from cache if available
+      const cachedLifetime = result.cachedLifetime as Record<string, unknown> | null;
+      const cachedTrip = result.cachedTrip as Record<string, unknown> | null;
+      if (cachedLifetime) {
+        lifetimeStore.seed({
+          totalCartoFSS: (cachedLifetime.total_carto_fss as number) ?? 0,
+          totalCartoDSS: (cachedLifetime.total_carto_dss as number) ?? 0,
+          totalBioBase: (cachedLifetime.total_bio_base as number) ?? 0,
+          totalBioBonus: (cachedLifetime.total_bio_bonus as number) ?? 0,
+          totalSystems: (cachedLifetime.total_systems as number) ?? 0,
+          totalBodiesScanned: (cachedLifetime.total_bodies_scanned as number) ?? 0,
+          totalStarsScanned: (cachedLifetime.total_stars_scanned as number) ?? 0,
+          totalBodiesMapped: (cachedLifetime.total_bodies_mapped as number) ?? 0,
+          totalBioSpecies: (cachedLifetime.total_bio_species as number) ?? 0,
+          totalDistanceLy: (cachedLifetime.total_distance_ly as number) ?? 0,
+          rarestSpecies: (cachedLifetime.rarest_species as string) ?? null,
+          rarestSpeciesValue: (cachedLifetime.rarest_species_value as number) ?? 0,
+        });
       }
-      ready = true; // Show UI now with trip data
-      appReady = true; // Enable notification sounds (history replay done)
 
-      // Batch-trigger bio predictions for any bodies that loaded from history
-      for (const body of systemStore.current?.bodies ?? []) {
-        triggerBioPrediction(body);
-        // Also sync confidence for bodies that already have predictions from prior sessions
-        syncPredictionConfidence(body);
+      // Seed trip from cache if no new dock happened in the new events
+      const newEventsHaveDock = allEvents.some(e => e.event === "Docked");
+      if (cachedTrip && !newEventsHaveDock) {
+        tripStore.seed({
+          systemsVisited: (cachedTrip.systems_visited as number) ?? 0,
+          bodiesScanned: (cachedTrip.bodies_scanned as number) ?? 0,
+          starsScanned: (cachedTrip.stars_scanned as number) ?? 0,
+          bodiesMapped: (cachedTrip.bodies_mapped as number) ?? 0,
+          firstDiscoveries: (cachedTrip.first_discoveries as number) ?? 0,
+          cartoFSSValue: (cachedTrip.carto_fss_value as number) ?? 0,
+          cartoDSSValue: (cachedTrip.carto_dss_value as number) ?? 0,
+          bioValueBase: (cachedTrip.bio_value_base as number) ?? 0,
+          bioValueBonus: (cachedTrip.bio_value_bonus as number) ?? 0,
+          bioSpeciesFound: (cachedTrip.bio_species_found as number) ?? 0,
+          bioSpeciesAnalysed: (cachedTrip.bio_species_analysed as number) ?? 0,
+          distanceTravelled: (cachedTrip.distance_travelled as number) ?? 0,
+          playTimeSeconds: (cachedTrip.play_time_seconds as number) ?? 0,
+          jumps: (cachedTrip.jumps as number) ?? 0,
+        });
       }
 
-      // Phase 2: Process ALL events for lifetime stats in background chunks
-      statsProgress = `Processing lifetime stats (${allEvents.length} events)...`;
-      let li = 0;
-      const CHUNK = 5000;
+      // Seed additional stores from cache
+      if (cachedLifetime) {
+        const cachedCommander = result.cachedCommander as string | null;
+        const cachedShipName = result.cachedShipName as string | null;
+        const cachedSystemState = result.cachedSystemState as unknown;
+        const cachedExpedition = result.cachedExpedition as unknown;
 
-      function processLifetimeChunk() {
-        const end = Math.min(li + CHUNK, allEvents.length);
-        for (; li < end; li++) {
-          handleLifetimeEvent(allEvents[li]);
+        if (cachedCommander || cachedShipName) {
+          journalStore.seed(cachedCommander, cachedShipName);
+        }
+        if (cachedSystemState) {
+          systemStore.seedFromCache(cachedSystemState);
+        }
+        if (cachedExpedition) {
+          expeditionStore.seedFromCache(cachedExpedition);
+        }
+      }
+
+      if (cachedLifetime) {
+        // === CACHED PATH: fast startup ===
+        // Lifetime + trip + system + expedition already seeded from cache above.
+        // allEvents contains ONLY new events since the cache.
+        // Process ALL new events through both handlers (they accumulate on top of seeded values).
+        for (let i = 0; i < allEvents.length; i++) {
+          handleJournalEvent(allEvents[i]);
+          handleLifetimeEvent(allEvents[i]);
         }
 
-        if (li < allEvents.length) {
-          statsProgress = `Lifetime stats... ${Math.round((li / allEvents.length) * 100)}%`;
-          requestAnimationFrame(processLifetimeChunk);
-        } else {
-          statsLoading = false;
-          statsProgress = "";
-          lifetimeReady = true;
+        // Process last 24h events for the "Last 24h" stats panel.
+        // These are pre-filtered by Rust to events within ~25h.
+        const recent24h = (result.recent24hEvents ?? []) as Record<string, unknown>[];
+        for (const ev of recent24h) {
+          const ts = ev.timestamp as string | undefined;
+          if (ts && last24hStore.isRecent(ts)) {
+            const event = ev.event as string;
+            if (ACTIVE_EVENTS.has(event)) last24hStore.trackTimestamp(ts);
+            // Mirror the relevant stat accumulation for last24h
+            switch (event) {
+              case "FSDJump":
+                last24hStore.addSystem(ev.StarSystem as string, (ev.JumpDist as number) ?? 0);
+                break;
+              case "Location":
+                last24hStore.addSystemVisit(ev.StarSystem as string);
+                break;
+              case "Scan":
+                if (ev.StarType) {
+                  last24hStore.addStarScan(estimateStarValue(ev.StarType as string, (ev.StellarMass as number) ?? 1, !!(ev.WasDiscovered)));
+                } else {
+                  const fv = estimateCartoValue({ bodyType: (ev.PlanetClass as string) ?? "", terraformable: (ev.TerraformState as string) === "Terraformable", wasDiscovered: !!(ev.WasDiscovered), wasMapped: !!(ev.WasMapped), massEM: (ev.MassEM as number) ?? undefined, withDSS: false });
+                  last24hStore.addBodyScan(!ev.WasDiscovered, fv);
+                }
+                break;
+              case "SAAScanComplete":
+                last24hStore.addBodyMapped(0); // approximate — no body lookup available
+                break;
+              case "ScanOrganic":
+                if ((ev.ScanType as string) === "Analyse") {
+                  const spName = (ev.Species_Localised as string) ?? (ev.Species as string) ?? "";
+                  last24hStore.addBioAnalysis(getSpeciesValue(spName), !(ev.WasDiscovered));
+                }
+                break;
+            }
+          }
         }
-      }
 
-      requestAnimationFrame(processLifetimeChunk);
+        ready = true;
+        appReady = true;
+        statsLoading = false;
+        lifetimeReady = true;
+
+        // Batch-trigger bio predictions
+        for (const body of systemStore.current?.bodies ?? []) {
+          triggerBioPrediction(body);
+          syncPredictionConfidence(body);
+        }
+
+        // Update cache with new state
+        saveJournalCache();
+      } else {
+        // === FULL READ PATH: no cache, first run ===
+        // Phase 1: Process trip events immediately (post-dock → end)
+        for (let i = tripStartIdx; i < allEvents.length; i++) {
+          handleJournalEvent(allEvents[i]);
+        }
+        ready = true;
+        appReady = true;
+
+        // Batch-trigger bio predictions
+        for (const body of systemStore.current?.bodies ?? []) {
+          triggerBioPrediction(body);
+          syncPredictionConfidence(body);
+        }
+
+        // Phase 2: Process ALL events for lifetime stats in background chunks
+        statsProgress = `Processing lifetime stats (${allEvents.length} events)...`;
+        let li = 0;
+        const CHUNK = 5000;
+
+        function processLifetimeChunk() {
+          const end = Math.min(li + CHUNK, allEvents.length);
+          for (; li < end; li++) {
+            handleLifetimeEvent(allEvents[li]);
+          }
+
+          if (li < allEvents.length) {
+            statsProgress = `Lifetime stats... ${Math.round((li / allEvents.length) * 100)}%`;
+            requestAnimationFrame(processLifetimeChunk);
+          } else {
+            statsLoading = false;
+            statsProgress = "";
+            lifetimeReady = true;
+
+            // Save cache for next startup
+            saveJournalCache();
+          }
+        }
+
+        requestAnimationFrame(processLifetimeChunk);
+      }
     }).catch(() => {
       ready = true;
       appReady = true;
@@ -707,6 +901,7 @@
     <!-- Top bar: system + CMDR + trip value + settings toggle -->
     <header class="flex items-center gap-4 px-4 py-1.5 bg-ed-panel border-b border-ed-border">
       <span class="text-ed-orange font-bold tracking-wide">ED Farpoint</span>
+      <span class="text-ed-text-muted text-[10px]">{appVersion}</span>
       {#if journalStore.commander}
         <span class="text-ed-text-muted text-xs">CMDR {journalStore.commander}</span>
       {/if}
@@ -727,6 +922,13 @@
           <span class="text-ed-text-muted">TOTAL</span>
           <span class="text-ed-orange font-bold ml-1">{fmtCr(tripStore.current.cartoFSSValue + tripStore.current.cartoDSSValue + tripStore.current.bioValueBase + tripStore.current.bioValueBonus)}</span>
         </span>
+        {#if configStore.current?.carrier?.enabled}
+          {@const carrierVal = (tripStore.current.cartoFSSValue + tripStore.current.cartoDSSValue + tripStore.current.bioValueBase + tripStore.current.bioValueBonus) * 0.65625}
+          <span>
+            <span class="text-ed-text-muted">CARRIER</span>
+            <span class="text-ed-dim ml-1">{fmtCr(carrierVal)}</span>
+          </span>
+        {/if}
         {#if tripStore.current.playTimeSeconds > 60}
           {@const totalVal = tripStore.current.cartoFSSValue + tripStore.current.cartoDSSValue + tripStore.current.bioValueBase + tripStore.current.bioValueBonus}
           <span>

@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { configStore } from "$lib/stores/config.svelte";
   import { last24hStore } from "$lib/stores/session.svelte";
 
   const today = $derived(last24hStore.current);
+  const carrierEnabled = $derived(configStore.current?.carrier?.enabled ?? false);
 
   function fmt(v: number): string {
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + " B";
@@ -79,6 +81,12 @@
         <span class="text-ed-orange">Total</span>
         <span class="font-mono text-ed-orange">{fmt(totalValue)} Cr</span>
       </div>
+      {#if carrierEnabled}
+        <div class="flex justify-between">
+          <span class="text-ed-text-muted">Carrier</span>
+          <span class="font-mono text-ed-dim">{fmt(totalValue * 0.65625)}</span>
+        </div>
+      {/if}
       {#if crPerHour > 0}
         <div class="flex justify-between">
           <span class="text-ed-text-muted">Cr/h</span>

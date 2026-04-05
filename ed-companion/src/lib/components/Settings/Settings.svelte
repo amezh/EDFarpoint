@@ -2,8 +2,40 @@
   import { configStore } from "$lib/stores/config.svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { emit, listen } from "@tauri-apps/api/event";
+  import { check } from "@tauri-apps/plugin-updater";
 
   const config = $derived(configStore.current);
+
+  let updateStatus = $state<string | null>(null);
+  let appVersion = $state("...");
+
+  invoke<string>("get_app_version").then(v => {
+    appVersion = v === "0.0.0" ? "dev" : `v${v}`;
+  }).catch(() => {});
+
+  async function checkForUpdate() {
+    updateStatus = "Checking...";
+    try {
+      const update = await check({
+        headers: {
+          Authorization: `Bearer ${config?.github?.token ?? ""}`,
+        },
+      });
+      if (update) {
+        updateStatus = `Update available: v${update.version}`;
+        if (confirm(`Update to v${update.version}?\n\n${update.body ?? ""}`)) {
+          updateStatus = "Downloading...";
+          await update.downloadAndInstall();
+          updateStatus = "Restarting...";
+          await invoke("clear_cache_and_restart");
+        }
+      } else {
+        updateStatus = "You're on the latest version";
+      }
+    } catch (e) {
+      updateStatus = `Update check failed: ${e}`;
+    }
+  }
 
   function save() {
     configStore.patch(() => {}); // trigger debounced save
@@ -73,6 +105,28 @@
                  bind:value={config.edsm.api_key} onchange={save}
                  placeholder="Optional" />
         </label>
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">GitHub token (for updates)</span>
+          <input type="password" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-48 text-xs"
+                 bind:value={config.github.token} onchange={save}
+                 placeholder="ghp_..." />
+        </label>
+      </div>
+    </div>
+
+    <div class="ed-card">
+      <h3 class="text-ed-amber font-bold mb-3">About</h3>
+      <div class="flex flex-col gap-2 text-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Version</span>
+          <span class="text-ed-text font-mono">{appVersion}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Check for updates</span>
+          <button class="ed-btn text-xs" onclick={checkForUpdate}>
+            {updateStatus ?? "Check now"}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -150,6 +204,34 @@
             <input type="number" class="bg-ed-bg border border-ed-border rounded px-2 py-1 text-ed-text w-20 text-xs text-right"
                    bind:value={config.poi.max_gravity} onchange={save} step="0.1" />
           </label>
+        {/if}
+      </div>
+    </div>
+
+    <div class="ed-card">
+      <h3 class="text-ed-amber font-bold mb-3">Data</h3>
+      <div class="flex flex-col gap-2 text-sm">
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Clear journal cache and reload</span>
+          <button class="ed-btn text-xs" onclick={() => {
+            invoke("clear_cache_and_restart").catch(() => {});
+          }}>Clear cache & restart</button>
+        </label>
+      </div>
+    </div>
+
+    <div class="ed-card">
+      <h3 class="text-ed-amber font-bold mb-3">Fleet Carrier</h3>
+      <div class="flex flex-col gap-2 text-sm">
+        <label class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Show carrier values</span>
+          <input type="checkbox" bind:checked={config.carrier.enabled}
+                 onchange={save} />
+        </label>
+        {#if config.carrier.enabled}
+          <p class="text-xs text-ed-text-muted">
+            Carrier payout: 75% base value, minus 12.5% transfer tax (65.6% net)
+          </p>
         {/if}
       </div>
     </div>

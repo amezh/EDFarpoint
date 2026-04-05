@@ -68,6 +68,15 @@ function createExpeditionStore() {
     get visited() { return visited; },
     get currentSystemName() { return currentSystemName; },
 
+    /** Seed from cached data */
+    seedFromCache(cachedVisited: unknown) {
+      if (!Array.isArray(cachedVisited)) return;
+      visited = cachedVisited as VisitedSystem[];
+      if (visited.length > 0) {
+        currentSystemName = visited[visited.length - 1].name;
+      }
+    },
+
     /** Current system entry (last in visited list) */
     get currentSystem(): VisitedSystem | null {
       if (!currentSystemName) return null;

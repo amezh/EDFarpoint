@@ -21,6 +21,8 @@ export interface AppConfig {
   autoswitch: { enabled: boolean; panel_autoswitch: boolean; overlay_autoswitch: boolean };
   ui: { body_columns: string[] };
   edsm: { api_key: string };
+  carrier: { enabled: boolean };
+  github: { token: string };
 }
 
 let config = $state<AppConfig | null>(null);

@@ -121,9 +121,7 @@
         {#if currentSystem.firstDiscoveryBodies > 0}
           <span class="text-ed-amber">{currentSystem.firstDiscoveryBodies} 1st bodies</span>
         {/if}
-        {#if currentSystem.edsmLoading}
-          <span class="text-ed-text-muted italic">EDSM...</span>
-        {:else if currentSystem.edsmKnown === false}
+        {#if currentSystem.edsmKnown === false}
           <span class="text-ed-green">new to EDSM</span>
         {:else if currentSystem.edsmKnown === true}
           <span class="text-ed-text-muted">known to EDSM</span>

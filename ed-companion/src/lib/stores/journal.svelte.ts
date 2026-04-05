@@ -32,6 +32,11 @@ function createJournalStore() {
       return state.recentEvents;
     },
 
+    seed(commander: string | null, shipName: string | null) {
+      if (commander) state.commander = commander;
+      if (shipName) state.shipName = shipName;
+    },
+
     handleEvent(payload: unknown) {
       const ev = payload as JournalEvent;
       if (!ev?.event) return;

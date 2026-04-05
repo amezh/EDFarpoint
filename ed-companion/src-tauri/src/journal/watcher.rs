@@ -11,11 +11,13 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 
+use super::cache::JournalCache;
 use super::events::JournalEvent;
 
 /// Historical data split into lifetime (all) and trip (since last dock)
 pub struct HistoricalData {
-    /// All events across all journal files (for lifetime stats + current system state)
+    /// All events across all journal files (for lifetime stats + current system state).
+    /// When a cache is used, this only contains NEW events since the cache.
     pub all_events: Vec<Value>,
     /// Index into all_events where the current trip starts (after last Docked)
     pub trip_start_idx: usize,
@@ -23,6 +25,14 @@ pub struct HistoricalData {
     pub last_dock_timestamp: Option<String>,
     /// Last dock station name, if any
     pub last_dock_station: Option<String>,
+    /// Cached stats from prior runs (None = full read, no cache)
+    pub cached: Option<JournalCache>,
+    /// Latest file name + offset for cache saving
+    pub latest_file_name: String,
+    pub latest_file_offset: u64,
+    /// Events from the last 24 hours (for "Last 24h" stats panel).
+    /// When cached, these are read separately from recent journal files.
+    pub recent_24h_events: Vec<Value>,
 }
 
 /// Global store for historical data
@@ -165,56 +175,174 @@ impl JournalWatcher {
         results
     }
 
-    /// Read ALL journal files and find the trip boundary (last Docked event)
-    pub fn read_all_history(&self) -> HistoricalData {
+    /// Read events from the last 24 hours across all journal files.
+    /// Only reads files modified within the last ~25 hours (with margin).
+    fn read_recent_24h(&self) -> Vec<Value> {
+        let cutoff = chrono::Utc::now() - chrono::Duration::hours(25); // small margin
+        let cutoff_str = cutoff.format("%Y-%m-%dT%H:%M:%S").to_string();
+
         let files = self.all_journal_files();
+        let mut events = Vec::new();
+
+        // Only check files modified in last ~25h
+        for path in files.iter().rev() {
+            let mtime = std::fs::metadata(path)
+                .and_then(|m| m.modified())
+                .ok();
+            let too_old = mtime.map(|t| {
+                t.elapsed().unwrap_or_default() > std::time::Duration::from_secs(25 * 3600)
+            }).unwrap_or(true);
+            if too_old { break; } // files are mtime-sorted, so older files come first
+
+            let file_events = Self::read_all_lines(path);
+            for ev in file_events {
+                if let Some(ts) = ev.get("timestamp").and_then(|t| t.as_str()) {
+                    if ts >= cutoff_str.as_str() {
+                        events.push(ev);
+                    }
+                }
+            }
+        }
+
+        events
+    }
+
+    /// Read journal history, optionally resuming from a cache.
+    /// When cached, only reads new events since the cache point.
+    pub fn read_history(&self, cache: Option<JournalCache>) -> HistoricalData {
+        let files = self.all_journal_files(); // sorted by mtime
         let start = std::time::Instant::now();
 
         let mut all_events = Vec::new();
         let mut last_dock_idx: Option<usize> = None;
         let mut last_dock_timestamp: Option<String> = None;
         let mut last_dock_station: Option<String> = None;
+        let mut skipped_files = 0usize;
 
-        for path in &files {
+        let has_cache = cache.is_some();
+
+        // Find the index of the cached file in the mtime-sorted list
+        let resume_idx = if let Some(ref c) = cache {
+            if c.last_file_name.is_empty() {
+                None
+            } else {
+                files.iter().position(|p| {
+                    p.file_name()
+                        .map(|n| n.to_string_lossy() == c.last_file_name)
+                        .unwrap_or(false)
+                })
+            }
+        } else {
+            None
+        };
+
+        let resume_offset = cache.as_ref().map(|c| c.last_file_offset).unwrap_or(0);
+
+        for (i, path) in files.iter().enumerate() {
+            if let Some(ri) = resume_idx {
+                if i < ri {
+                    // File is older than our resume point — skip entirely
+                    skipped_files += 1;
+                    continue;
+                }
+
+                if i == ri {
+                    // Resume file — read from saved offset
+                    let mut offset = resume_offset;
+                    let events = Self::read_new_lines(path, &mut offset);
+                    for ev in events {
+                        let idx = all_events.len();
+                        if ev.get("event").and_then(|e| e.as_str()) == Some("Docked") {
+                            last_dock_idx = Some(idx);
+                            last_dock_timestamp = ev.get("timestamp").and_then(|t| t.as_str()).map(|s| s.to_string());
+                            last_dock_station = ev.get("StationName").and_then(|s| s.as_str()).map(|s| s.to_string());
+                        }
+                        all_events.push(ev);
+                    }
+                    continue;
+                }
+            }
+
+            // Full read of this file (newer than cache, or no cache)
             let events = Self::read_all_lines(path);
             for ev in events {
                 let idx = all_events.len();
-
                 if ev.get("event").and_then(|e| e.as_str()) == Some("Docked") {
                     last_dock_idx = Some(idx);
                     last_dock_timestamp = ev.get("timestamp").and_then(|t| t.as_str()).map(|s| s.to_string());
                     last_dock_station = ev.get("StationName").and_then(|s| s.as_str()).map(|s| s.to_string());
                 }
-
                 all_events.push(ev);
             }
+        }
+
+        // If we have a cache and no new Docked event was found, inherit dock info from cache
+        if has_cache && last_dock_idx.is_none() {
+            last_dock_timestamp = cache.as_ref().and_then(|c| c.last_dock_timestamp.clone());
+            last_dock_station = cache.as_ref().and_then(|c| c.last_dock_station.clone());
         }
 
         let trip_start_idx = last_dock_idx.map(|i| i + 1).unwrap_or(0);
 
         let elapsed = start.elapsed();
-        log::info!(
-            "Journal history: {} total events from {} files in {:.1}s. Trip starts at event {} (last dock: {})",
-            all_events.len(),
-            files.len(),
-            elapsed.as_secs_f64(),
-            trip_start_idx,
-            last_dock_timestamp.as_deref().unwrap_or("never"),
-        );
+        if has_cache {
+            log::info!(
+                "Journal history (incremental): {} new events from {} files in {:.1}s ({} skipped). Trip starts at event {} (last dock: {})",
+                all_events.len(),
+                files.len(),
+                elapsed.as_secs_f64(),
+                skipped_files,
+                trip_start_idx,
+                last_dock_timestamp.as_deref().unwrap_or("never"),
+            );
+        } else {
+            log::info!(
+                "Journal history (full): {} events from {} files in {:.1}s. Trip starts at event {} (last dock: {})",
+                all_events.len(),
+                files.len(),
+                elapsed.as_secs_f64(),
+                trip_start_idx,
+                last_dock_timestamp.as_deref().unwrap_or("never"),
+            );
+        }
+
+        // Record latest file info for cache saving
+        let latest_file = files.last()
+            .and_then(|p| p.file_name())
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let latest_offset = files.last()
+            .and_then(|p| fs::metadata(p).ok())
+            .map(|m| m.len())
+            .unwrap_or(0);
+
+        // For cached startup, read last 24h events separately for the "Last 24h" panel
+        let recent_24h_events = if has_cache {
+            self.read_recent_24h()
+        } else {
+            Vec::new() // full read path — frontend handles 24h filtering itself
+        };
 
         HistoricalData {
             all_events,
             trip_start_idx,
             last_dock_timestamp,
             last_dock_station,
+            cached: cache,
+            latest_file_name: latest_file,
+            latest_file_offset: latest_offset,
+            recent_24h_events,
         }
     }
 
     pub async fn start(self, app: AppHandle) {
         let (tx, mut rx) = mpsc::channel::<()>(100);
 
-        // Read full history
-        let data = self.read_all_history();
+        // Load cache if available
+        let cache = JournalCache::load(&self.journal_dir);
+
+        // Read history (incremental if cached)
+        let data = self.read_history(cache);
 
         // Set position to end of latest journal for live tailing
         if let Some(latest) = self.find_latest_journal() {

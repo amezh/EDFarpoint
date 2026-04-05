@@ -71,6 +71,22 @@ function createLifetimeStore() {
       state.totalDistanceLy += ly;
     },
 
+    /** Seed from cached data (startup optimization) */
+    seed(cached: Partial<LifetimeState>) {
+      if (cached.totalCartoFSS != null) state.totalCartoFSS = cached.totalCartoFSS;
+      if (cached.totalCartoDSS != null) state.totalCartoDSS = cached.totalCartoDSS;
+      if (cached.totalBioBase != null) state.totalBioBase = cached.totalBioBase;
+      if (cached.totalBioBonus != null) state.totalBioBonus = cached.totalBioBonus;
+      if (cached.totalSystems != null) state.totalSystems = cached.totalSystems;
+      if (cached.totalBodiesScanned != null) state.totalBodiesScanned = cached.totalBodiesScanned;
+      if (cached.totalStarsScanned != null) state.totalStarsScanned = cached.totalStarsScanned;
+      if (cached.totalBodiesMapped != null) state.totalBodiesMapped = cached.totalBodiesMapped;
+      if (cached.totalBioSpecies != null) state.totalBioSpecies = cached.totalBioSpecies;
+      if (cached.totalDistanceLy != null) state.totalDistanceLy = cached.totalDistanceLy;
+      if (cached.rarestSpecies !== undefined) state.rarestSpecies = cached.rarestSpecies ?? null;
+      if (cached.rarestSpeciesValue != null) state.rarestSpeciesValue = cached.rarestSpeciesValue;
+    },
+
     toJSON(): LifetimeState {
       return { ...state };
     },

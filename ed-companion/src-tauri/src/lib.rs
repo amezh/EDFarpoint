@@ -187,6 +187,52 @@ async fn fetch_edsm_bodies(
     Ok(serde_json::to_value(&bodies).unwrap_or(Value::Null))
 }
 
+/// Clear journal cache and restart the app (full re-read on next launch)
+#[tauri::command]
+fn clear_cache_and_restart(
+    state: tauri::State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    let journal_dir = &state.config.read().paths.journal_dir;
+    let dir = if journal_dir.is_empty() {
+        journal::JournalWatcher::default_journal_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+    } else {
+        std::path::PathBuf::from(journal_dir)
+    };
+    // Delete cache file
+    let cache_path = dir.join("journal_cache.json");
+    let _ = std::fs::remove_file(&cache_path);
+    log::info!("Journal cache cleared, restarting app");
+
+    // Restart: use tauri's restart, falling back to exit
+    app.restart();
+}
+
+/// Frontend calls this to save journal cache after processing
+#[tauri::command]
+fn save_journal_cache(
+    state: tauri::State<'_, Arc<AppState>>,
+    cache: Value,
+) -> Result<(), String> {
+    let cache: journal::cache::JournalCache =
+        serde_json::from_value(cache).map_err(|e| e.to_string())?;
+    let journal_dir = &state.config.read().paths.journal_dir;
+    let dir = if journal_dir.is_empty() {
+        journal::JournalWatcher::default_journal_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+    } else {
+        std::path::PathBuf::from(journal_dir)
+    };
+    cache.save(&dir);
+    Ok(())
+}
+
+#[tauri::command]
+fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
 /// Frontend calls this once on mount to get structured historical data
 #[tauri::command]
 fn get_journal_history() -> Value {
@@ -194,11 +240,27 @@ fn get_journal_history() -> Value {
     {
         match journal::watcher::take_historical_data() {
             Some(data) => {
+                let cached = &data.cached;
+                let cached_lifetime = cached.as_ref().map(|c| &c.lifetime);
+                let cached_trip = cached.as_ref().and_then(|c| c.trip.as_ref());
+                let cached_commander = cached.as_ref().and_then(|c| c.commander.as_deref());
+                let cached_ship_name = cached.as_ref().and_then(|c| c.ship_name.as_deref());
+                let cached_system_state = cached.as_ref().and_then(|c| c.system_state.as_ref());
+                let cached_expedition = cached.as_ref().and_then(|c| c.expedition.as_ref());
                 serde_json::json!({
                     "allEvents": data.all_events,
                     "tripStartIdx": data.trip_start_idx,
                     "lastDockTimestamp": data.last_dock_timestamp,
                     "lastDockStation": data.last_dock_station,
+                    "cachedLifetime": cached_lifetime,
+                    "cachedTrip": cached_trip,
+                    "cachedCommander": cached_commander,
+                    "cachedShipName": cached_ship_name,
+                    "cachedSystemState": cached_system_state,
+                    "cachedExpedition": cached_expedition,
+                    "latestFileName": data.latest_file_name,
+                    "latestFileOffset": data.latest_file_offset,
+                    "recent24hEvents": data.recent_24h_events,
                 })
             }
             None => Value::Null,
@@ -299,6 +361,7 @@ pub fn run() {
             .level(log::LevelFilter::Info)
             .build())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(app_state)
         .invoke_handler({
             #[cfg(not(target_os = "android"))]
@@ -320,6 +383,9 @@ pub fn run() {
                     fetch_edsm_bodies,
                     push_remote_state,
                     get_journal_history,
+                    save_journal_cache,
+                    get_app_version,
+                    clear_cache_and_restart,
                 ]
             }
             #[cfg(target_os = "android")]
@@ -335,6 +401,9 @@ pub fn run() {
                     fetch_edsm_bodies,
                     push_remote_state,
                     get_journal_history,
+                    save_journal_cache,
+                    get_app_version,
+                    clear_cache_and_restart,
                 ]
             }
         })

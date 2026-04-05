@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { configStore } from "$lib/stores/config.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
 
   const trip = $derived(tripStore.current);
+  const carrierEnabled = $derived(configStore.current?.carrier?.enabled ?? false);
 
   function fmt(v: number): string {
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + " B";
@@ -101,6 +103,12 @@
         <span class="text-ed-orange font-bold">Estimated Total Value</span>
         <span class="font-mono text-ed-orange font-bold text-base">{fmt(totalValue)} Cr</span>
       </div>
+      {#if carrierEnabled}
+        <div class="flex justify-between mt-1">
+          <span class="text-ed-text-muted">Carrier payout</span>
+          <span class="font-mono text-ed-dim">{fmt(totalValue * 0.65625)} Cr</span>
+        </div>
+      {/if}
     </div>
   </div>
 </div>

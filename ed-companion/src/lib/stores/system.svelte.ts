@@ -113,6 +113,14 @@ function createSystemStore() {
       return state;
     },
 
+    /** Seed from cached JSON (same format as sessionStorage) */
+    seedFromCache(cached: unknown) {
+      if (!cached || typeof cached !== "object") return;
+      const c = cached as Record<string, unknown>;
+      const parsed = { ...c, stars: new Map(c.stars as [number, string][] ?? []) } as SystemState;
+      state = parsed;
+    },
+
     setSystem(data: Record<string, unknown>) {
       const name = data.StarSystem as string;
       const address = data.SystemAddress as number;
