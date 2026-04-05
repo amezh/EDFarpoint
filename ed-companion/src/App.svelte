@@ -90,7 +90,7 @@
     try {
       const result = await invoke<Array<Record<string, unknown>> | null>("fetch_edsm_bodies", { systemName });
       if (result) {
-        systemStore.applyEdsmBodies(result as Array<{ body_id?: number; name?: string; discovery?: { commander?: string; date?: string } }>);
+        systemStore.applyEdsmBodies(result);
       }
     } catch { /* EDSM may be unreachable — silently ignore */ }
   }
@@ -165,9 +165,9 @@
       try {
         const bodies = await invoke<Array<Record<string, unknown>> | null>("fetch_edsm_bodies", { systemName: sys.name });
         if (bodies && bodies.length > 0) {
-          // Find main star (isMainStar or lowest bodyId)
-          const mainStar = bodies.find((b: any) => b.is_main_star)
-            ?? bodies.reduce((a: any, b: any) => ((a.body_id ?? 999) < (b.body_id ?? 999) ? a : b));
+          // Find main star (isMainStar or lowest bodyId) — Rust serializes as camelCase
+          const mainStar = bodies.find((b: any) => b.isMainStar)
+            ?? bodies.reduce((a: any, b: any) => ((a.bodyId ?? 999) < (b.bodyId ?? 999) ? a : b));
           const disc = (mainStar as any)?.discovery;
           routeStore.setDiscoverer(sys.name, disc?.commander ?? "???");
         } else {

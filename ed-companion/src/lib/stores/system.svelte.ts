@@ -358,14 +358,17 @@ function createSystemStore() {
     },
 
     /** Apply EDSM discovery data to matching bodies */
-    applyEdsmBodies(edsmBodies: Array<{ body_id?: number; name?: string; discovery?: { commander?: string; date?: string } }>) {
+    applyEdsmBodies(edsmBodies: Array<Record<string, unknown>>) {
       if (!state) return;
       for (const eb of edsmBodies) {
-        if (eb.body_id == null || !eb.discovery?.commander) continue;
-        const body = state.bodies.find((b) => b.bodyId === eb.body_id);
+        // Rust serializes as camelCase (bodyId, not body_id) due to serde rename
+        const bodyId = (eb.bodyId ?? eb.body_id) as number | undefined;
+        const discovery = eb.discovery as { commander?: string; date?: string } | undefined;
+        if (bodyId == null || !discovery?.commander) continue;
+        const body = state.bodies.find((b) => b.bodyId === bodyId);
         if (body) {
-          body.edsmDiscoverer = eb.discovery.commander;
-          body.edsmDiscoveryDate = eb.discovery.date ?? null;
+          body.edsmDiscoverer = discovery.commander;
+          body.edsmDiscoveryDate = discovery.date ?? null;
         }
       }
     },

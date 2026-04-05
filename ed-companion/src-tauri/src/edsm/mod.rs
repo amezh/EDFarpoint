@@ -182,7 +182,7 @@ impl EdsmClient {
         }
 
         let mut url = format!(
-            "{}/system-bodies?systemName={}",
+            "{}/bodies?systemName={}",
             EDSM_BASE_URL.replace("api-v1", "api-system-v1"),
             urlencoding::encode(system_name)
         );
