@@ -1,6 +1,6 @@
 [package]
 name = "ed-companion"
-version = "1.0.3"
+version = "0.0.0"
 description = "ED Farpoint - Elite Dangerous Exploration & Exobiology Companion"
 authors = ["Lazy Cat"]
 license = "MIT"
