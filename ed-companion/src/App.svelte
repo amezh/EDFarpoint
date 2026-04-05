@@ -751,11 +751,34 @@
       if (cachedLifetime) {
         // === CACHED PATH: fast startup ===
         // Lifetime + trip + system + expedition already seeded from cache above.
+
+        // Rebuild bodyDiscoveryMap from cached system bodies
+        if (systemStore.current) {
+          for (const body of systemStore.current.bodies) {
+            if (body.bodyId != null && systemStore.current.address) {
+              bodyDiscoveryMap.set(
+                bodyKey(systemStore.current.address, body.bodyId),
+                body.wasDiscovered,
+              );
+            }
+          }
+        }
+
         // allEvents contains ONLY new events since the cache.
         // Process ALL new events through both handlers (they accumulate on top of seeded values).
         for (let i = 0; i < allEvents.length; i++) {
           handleJournalEvent(allEvents[i]);
           handleLifetimeEvent(allEvents[i]);
+        }
+
+        // Trigger bio predictions and EDSM fetch for cached system
+        for (const body of systemStore.current?.bodies ?? []) {
+          triggerBioPrediction(body);
+          syncPredictionConfidence(body);
+        }
+        if (systemStore.current?.name) {
+          fetchEdsmBodies(systemStore.current.name);
+          fetchRouteDiscoverers();
         }
 
         // Process last 24h events for the "Last 24h" stats panel.
