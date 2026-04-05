@@ -6,6 +6,8 @@ export interface RouteSystem {
   starPos: [number, number, number];
   starClass: string;
   distanceLy: number | null;
+  discoverer: string | null; // EDSM main star discoverer, null = not yet fetched
+  discovererLoading: boolean;
 }
 
 export interface RouteState {
@@ -62,6 +64,8 @@ function createRouteStore() {
         starPos: entry.StarPos as [number, number, number],
         starClass: entry.StarClass as string,
         distanceLy: null,
+        discoverer: null,
+        discovererLoading: false,
       }));
 
       // Calculate distances between consecutive systems
@@ -79,6 +83,19 @@ function createRouteStore() {
       state.destination = systems[systems.length - 1]?.name ?? null;
       state.remainingJumps = systems.length - 1;
       state.remainingLy = systems.reduce((sum, s) => sum + (s.distanceLy ?? 0), 0);
+    },
+
+    setDiscoverer(systemName: string, discoverer: string | null) {
+      const sys = state.systems.find((s) => s.name === systemName);
+      if (sys) {
+        sys.discoverer = discoverer;
+        sys.discovererLoading = false;
+      }
+    },
+
+    setDiscovererLoading(systemName: string) {
+      const sys = state.systems.find((s) => s.name === systemName);
+      if (sys) sys.discovererLoading = true;
     },
 
     advanceRoute(currentSystem: string) {

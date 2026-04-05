@@ -3,6 +3,7 @@
   import RouteView from "$lib/components/RouteView/RouteView.svelte";
   import Settings from "$lib/components/Settings/Settings.svelte";
   import SystemView from "$lib/components/SystemView.svelte";
+  import TodayStats from "$lib/components/TripStats/TodayStats.svelte";
   import TripStats from "$lib/components/TripStats/TripStats.svelte";
   import { bioStore } from "$lib/stores/bio.svelte";
   import { configStore } from "$lib/stores/config.svelte";
@@ -14,6 +15,7 @@
   import { statusStore } from "$lib/stores/status.svelte";
   import type { Body } from "$lib/stores/system.svelte";
   import { systemStore } from "$lib/stores/system.svelte";
+  import { last24hStore } from "$lib/stores/session.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
   import { predictBio } from "$lib/utils/bioPredict";
   import { getSpeciesValue } from "$lib/utils/bioValues";
@@ -85,6 +87,32 @@
         systemStore.applyEdsmBodies(result as Array<{ body_id?: number; name?: string; discovery?: { commander?: string; date?: string } }>);
       }
     } catch { /* EDSM may be unreachable — silently ignore */ }
+  }
+
+  /** Fetch EDSM discoverer info for the next N route systems */
+  async function fetchRouteDiscoverers() {
+    const systems = routeStore.current.systems;
+    // Skip first (current system), fetch next 5
+    const upcoming = systems.slice(1, 6);
+    for (const sys of upcoming) {
+      if (sys.discoverer !== null || sys.discovererLoading) continue;
+      routeStore.setDiscovererLoading(sys.name);
+      try {
+        const bodies = await invoke<Array<Record<string, unknown>> | null>("fetch_edsm_bodies", { systemName: sys.name });
+        if (bodies && bodies.length > 0) {
+          // Find main star (isMainStar or lowest bodyId)
+          const mainStar = bodies.find((b: any) => b.is_main_star)
+            ?? bodies.reduce((a: any, b: any) => ((a.body_id ?? 999) < (b.body_id ?? 999) ? a : b));
+          const disc = (mainStar as any)?.discovery;
+          routeStore.setDiscoverer(sys.name, disc?.commander ?? "???");
+        } else {
+          // System not in EDSM — undiscovered
+          routeStore.setDiscoverer(sys.name, "???");
+        }
+      } catch {
+        routeStore.setDiscoverer(sys.name, "???");
+      }
+    }
   }
 
   /** Cross-reference bio store's actual scan data with predictions to restore confidence */
@@ -180,8 +208,13 @@
     // Track play time — only from events that indicate active player input.
     // Passive events (Music, ReceiveText, Friends, etc.) fire while AFK
     // and would incorrectly inflate play time.
-    if (data.timestamp && ACTIVE_EVENTS.has(event)) {
-      tripStore.trackTimestamp(data.timestamp as string);
+    const timestamp = data.timestamp as string | undefined;
+
+    const eventIsRecent = !!timestamp && last24hStore.isRecent(timestamp);
+
+    if (timestamp && ACTIVE_EVENTS.has(event)) {
+      tripStore.trackTimestamp(timestamp);
+      if (eventIsRecent) last24hStore.trackTimestamp(timestamp);
     }
 
     journalStore.handleEvent(data);
@@ -195,14 +228,19 @@
         // Fetch EDSM body data in background for discoverer info
         fetchEdsmBodies(data.StarSystem as string);
         if (event === "FSDJump") {
-          tripStore.addSystem(
-            data.StarSystem as string,
-            (data.JumpDist as number) ?? 0,
-          );
-          routeStore.advanceRoute(data.StarSystem as string);
+          const jumpSys = data.StarSystem as string;
+          const jumpDist = (data.JumpDist as number) ?? 0;
+          tripStore.addSystem(jumpSys, jumpDist);
+          if (eventIsRecent) last24hStore.addSystem(jumpSys, jumpDist);
+
+          routeStore.advanceRoute(jumpSys);
+          fetchRouteDiscoverers();
         } else {
           // Location event (game load) — register system without counting a jump
-          tripStore.addSystemVisit(data.StarSystem as string);
+          const locSys = data.StarSystem as string;
+          tripStore.addSystemVisit(locSys);
+          if (eventIsRecent) last24hStore.addSystemVisit(locSys);
+
           // If player is on a planet surface (logged in while landed/on foot),
           // restore the active planet so bio tracker works immediately
           const locBodyId = data.BodyID as number;
@@ -227,6 +265,8 @@
             !!(data.WasDiscovered),
           );
           tripStore.addStarScan(starValue);
+          if (eventIsRecent) last24hStore.addStarScan(starValue);
+
           if (systemStore.current?.name) {
             expeditionStore.addCartoValue(systemStore.current.name, starValue);
             if (!(data.WasDiscovered)) {
@@ -264,6 +304,8 @@
             withDSS: false,
           });
           tripStore.addBodyScan(isFirst, fssValue);
+          if (eventIsRecent) last24hStore.addBodyScan(isFirst, fssValue);
+
           if (systemStore.current?.name) {
             expeditionStore.addCartoValue(systemStore.current.name, fssValue);
             expeditionStore.addBodyScanned(systemStore.current.name);
@@ -340,12 +382,14 @@
           const fssValue = estimateCartoValue({ ...common, withDSS: false });
           const dssBonus = Math.max(0, dssValue - fssValue);
           tripStore.addBodyMapped(dssBonus);
+          if (eventIsRecent) last24hStore.addBodyMapped(dssBonus);
           if (systemStore.current?.name) {
             expeditionStore.addCartoValue(systemStore.current.name, dssBonus);
             expeditionStore.addBodyMapped(systemStore.current.name);
           }
         } else {
           tripStore.addBodyMapped(0);
+          if (eventIsRecent) last24hStore.addBodyMapped(0);
           if (systemStore.current?.name) {
             expeditionStore.addBodyMapped(systemStore.current.name);
           }
@@ -376,6 +420,7 @@
           const bodyId = data.Body as number;
           const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bodyId)) ?? true;
           tripStore.addBioAnalysis(baseValue, !wasDisc);
+          if (eventIsRecent) last24hStore.addBioAnalysis(baseValue, !wasDisc);
           // Mark species as analysed in predictions
           const analyseBody = systemStore.current?.bodies.find(b => b.bodyId === bodyId);
           if (analyseBody) {
@@ -629,6 +674,7 @@
 
     const unlistenNavRoute = listen<unknown>("navroute-update", (event) => {
       routeStore.setRoute(event.payload as Record<string, unknown>);
+      fetchRouteDiscoverers();
     });
 
     // When the overlay window finishes loading its event listeners it emits
@@ -729,6 +775,9 @@
             {#if !bioStore.currentPlanet || bioStore.currentPlanet.species.length === 0}
               <div class="mt-2 pt-2 border-t border-ed-border/30">
                 <TripStats />
+              </div>
+              <div class="mt-2">
+                <TodayStats />
               </div>
             {/if}
           </div>

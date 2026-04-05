@@ -203,7 +203,8 @@
       {#each vm.route.nextSystems as sys}
         <div class="flex items-center justify-between py-0.5 text-[10px]">
           <span class="truncate flex-1 {SCOOPABLE_STARS.has(sys.starClass) ? 'text-amber-400' : 'text-gray-400'}">{sys.name}</span>
-          <span class="{sys.starClass === 'N' ? 'text-cyan-400' : SCOOPABLE_STARS.has(sys.starClass) ? 'text-amber-400' : 'text-gray-500'}">{sys.starClass}</span>
+          <span class="truncate max-w-16 ml-1 {sys.discoverer && sys.discoverer !== '???' ? 'text-gray-500 italic' : 'text-cyan-400'}">{sys.discoverer ?? '???'}</span>
+          <span class="ml-1 {sys.starClass === 'N' ? 'text-cyan-400' : SCOOPABLE_STARS.has(sys.starClass) ? 'text-amber-400' : 'text-gray-500'}">{sys.starClass}</span>
         </div>
       {/each}
     </div>

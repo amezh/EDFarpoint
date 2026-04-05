@@ -71,6 +71,9 @@
         <span class="w-1.5 h-1.5 rounded-full shrink-0 {isScoopable(sys.starClass) ? 'bg-ed-amber' : ''}"></span>
         <span class="{starColor(sys.starClass)} w-4">{sys.starClass}</span>
         <span class="font-mono flex-1 truncate text-ed-text-muted">{sys.name}</span>
+        <span class="text-[10px] truncate max-w-20 {sys.discoverer && sys.discoverer !== '???' ? 'text-ed-text-muted italic' : 'text-ed-cyan'}">
+          {#if sys.discovererLoading}...{:else}{sys.discoverer ?? '???'}{/if}
+        </span>
         <span class="text-ed-text-muted font-mono">{sys.distanceLy?.toFixed(1)} LY</span>
       </div>
     {/each}

@@ -180,9 +180,10 @@ function buildViewModel(
     route: {
       remainingJumps: route.remainingJumps,
       destination: route.destination,
-      nextSystems: route.systems.slice(0, 3).map((s) => ({
+      nextSystems: route.systems.slice(1, 4).map((s) => ({
         name: s.name,
         starClass: s.starClass,
+        discoverer: s.discoverer,
       })),
     },
 

@@ -90,5 +90,5 @@ export interface OverlayTrip {
 export interface OverlayRoute {
   remainingJumps: number;
   destination: string | null;
-  nextSystems: { name: string; starClass: string }[];
+  nextSystems: { name: string; starClass: string; discoverer: string | null }[];
 }
