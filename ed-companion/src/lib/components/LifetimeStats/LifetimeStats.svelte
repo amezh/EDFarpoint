@@ -4,6 +4,7 @@
   const stats = $derived(lifetimeStore.current);
 
   function fmt(v: number): string {
+    if (!Number.isFinite(v)) return "0";
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + " B";
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + " M";
     if (v >= 1_000) return (v / 1_000).toFixed(1) + " K";

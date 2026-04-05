@@ -9,6 +9,7 @@
   const SCOOPABLE = new Set(["K", "G", "B", "F", "O", "A", "M"]);
 
   function fmt(v: number): string {
+    if (!Number.isFinite(v)) return "0";
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + "B";
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
     if (v >= 1_000) return (v / 1_000).toFixed(0) + "K";
@@ -37,7 +38,7 @@
   const currentSystem = $derived(expeditionStore.currentSystem);
 
   // Route ahead (skip first entry if it's the current system)
-  const routeAhead = $derived(() => {
+  const routeAhead = $derived.by(() => {
     const systems = route?.systems ?? [];
     if (systems.length > 0 && systems[0].name === currentName) {
       return systems.slice(1);
@@ -63,9 +64,9 @@
   {/if}
 
   <!-- NEXT: Route ahead -->
-  {#if routeAhead().length > 0}
+  {#if routeAhead.length > 0}
     <div class="text-[10px] text-ed-text-muted uppercase tracking-wider px-1 mt-1">Next</div>
-    {#each routeAhead().slice(0, 5) as sys, i (sys.name + i)}
+    {#each routeAhead.slice(0, 5) as sys, i (sys.name + i)}
       <div class="flex items-center gap-2 px-3 py-1 text-xs {isScoopable(sys.starClass) ? 'bg-ed-amber/5' : ''}">
         <span class="w-3 text-right text-ed-text-muted">{i + 1}</span>
         <span class="w-1.5 h-1.5 rounded-full shrink-0 {isScoopable(sys.starClass) ? 'bg-ed-amber' : ''}"></span>

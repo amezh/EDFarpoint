@@ -85,7 +85,7 @@
       {@const active = species.samples > 0 && !done}
       {@const predicted = species.predicted && species.samples === 0}
       {@const dists = active ? distancesToScans(species) : []}
-      {@const farEnough = dists.length > 0 && dists.every(d => d >= species.clonalRange)}
+      {@const farEnough = dists.length > 0 && dists.every(d => d >= (species.clonalRange ?? 200))}
       {@const mult = currentBody && !currentBody.wasDiscovered ? 5 : 1}
 
       {#if done}

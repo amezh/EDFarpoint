@@ -6,6 +6,7 @@
   const carrierEnabled = $derived(configStore.current?.carrier?.enabled ?? false);
 
   function fmt(v: number): string {
+    if (!Number.isFinite(v)) return "0";
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + " B";
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + " M";
     if (v >= 1_000) return (v / 1_000).toFixed(1) + " K";
@@ -13,6 +14,7 @@
   }
 
   function fmtTime(seconds: number): string {
+    if (!Number.isFinite(seconds)) return "0m";
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     if (h > 0) return `${h}h ${m}m`;

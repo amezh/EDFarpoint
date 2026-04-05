@@ -52,6 +52,9 @@ impl RemoteState {
 
     /// Broadcast an event to all connected WebSocket clients
     pub fn broadcast(&self, event_type: &str, payload: &Value) {
+        if self.event_tx.receiver_count() == 0 {
+            return;
+        }
         let msg = serde_json::json!({
             "type": event_type,
             "payload": payload,
@@ -79,8 +82,16 @@ pub async fn start_server(state: Arc<RemoteState>, port: u16) {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     log::info!("Remote server listening on {}", addr);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(l) => l,
+        Err(e) => {
+            log::error!("Remote server failed to bind to {}: {}", addr, e);
+            return;
+        }
+    };
+    if let Err(e) = axum::serve(listener, app).await {
+        log::error!("Remote server error: {}", e);
+    }
 }
 
 async fn get_status(State(state): State<Arc<RemoteState>>) -> impl IntoResponse {

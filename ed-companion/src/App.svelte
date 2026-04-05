@@ -58,6 +58,7 @@
   let updateAvailable = $state<Awaited<ReturnType<typeof check>> | null>(null);
 
   function fmtCr(v: number): string {
+    if (!Number.isFinite(v)) return "0";
     if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
     if (v >= 1_000) return (v / 1_000).toFixed(1) + "K";
@@ -484,11 +485,13 @@
           // Check if body was undiscovered (first discovery bio bonus)
           const sysAddr = data.SystemAddress as number;
           const bodyId = data.Body as number;
-          const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bodyId)) ?? true;
+          const analyseBody = systemStore.current?.bodies.find(b => b.bodyId === bodyId);
+          // Fall back to body's wasDiscovered flag if not in discovery map (e.g. scanned before cache point)
+          const wasDisc = bodyDiscoveryMap.get(bodyKey(sysAddr, bodyId))
+            ?? analyseBody?.wasDiscovered
+            ?? true;
           tripStore.addBioAnalysis(baseValue, !wasDisc);
           if (eventIsRecent) last24hStore.addBioAnalysis(baseValue, !wasDisc);
-          // Mark species as analysed in predictions
-          const analyseBody = systemStore.current?.bodies.find(b => b.bodyId === bodyId);
           if (analyseBody) {
             const spLower = speciesName.toLowerCase().split(" - ")[0].trim();
             for (const p of analyseBody.bioSpeciesPredicted) {
@@ -658,7 +661,10 @@
           const baseValue = getSpeciesValue(lsName);
           const sysAddr = data.SystemAddress as number;
           const bid = data.Body as number;
-          const wasDisc = lifetimeBodyDiscoveryMap.get(bodyKey(sysAddr, bid)) ?? true;
+          // Fall back to bodyScanCache's wasDiscovered if not in discovery map
+          const wasDisc = lifetimeBodyDiscoveryMap.get(bodyKey(sysAddr, bid))
+            ?? bodyScanCache.get(bodyKey(sysAddr, bid))?.wasDiscovered
+            ?? true;
           lifetimeStore.addBioSpecies(lsName, baseValue, !wasDisc);
         }
         break;

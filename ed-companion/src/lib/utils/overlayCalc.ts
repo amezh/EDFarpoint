@@ -9,6 +9,7 @@ import { estimateCartoValue } from "$lib/utils/valueCalc";
 // ── Formatting ─────────────────────────────────────────────
 
 export function formatCredits(v: number): string {
+  if (!Number.isFinite(v)) return "0";
   if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1) + "B";
   if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
   if (v >= 1_000) return (v / 1_000).toFixed(0) + "K";
@@ -16,6 +17,7 @@ export function formatCredits(v: number): string {
 }
 
 export function formatDistance(meters: number): string {
+  if (!Number.isFinite(meters)) return "?m";
   if (meters >= 1000) return (meters / 1000).toFixed(1) + "km";
   return Math.round(meters) + "m";
 }

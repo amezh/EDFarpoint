@@ -80,6 +80,7 @@
   const explorationPct = $derived(totalBodies > 0 ? Math.round((fssScanned / totalBodies) * 100) : 0);
 
   function fmt(v: number): string {
+    if (!Number.isFinite(v)) return "0";
     if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + "M";
     if (v >= 1_000) return (v / 1_000).toFixed(0) + "K";
     return v.toString();
