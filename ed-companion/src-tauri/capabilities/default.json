@@ -19,6 +19,7 @@
     "core:window:allow-is-always-on-top",
     "core:webview:default",
     "core:webview:allow-webview-close",
-    "store:default"
+    "store:default",
+    "updater:default"
   ]
 }
