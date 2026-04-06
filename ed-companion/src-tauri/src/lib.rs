@@ -22,6 +22,7 @@ use tauri::{Emitter, Manager};
 use bio::BioPredictor;
 use config::AppConfig;
 use edsm::EdsmClient;
+use journal::expedition_history::ExpeditionHistory;
 use remote::RemoteState;
 use stats::{LifetimeStats, TripStats};
 
@@ -33,6 +34,8 @@ pub struct AppState {
     pub bio_predictor: Option<BioPredictor>,
     pub edsm: EdsmClient,
     pub remote: Arc<RemoteState>,
+    pub expedition_history: RwLock<ExpeditionHistory>,
+    pub journal_dir: PathBuf,
 }
 
 #[tauri::command]
@@ -187,6 +190,24 @@ async fn fetch_edsm_bodies(
     Ok(serde_json::to_value(&bodies).unwrap_or(Value::Null))
 }
 
+#[tauri::command]
+fn get_expedition_history(state: tauri::State<'_, Arc<AppState>>) -> Value {
+    serde_json::to_value(&state.expedition_history.read().records).unwrap_or(Value::Null)
+}
+
+#[tauri::command]
+fn save_expedition_record(
+    state: tauri::State<'_, Arc<AppState>>,
+    record: Value,
+) -> Result<(), String> {
+    let record: journal::expedition_history::ExpeditionRecord =
+        serde_json::from_value(record).map_err(|e| e.to_string())?;
+    let mut history = state.expedition_history.write();
+    history.add_record(record);
+    history.save(&state.journal_dir);
+    Ok(())
+}
+
 /// Clear journal cache and restart the app (full re-read on next launch)
 #[tauri::command]
 fn clear_cache_and_restart(
@@ -263,6 +284,14 @@ fn get_journal_history() -> Value {
                     "latestFileName": data.latest_file_name,
                     "latestFileOffset": data.latest_file_offset,
                     "recent24hEvents": data.recent_24h_events,
+                    "dockBoundaries": data.dock_boundaries.iter().map(|d| {
+                        serde_json::json!({
+                            "eventIdx": d.event_idx,
+                            "timestamp": d.timestamp,
+                            "station": d.station,
+                            "system": d.system,
+                        })
+                    }).collect::<Vec<_>>(),
                 })
             }
             None => Value::Null,
@@ -338,6 +367,12 @@ pub fn run() {
     // Create remote state
     let (remote_state, _remote_rx) = RemoteState::new();
 
+    // Load expedition history
+    #[cfg(not(target_os = "android"))]
+    let expedition_history = ExpeditionHistory::load(&journal_dir).unwrap_or_else(ExpeditionHistory::new);
+    #[cfg(target_os = "android")]
+    let expedition_history = ExpeditionHistory::new();
+
     let remote_enabled = config.remote.enabled;
     let remote_port = config.remote.port;
     let overlay_enabled = config.window.overlay_enabled;
@@ -349,6 +384,11 @@ pub fn run() {
         bio_predictor,
         edsm,
         remote: remote_state.clone(),
+        expedition_history: RwLock::new(expedition_history),
+        #[cfg(not(target_os = "android"))]
+        journal_dir: journal_dir.clone(),
+        #[cfg(target_os = "android")]
+        journal_dir: PathBuf::from("."),
     });
 
     #[cfg(not(target_os = "android"))]
@@ -388,6 +428,8 @@ pub fn run() {
                     save_journal_cache,
                     get_app_version,
                     clear_cache_and_restart,
+                    get_expedition_history,
+                    save_expedition_record,
                 ]
             }
             #[cfg(target_os = "android")]
@@ -406,6 +448,8 @@ pub fn run() {
                     save_journal_cache,
                     get_app_version,
                     clear_cache_and_restart,
+                    get_expedition_history,
+                    save_expedition_record,
                 ]
             }
         })

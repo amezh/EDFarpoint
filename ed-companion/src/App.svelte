@@ -1,5 +1,6 @@
 <script lang="ts">
   import BioTracker from "$lib/components/BioTracker/BioTracker.svelte";
+  import ExpeditionHistory from "$lib/components/ExpeditionHistory/ExpeditionHistory.svelte";
   import RouteView from "$lib/components/RouteView/RouteView.svelte";
   import Settings from "$lib/components/Settings/Settings.svelte";
   import SystemView from "$lib/components/SystemView.svelte";
@@ -17,6 +18,7 @@
   import { systemStore } from "$lib/stores/system.svelte";
   import { last24hStore } from "$lib/stores/session.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
+  import { expeditionHistoryStore, type ExpeditionRecord } from "$lib/stores/expeditionHistory.svelte";
   import { predictBio } from "$lib/utils/bioPredict";
   import { getSpeciesValue } from "$lib/utils/bioValues";
   import { pushRemoteState } from "$lib/utils/remotePush";
@@ -49,6 +51,7 @@
   let ready = $state(false);
   let appReady = false; // suppress sounds during history replay
   let showSettings = $state(false);
+  let showHistory = $state(false);
   let statsLoading = $state(true);
   let statsProgress = $state("");
   let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
@@ -561,11 +564,28 @@
         break;
       }
 
-      case "Docked":
+      case "Docked": {
+        // Snapshot expedition BEFORE resetting (only if app is ready — skip during history replay)
+        if (appReady) {
+          const firstVisited = expeditionStore.visited[0];
+          expeditionHistoryStore.snapshotCurrentTrip(
+            tripStore.current,
+            lastDockInfo?.timestamp ?? firstVisited?.timestamp ?? "",
+            firstVisited?.name ?? "",
+            (data.timestamp as string) ?? "",
+            (data.StationName as string) ?? "",
+            (data.StarSystem as string) ?? "",
+          );
+          lastDockInfo = {
+            timestamp: (data.timestamp as string) ?? "",
+            station: (data.StationName as string) ?? "",
+          };
+        }
         tripStore.reset();
         expeditionStore.reset();
         bodyDiscoveryMap.clear();
         break;
+      }
     }
   }
 
@@ -672,8 +692,9 @@
   }
 
   onMount(() => {
-    // Load app config
+    // Load app config and expedition history
     configStore.load();
+    expeditionHistoryStore.load();
     invoke<string>("get_app_version").then(v => {
       appVersion = v === "0.0.0" ? "dev" : `v${v}`;
     }).catch(() => {});
@@ -907,14 +928,143 @@
         }
 
         // Phase 2: Process ALL events for lifetime stats in background chunks
+        // Also reconstruct expedition history from dock boundaries (one-time)
+        const dockBounds = (result.dockBoundaries ?? []) as Array<{ eventIdx: number; timestamp: string; station: string; system: string }>;
+        const shouldReconstruct = !expeditionHistoryStore.loaded || expeditionHistoryStore.expeditions.length === 0;
+
         statsProgress = `Processing lifetime stats (${allEvents.length} events)...`;
         let li = 0;
         const CHUNK = 5000;
+
+        // Expedition reconstruction accumulators
+        let expDockIdx = 0;
+        const expAccum = {
+          systemsVisited: 0, bodiesScanned: 0, starsScanned: 0, bodiesMapped: 0,
+          firstDiscoveries: 0, cartoFSSValue: 0, cartoDSSValue: 0,
+          bioValueBase: 0, bioValueBonus: 0, bioSpeciesFound: 0, bioSpeciesAnalysed: 0,
+          distanceTravelled: 0, playTimeSeconds: 0, jumps: 0,
+          startTimestamp: "", startSystem: "",
+          lastEventTime: null as number | null,
+          visitedSystems: new Set<string>(),
+        };
+        const MAX_GAP_MS = 15 * 60 * 1000;
+        const reconstructedExpeditions: ExpeditionRecord[] = [];
+
+        function resetExpAccum() {
+          expAccum.systemsVisited = 0; expAccum.bodiesScanned = 0; expAccum.starsScanned = 0;
+          expAccum.bodiesMapped = 0; expAccum.firstDiscoveries = 0;
+          expAccum.cartoFSSValue = 0; expAccum.cartoDSSValue = 0;
+          expAccum.bioValueBase = 0; expAccum.bioValueBonus = 0;
+          expAccum.bioSpeciesFound = 0; expAccum.bioSpeciesAnalysed = 0;
+          expAccum.distanceTravelled = 0; expAccum.playTimeSeconds = 0; expAccum.jumps = 0;
+          expAccum.startTimestamp = ""; expAccum.startSystem = "";
+          expAccum.lastEventTime = null;
+          expAccum.visitedSystems.clear();
+        }
+
+        function accumExpEvent(ev: Record<string, unknown>) {
+          const event = ev.event as string;
+          if (!event) return;
+          const ts = ev.timestamp as string | undefined;
+          if (ts) {
+            if (!expAccum.startTimestamp) expAccum.startTimestamp = ts;
+            const t = new Date(ts).getTime();
+            if (!isNaN(t) && expAccum.lastEventTime !== null) {
+              const gap = t - expAccum.lastEventTime;
+              if (gap > 0 && gap <= MAX_GAP_MS) expAccum.playTimeSeconds += gap / 1000;
+            }
+            if (!isNaN(t)) expAccum.lastEventTime = t;
+          }
+          switch (event) {
+            case "FSDJump": {
+              const name = ev.StarSystem as string;
+              if (name && !expAccum.visitedSystems.has(name)) {
+                expAccum.visitedSystems.add(name);
+                expAccum.systemsVisited++;
+              }
+              if (!expAccum.startSystem) expAccum.startSystem = name ?? "";
+              expAccum.jumps++;
+              expAccum.distanceTravelled += (ev.JumpDist as number) ?? 0;
+              break;
+            }
+            case "Location": {
+              const name = ev.StarSystem as string;
+              if (name && !expAccum.visitedSystems.has(name)) {
+                expAccum.visitedSystems.add(name);
+                expAccum.systemsVisited++;
+              }
+              if (!expAccum.startSystem) expAccum.startSystem = name ?? "";
+              break;
+            }
+            case "Scan":
+              if (ev.StarType) {
+                expAccum.starsScanned++;
+                expAccum.cartoFSSValue += estimateStarValue(ev.StarType as string, (ev.StellarMass as number) ?? 1, !!(ev.WasDiscovered));
+              } else {
+                expAccum.bodiesScanned++;
+                if (!ev.WasDiscovered) expAccum.firstDiscoveries++;
+                expAccum.cartoFSSValue += estimateCartoValue({
+                  bodyType: (ev.PlanetClass as string) ?? "",
+                  terraformable: (ev.TerraformState as string) === "Terraformable",
+                  wasDiscovered: !!(ev.WasDiscovered), wasMapped: !!(ev.WasMapped),
+                  massEM: (ev.MassEM as number) ?? undefined, withDSS: false,
+                });
+              }
+              break;
+            case "SAAScanComplete":
+              expAccum.bodiesMapped++;
+              break;
+            case "ScanOrganic":
+              if ((ev.ScanType as string) === "Log") expAccum.bioSpeciesFound++;
+              if ((ev.ScanType as string) === "Analyse") {
+                expAccum.bioSpeciesAnalysed++;
+                const spName = (ev.Species_Localised as string) ?? (ev.Species as string) ?? "";
+                const baseVal = getSpeciesValue(spName);
+                expAccum.bioValueBase += baseVal;
+                if (!ev.WasDiscovered) expAccum.bioValueBonus += baseVal * 4;
+              }
+              break;
+          }
+        }
 
         function processLifetimeChunk() {
           const end = Math.min(li + CHUNK, allEvents.length);
           for (; li < end; li++) {
             handleLifetimeEvent(allEvents[li]);
+
+            // Expedition reconstruction: accumulate events per dock segment
+            if (shouldReconstruct) {
+              accumExpEvent(allEvents[li]);
+              // Check if we hit a dock boundary
+              if (expDockIdx < dockBounds.length && li === dockBounds[expDockIdx].eventIdx) {
+                const dock = dockBounds[expDockIdx];
+                reconstructedExpeditions.push({
+                  id: dock.timestamp,
+                  startTimestamp: expAccum.startTimestamp,
+                  endTimestamp: dock.timestamp,
+                  startSystem: expAccum.startSystem,
+                  endStation: dock.station,
+                  endSystem: dock.system,
+                  systemsVisited: expAccum.systemsVisited,
+                  bodiesScanned: expAccum.bodiesScanned,
+                  starsScanned: expAccum.starsScanned,
+                  bodiesMapped: expAccum.bodiesMapped,
+                  firstDiscoveries: expAccum.firstDiscoveries,
+                  cartoFSSValue: expAccum.cartoFSSValue,
+                  cartoDSSValue: expAccum.cartoDSSValue,
+                  bioValueBase: expAccum.bioValueBase,
+                  bioValueBonus: expAccum.bioValueBonus,
+                  bioSpeciesFound: expAccum.bioSpeciesFound,
+                  bioSpeciesAnalysed: expAccum.bioSpeciesAnalysed,
+                  distanceTravelled: expAccum.distanceTravelled,
+                  playTimeSeconds: expAccum.playTimeSeconds,
+                  jumps: expAccum.jumps,
+                  reconstructed: true,
+                });
+                resetExpAccum();
+                expDockIdx++;
+              }
+            }
           }
 
           if (li < allEvents.length) {
@@ -924,6 +1074,11 @@
             statsLoading = false;
             statsProgress = "";
             lifetimeReady = true;
+
+            // Save reconstructed expeditions
+            if (shouldReconstruct && reconstructedExpeditions.length > 0) {
+              expeditionHistoryStore.addReconstructed(reconstructedExpeditions);
+            }
 
             // Save cache for next startup
             saveJournalCache();
@@ -1043,8 +1198,13 @@
             <span class="ml-1" title="Last dock: {lastDockInfo.station}">| {lastDockInfo.station}</span>
           {/if}
         </span>
+        <button class="text-ed-text-muted hover:text-ed-text transition-colors text-[10px]"
+                onclick={() => { showHistory = !showHistory; if (showHistory) showSettings = false; }}
+                title="Expedition History">
+          {showHistory ? "✕ History" : "History"}
+        </button>
         <button class="text-ed-text-muted hover:text-ed-text transition-colors"
-                onclick={() => showSettings = !showSettings}
+                onclick={() => { showSettings = !showSettings; if (showSettings) showHistory = false; }}
                 title="Settings">
           {showSettings ? "✕" : "⚙"}
         </button>
@@ -1065,6 +1225,13 @@
     {#if showSettings}
       <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full">
         <Settings />
+      </main>
+    {:else if showHistory}
+      <main class="flex-1 overflow-y-auto p-4">
+        <div class="ed-card">
+          <h2 class="text-ed-amber font-bold mb-3">Expedition History</h2>
+          <ExpeditionHistory />
+        </div>
       </main>
     {:else}
       <main class="flex-1 overflow-y-auto p-2">

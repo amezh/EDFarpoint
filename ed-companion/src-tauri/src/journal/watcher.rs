@@ -14,6 +14,14 @@ use tokio::sync::mpsc;
 use super::cache::JournalCache;
 use super::events::JournalEvent;
 
+/// A dock boundary: index in the all_events array + metadata
+pub struct DockBoundary {
+    pub event_idx: usize,
+    pub timestamp: String,
+    pub station: String,
+    pub system: String,
+}
+
 /// Historical data split into lifetime (all) and trip (since last dock)
 pub struct HistoricalData {
     /// All events across all journal files (for lifetime stats + current system state).
@@ -33,6 +41,8 @@ pub struct HistoricalData {
     /// Events from the last 24 hours (for "Last 24h" stats panel).
     /// When cached, these are read separately from recent journal files.
     pub recent_24h_events: Vec<Value>,
+    /// All dock boundaries found during history reading (for expedition reconstruction)
+    pub dock_boundaries: Vec<DockBoundary>,
 }
 
 /// Global store for historical data
@@ -217,6 +227,7 @@ impl JournalWatcher {
         let mut last_dock_idx: Option<usize> = None;
         let mut last_dock_timestamp: Option<String> = None;
         let mut last_dock_station: Option<String> = None;
+        let mut dock_boundaries: Vec<DockBoundary> = Vec::new();
         let mut skipped_files = 0usize;
 
         let has_cache = cache.is_some();
@@ -256,6 +267,12 @@ impl JournalWatcher {
                             last_dock_idx = Some(idx);
                             last_dock_timestamp = ev.get("timestamp").and_then(|t| t.as_str()).map(|s| s.to_string());
                             last_dock_station = ev.get("StationName").and_then(|s| s.as_str()).map(|s| s.to_string());
+                            dock_boundaries.push(DockBoundary {
+                                event_idx: idx,
+                                timestamp: last_dock_timestamp.clone().unwrap_or_default(),
+                                station: last_dock_station.clone().unwrap_or_default(),
+                                system: ev.get("StarSystem").and_then(|s| s.as_str()).unwrap_or("").to_string(),
+                            });
                         }
                         all_events.push(ev);
                     }
@@ -271,6 +288,12 @@ impl JournalWatcher {
                     last_dock_idx = Some(idx);
                     last_dock_timestamp = ev.get("timestamp").and_then(|t| t.as_str()).map(|s| s.to_string());
                     last_dock_station = ev.get("StationName").and_then(|s| s.as_str()).map(|s| s.to_string());
+                    dock_boundaries.push(DockBoundary {
+                        event_idx: idx,
+                        timestamp: last_dock_timestamp.clone().unwrap_or_default(),
+                        station: last_dock_station.clone().unwrap_or_default(),
+                        system: ev.get("StarSystem").and_then(|s| s.as_str()).unwrap_or("").to_string(),
+                    });
                 }
                 all_events.push(ev);
             }
@@ -332,6 +355,7 @@ impl JournalWatcher {
             latest_file_name: latest_file,
             latest_file_offset: latest_offset,
             recent_24h_events,
+            dock_boundaries,
         }
     }
 
