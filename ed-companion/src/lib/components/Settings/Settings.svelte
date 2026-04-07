@@ -202,6 +202,12 @@
           <p class="text-xs text-ed-green">http://localhost:{config.remote.port}/</p>
         {/if}
         <div class="flex items-center justify-between">
+          <span class="text-ed-text-muted">Reset current expedition</span>
+          <button class="ed-btn text-xs" onclick={() => {
+            emit("reset-expedition");
+          }}>Reset</button>
+        </div>
+        <div class="flex items-center justify-between">
           <span class="text-ed-text-muted">Clear cache</span>
           <button class="ed-btn text-xs" onclick={() => {
             invoke("clear_cache_and_restart").catch(() => {});

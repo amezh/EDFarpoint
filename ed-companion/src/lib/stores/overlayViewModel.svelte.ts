@@ -5,6 +5,7 @@ import type {
   OverlayViewModel,
   OverlayBioTarget,
   OverlayBioTargetSpecies,
+  OverlayCarrier,
   OverlayCartoTarget,
   OverlaySpecies,
 } from "$lib/types/overlay";
@@ -14,12 +15,14 @@ import type { TripState } from "$lib/stores/trip.svelte";
 import type { RouteState } from "$lib/stores/route.svelte";
 import type { StatusState } from "$lib/stores/status.svelte";
 import type { AppConfig } from "$lib/stores/config.svelte";
+import type { CarrierState } from "$lib/stores/carrier.svelte";
 import { systemStore } from "$lib/stores/system.svelte";
 import { bioStore } from "$lib/stores/bio.svelte";
 import { tripStore } from "$lib/stores/trip.svelte";
 import { routeStore } from "$lib/stores/route.svelte";
 import { statusStore } from "$lib/stores/status.svelte";
 import { configStore } from "$lib/stores/config.svelte";
+import { carrierStore } from "$lib/stores/carrier.svelte";
 import {
   buildBioTargets,
   buildCartoTargets,
@@ -38,6 +41,7 @@ function buildViewModel(
   route: RouteState,
   status: StatusState,
   config: AppConfig | null,
+  carrier: CarrierState,
 ): OverlayViewModel {
   const bodies = system?.bodies ?? [];
   const bioThreshold = config?.bio?.value_threshold ?? 0;
@@ -189,6 +193,46 @@ function buildViewModel(
 
     position,
     bodyRadius: bio?.bodyRadius ?? null,
+
+    // Carrier — show when docked and carrier data is available
+    // Use Status.json docked flag, with journal-based fallback for when game isn't running
+    carrier: ((status.parsed.docked || status.journalDocked) && carrier.hasData)
+      ? buildCarrierOverlay(carrier)
+      : null,
+  };
+}
+
+function buildCarrierOverlay(c: CarrierState): OverlayCarrier {
+  const upkeep = c.upkeepPerWeek;
+  // How long the reserve lasts at current upkeep rate
+  // Reserve is the portion set aside specifically for upkeep
+  let balanceRunsOutDays: number | null = null;
+  if (upkeep > 0 && c.reserveBalance > 0) {
+    balanceRunsOutDays = (c.reserveBalance / upkeep) * 7; // weeks to days
+  }
+
+  return {
+    name: c.name ?? "",
+    callsign: c.callsign ?? "",
+    carrierBalance: c.carrierBalance,
+    reserveBalance: c.reserveBalance,
+    availableBalance: c.availableBalance,
+    taxRate: c.taxRate,
+    upkeepPerWeek: upkeep,
+    balanceRunsOutDays,
+    incomeThisSession: c.incomeThisSession,
+    totalCapacity: c.totalCapacity,
+    freeSpace: c.freeSpace,
+    cargo: c.cargo,
+    cargoSpaceReserved: c.cargoSpaceReserved,
+    buyOrderCount: c.buyOrderCount,
+    buyOrderTonnage: c.buyOrderTonnage,
+    sellOrderCount: c.sellOrderCount,
+    sellOrderTonnage: c.sellOrderTonnage,
+    fuelLevel: c.fuelLevel,
+    jumpRangeCurr: c.jumpRangeCurr,
+    activeServiceCount: c.activeServices.length,
+    pendingJump: c.pendingJump,
   };
 }
 
@@ -201,6 +245,7 @@ function createOverlayViewModelStore() {
       routeStore.current,
       statusStore.current,
       configStore.current,
+      carrierStore.current,
     ),
   );
 

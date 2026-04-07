@@ -33,6 +33,10 @@ pub struct HistoricalData {
     pub last_dock_timestamp: Option<String>,
     /// Last dock station name, if any
     pub last_dock_station: Option<String>,
+    /// Last dock system name, if any
+    pub last_dock_system: Option<String>,
+    /// Last dock system address, if any
+    pub last_dock_system_address: Option<u64>,
     /// Cached stats from prior runs (None = full read, no cache)
     pub cached: Option<JournalCache>,
     /// Latest file name + offset for cache saving
@@ -227,6 +231,8 @@ impl JournalWatcher {
         let mut last_dock_idx: Option<usize> = None;
         let mut last_dock_timestamp: Option<String> = None;
         let mut last_dock_station: Option<String> = None;
+        let mut last_dock_system: Option<String> = None;
+        let mut last_dock_system_address: Option<u64> = None;
         let mut dock_boundaries: Vec<DockBoundary> = Vec::new();
         let mut skipped_files = 0usize;
 
@@ -267,6 +273,8 @@ impl JournalWatcher {
                             last_dock_idx = Some(idx);
                             last_dock_timestamp = ev.get("timestamp").and_then(|t| t.as_str()).map(|s| s.to_string());
                             last_dock_station = ev.get("StationName").and_then(|s| s.as_str()).map(|s| s.to_string());
+                            last_dock_system = ev.get("StarSystem").and_then(|s| s.as_str()).map(|s| s.to_string());
+                            last_dock_system_address = ev.get("SystemAddress").and_then(|s| s.as_u64());
                             dock_boundaries.push(DockBoundary {
                                 event_idx: idx,
                                 timestamp: last_dock_timestamp.clone().unwrap_or_default(),
@@ -288,6 +296,8 @@ impl JournalWatcher {
                     last_dock_idx = Some(idx);
                     last_dock_timestamp = ev.get("timestamp").and_then(|t| t.as_str()).map(|s| s.to_string());
                     last_dock_station = ev.get("StationName").and_then(|s| s.as_str()).map(|s| s.to_string());
+                    last_dock_system = ev.get("StarSystem").and_then(|s| s.as_str()).map(|s| s.to_string());
+                    last_dock_system_address = ev.get("SystemAddress").and_then(|s| s.as_u64());
                     dock_boundaries.push(DockBoundary {
                         event_idx: idx,
                         timestamp: last_dock_timestamp.clone().unwrap_or_default(),
@@ -303,6 +313,8 @@ impl JournalWatcher {
         if has_cache && last_dock_idx.is_none() {
             last_dock_timestamp = cache.as_ref().and_then(|c| c.last_dock_timestamp.clone());
             last_dock_station = cache.as_ref().and_then(|c| c.last_dock_station.clone());
+            last_dock_system = cache.as_ref().and_then(|c| c.last_dock_system.clone());
+            last_dock_system_address = cache.as_ref().and_then(|c| c.last_dock_system_address);
         }
 
         let trip_start_idx = last_dock_idx.map(|i| i + 1).unwrap_or(0);
@@ -351,6 +363,8 @@ impl JournalWatcher {
             trip_start_idx,
             last_dock_timestamp,
             last_dock_station,
+            last_dock_system,
+            last_dock_system_address,
             cached: cache,
             latest_file_name: latest_file,
             latest_file_offset: latest_offset,

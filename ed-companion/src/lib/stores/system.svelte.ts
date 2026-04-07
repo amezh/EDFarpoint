@@ -141,10 +141,17 @@ function createSystemStore() {
     setSystem(data: Record<string, unknown>) {
       const name = data.StarSystem as string;
       const address = data.SystemAddress as number;
-      const starPos = data.StarPos as [number, number, number];
+      const starPos = (data.StarPos as [number, number, number]) ?? [0, 0, 0];
 
       // If same system (relog, Location event), keep existing data
-      if (state && state.address === address) return;
+      // But update starPos if it was missing (set from Docked event without coordinates)
+      if (state && state.address === address) {
+        if (data.StarPos && state.starPos[0] === 0 && state.starPos[1] === 0 && state.starPos[2] === 0) {
+          state.starPos = starPos;
+          state.distanceFromSol = distFromSol(starPos);
+        }
+        return;
+      }
 
       state = {
         name,

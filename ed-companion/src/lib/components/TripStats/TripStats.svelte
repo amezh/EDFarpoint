@@ -19,9 +19,8 @@
 </script>
 
 <div class="ed-card">
-  <div class="flex items-center justify-between mb-3">
+  <div class="mb-3">
     <h2 class="text-ed-amber font-bold">Current Exploration Trip</h2>
-    <button class="ed-btn text-xs" onclick={() => tripStore.reset()}>Reset</button>
   </div>
 
   <div class="flex flex-col gap-3 text-sm">

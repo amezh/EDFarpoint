@@ -75,8 +75,9 @@ pub fn create_overlay_window(app: &AppHandle) -> Result<(), Box<dyn std::error::
 
     log::info!("[overlay] window built OK, label={}", window.label());
 
-    // Mark overlay as enabled
+    // Mark overlay as enabled and notify frontend
     set_overlay_enabled(app, true);
+    let _ = app.emit("overlay-state", true);
 
     // Track move/resize with 1s debounce to save geometry
     let app_handle = app.clone();

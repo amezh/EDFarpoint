@@ -58,6 +58,8 @@ export interface StatusState {
   altitude: number | null;
   heading: number | null;
   bodyName: string | null;
+  /** Docked state from journal events — used as fallback when Status.json hasn't been polled yet */
+  journalDocked: boolean;
 }
 
 function parseFlags(flags: number, flags2: number): Partial<StatusFlags> {
@@ -123,6 +125,7 @@ function createStatusStore() {
     altitude: null,
     heading: null,
     bodyName: null,
+    journalDocked: false,
   });
 
   return {
@@ -131,6 +134,10 @@ function createStatusStore() {
     },
     get flags() {
       return state.parsed;
+    },
+
+    setJournalDocked(docked: boolean) {
+      state.journalDocked = docked;
     },
 
     update(payload: unknown) {

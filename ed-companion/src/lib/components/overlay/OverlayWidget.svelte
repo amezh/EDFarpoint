@@ -112,8 +112,97 @@
     </div>
   {/if}
 
-  <!-- Expedition stats — when NOT on planet surface -->
-  {#if !vm.onPlanet}
+  <!-- Carrier stats — when docked at own carrier -->
+  {#if vm.carrier}
+    {@const c = vm.carrier}
+    {@const daysLeft = c.balanceRunsOutDays}
+    <div class="border-t border-gray-700/50 pt-1 mt-1">
+      <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">
+        Carrier — <span class="text-amber-400 normal-case">{c.name}</span>
+        <span class="text-gray-600 ml-1">{c.callsign}</span>
+      </div>
+      <!-- Finances -->
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Balance</span>
+        <span class="text-amber-400 font-mono">{fmt(c.carrierBalance)} Cr</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Available</span>
+        <span class="text-amber-300 font-mono">{fmt(c.availableBalance)} Cr</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Reserve</span>
+        <span class="text-gray-300 font-mono">{fmt(c.reserveBalance)} Cr</span>
+      </div>
+      {#if c.taxRate > 0}
+        <div class="flex items-center justify-between py-0.5 text-[10px]">
+          <span class="text-gray-400">Tax rate</span>
+          <span class="text-gray-300">{(c.taxRate * 100).toFixed(0)}%</span>
+        </div>
+      {/if}
+      <!-- Upkeep -->
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Upkeep/week</span>
+        <span class="text-red-400 font-mono">{fmt(c.upkeepPerWeek)} Cr</span>
+      </div>
+      {#if daysLeft != null}
+        {@const years = Math.floor(daysLeft / 365)}
+        {@const months = Math.floor((daysLeft % 365) / 30)}
+        {@const days = Math.floor(daysLeft % 30)}
+        {@const hours = Math.floor((daysLeft % 1) * 24)}
+        {@const isLow = daysLeft < 30}
+        <div class="flex items-center justify-between py-0.5 text-[10px]">
+          <span class="text-gray-400">Funds last</span>
+          <span class="font-mono {isLow ? 'text-red-400' : 'text-green-400'}">
+            {#if years > 0}{years}y {/if}{#if months > 0}{months}m {/if}{days}d {hours}h
+          </span>
+        </div>
+      {/if}
+      <!-- Session income -->
+      {#if c.incomeThisSession !== 0}
+        <div class="flex items-center justify-between py-0.5 text-[10px]">
+          <span class="text-gray-400">Session P/L</span>
+          <span class="font-mono {c.incomeThisSession >= 0 ? 'text-green-400' : 'text-red-400'}">
+            {c.incomeThisSession >= 0 ? '+' : ''}{fmt(c.incomeThisSession)} Cr
+          </span>
+        </div>
+      {/if}
+      <!-- Cargo & trade orders -->
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Cargo</span>
+        <span class="text-gray-300">{c.cargo} / {c.totalCapacity} t</span>
+      </div>
+      {#if c.buyOrderCount > 0 || c.sellOrderCount > 0}
+        <div class="flex items-center justify-between py-0.5 text-[10px]">
+          <span class="text-gray-400">Buy orders</span>
+          <span class="text-cyan-400">{c.buyOrderCount} ({c.buyOrderTonnage} t)</span>
+        </div>
+        <div class="flex items-center justify-between py-0.5 text-[10px]">
+          <span class="text-gray-400">Sell orders</span>
+          <span class="text-amber-400">{c.sellOrderCount} ({c.sellOrderTonnage} t)</span>
+        </div>
+      {/if}
+      <!-- Fuel & services -->
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Fuel</span>
+        <span class="text-gray-300">{c.fuelLevel} t — {c.jumpRangeCurr.toFixed(1)} LY</span>
+      </div>
+      <div class="flex items-center justify-between py-0.5 text-[10px]">
+        <span class="text-gray-400">Services</span>
+        <span class="text-gray-300">{c.activeServiceCount} active</span>
+      </div>
+      <!-- Pending jump -->
+      {#if c.pendingJump}
+        <div class="flex items-center justify-between py-0.5 text-[10px]">
+          <span class="text-cyan-400">Jump to</span>
+          <span class="text-cyan-300 truncate ml-1">{c.pendingJump.system}</span>
+        </div>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- Expedition stats — when NOT on planet surface and not showing carrier -->
+  {#if !vm.onPlanet && !vm.carrier}
     <div class="border-t border-gray-700/50 pt-1 mt-1">
       <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Expedition</div>
       <div class="flex items-center justify-between py-0.5 text-[10px]">

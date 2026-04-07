@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 /// Bump this when changing what data is cached or how events are processed.
 /// A mismatch forces a full re-read of all journal files.
-const CACHE_VERSION: u32 = 3;
+const CACHE_VERSION: u32 = 4;
 
 /// Cached journal processing state — allows incremental startup.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,6 +23,10 @@ pub struct JournalCache {
     /// Last dock info (trip boundary)
     pub last_dock_timestamp: Option<String>,
     pub last_dock_station: Option<String>,
+    #[serde(default)]
+    pub last_dock_system: Option<String>,
+    #[serde(default)]
+    pub last_dock_system_address: Option<u64>,
 
     // -- Cached frontend stats (mirrors the Svelte store shapes) --
 
@@ -55,6 +59,10 @@ pub struct JournalCache {
     /// Bio tracker state — opaque JSON blob from frontend bioStore
     #[serde(default)]
     pub bio: Option<serde_json::Value>,
+
+    /// Carrier state — opaque JSON blob from frontend carrierStore
+    #[serde(default)]
+    pub carrier: Option<serde_json::Value>,
 }
 
 /// Mirrors frontend LifetimeState
@@ -141,6 +149,8 @@ impl JournalCache {
             last_file_offset: 0,
             last_dock_timestamp: None,
             last_dock_station: None,
+            last_dock_system: None,
+            last_dock_system_address: None,
             lifetime: CachedLifetimeStats::default(),
             trip: None,
             commander: None,
@@ -149,6 +159,7 @@ impl JournalCache {
             system_state: None,
             expedition: None,
             bio: None,
+            carrier: None,
         }
     }
 }

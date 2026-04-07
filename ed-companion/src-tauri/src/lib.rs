@@ -269,11 +269,14 @@ fn get_journal_history() -> Value {
                 let cached_system_state = cached.as_ref().and_then(|c| c.system_state.as_ref());
                 let cached_expedition = cached.as_ref().and_then(|c| c.expedition.as_ref());
                 let cached_bio = cached.as_ref().and_then(|c| c.bio.as_ref());
+                let cached_carrier = cached.as_ref().and_then(|c| c.carrier.as_ref());
                 serde_json::json!({
                     "allEvents": data.all_events,
                     "tripStartIdx": data.trip_start_idx,
                     "lastDockTimestamp": data.last_dock_timestamp,
                     "lastDockStation": data.last_dock_station,
+                    "lastDockSystem": data.last_dock_system,
+                    "lastDockSystemAddress": data.last_dock_system_address,
                     "cachedLifetime": cached_lifetime,
                     "cachedTrip": cached_trip,
                     "cachedCommander": cached_commander,
@@ -281,6 +284,7 @@ fn get_journal_history() -> Value {
                     "cachedSystemState": cached_system_state,
                     "cachedExpedition": cached_expedition,
                     "cachedBio": cached_bio,
+                    "cachedCarrier": cached_carrier,
                     "latestFileName": data.latest_file_name,
                     "latestFileOffset": data.latest_file_offset,
                     "recent24hEvents": data.recent_24h_events,

@@ -18,6 +18,7 @@
   import { systemStore } from "$lib/stores/system.svelte";
   import { last24hStore } from "$lib/stores/session.svelte";
   import { tripStore } from "$lib/stores/trip.svelte";
+  import { carrierStore } from "$lib/stores/carrier.svelte";
   import { expeditionHistoryStore, type ExpeditionRecord } from "$lib/stores/expeditionHistory.svelte";
   import { predictBio } from "$lib/utils/bioPredict";
   import { getSpeciesValue } from "$lib/utils/bioValues";
@@ -33,7 +34,7 @@
   // Excludes passive/ambient events (Music, ReceiveText, Friends, Status, etc.)
   // that fire while AFK and would inflate the timer.
   const ACTIVE_EVENTS = new Set([
-    "FSDJump", "FSDTarget", "StartJump",
+    "FSDJump", "CarrierJump", "FSDTarget", "StartJump",
     "Scan", "FSSDiscoveryScan", "FSSBodySignals", "FSSAllBodiesFound",
     "SAAScanComplete", "SAASignalsFound",
     "ScanOrganic",
@@ -54,11 +55,12 @@
   let showHistory = $state(false);
   let statsLoading = $state(true);
   let statsProgress = $state("");
-  let lastDockInfo = $state<{ timestamp: string; station: string } | null>(null);
+  let lastDockInfo = $state<{ timestamp: string; station: string; system?: string; systemAddress?: number } | null>(null);
   let cacheFileInfo = { fileName: "", fileOffset: 0 }; // for cache saving
   let lastProcessedTimestamp = ""; // track latest event timestamp for cache
   let appVersion = $state("dev");
   let updateAvailable = $state<Awaited<ReturnType<typeof check>> | null>(null);
+  let overlayOpen = $state(false);
 
   function fmtCr(v: number): string {
     if (!Number.isFinite(v)) return "0";
@@ -111,12 +113,14 @@
 
     invoke("save_journal_cache", {
       cache: {
-        version: 3,
+        version: 4,
         last_event_timestamp: lastProcessedTimestamp,
         last_file_name: cacheFileInfo.fileName,
         last_file_offset: cacheFileInfo.fileOffset,
         last_dock_timestamp: lastDockInfo?.timestamp ?? null,
         last_dock_station: lastDockInfo?.station ?? null,
+        last_dock_system: lastDockInfo?.system ?? null,
+        last_dock_system_address: lastDockInfo?.systemAddress ?? null,
         lifetime: {
           total_carto_fss: lt.totalCartoFSS,
           total_carto_dss: lt.totalCartoDSS,
@@ -153,6 +157,7 @@
         system_state: systemStateJson,
         expedition: expeditionStore.visited,
         bio: bioStore.toJSON(),
+        carrier: carrierStore.toJSON(),
       },
     }).catch(() => {});
   }
@@ -291,10 +296,18 @@
 
     switch (event) {
       case "FSDJump":
+      case "CarrierJump":
       case "Location":
         bioStore.leavePlanet(); // Clear any active planet tracker on system change
         systemStore.setSystem(data);
         expeditionStore.enterSystem(data);
+        // Track journal-based docked state from Location/CarrierJump Docked flag
+        // FSDJump always means undocked; Location/CarrierJump have an explicit Docked field
+        if (event === "FSDJump") {
+          statusStore.setJournalDocked(false);
+        } else {
+          statusStore.setJournalDocked(data.Docked === true);
+        }
         // Fetch EDSM body data in background for discoverer info
         fetchEdsmBodies(data.StarSystem as string);
         if (event === "FSDJump") {
@@ -305,6 +318,12 @@
 
           routeStore.advanceRoute(jumpSys);
           fetchRouteDiscoverers();
+        } else if (event === "CarrierJump") {
+          // Carrier jump — register system visit without counting FSD jump distance
+          const carrierSys = data.StarSystem as string;
+          tripStore.addSystemVisit(carrierSys);
+          if (eventIsRecent) last24hStore.addSystemVisit(carrierSys);
+          carrierStore.handleCarrierJump();
         } else {
           // Location event (game load) — register system without counting a jump
           const locSys = data.StarSystem as string;
@@ -579,13 +598,51 @@
           lastDockInfo = {
             timestamp: (data.timestamp as string) ?? "",
             station: (data.StationName as string) ?? "",
+            system: (data.StarSystem as string) ?? undefined,
+            systemAddress: (data.SystemAddress as number) ?? undefined,
           };
         }
+        // Docked event has StarSystem + SystemAddress — ensure system is set
+        // (handles case where Docked is the last event with no subsequent Location)
+        if (data.StarSystem && data.SystemAddress) {
+          systemStore.setSystem(data);
+        }
+        statusStore.setJournalDocked(true);
         tripStore.reset();
         expeditionStore.reset();
         bodyDiscoveryMap.clear();
         break;
       }
+
+      case "Undocked":
+        statusStore.setJournalDocked(false);
+        break;
+
+      // Fleet carrier events
+      case "CarrierStats":
+        carrierStore.handleStats(data);
+        break;
+      case "CarrierFinance":
+        carrierStore.handleFinance(data);
+        break;
+      case "CarrierBankTransfer":
+        carrierStore.handleBankTransfer(data);
+        break;
+      case "CarrierTradeOrder":
+        carrierStore.handleTradeOrder(data);
+        break;
+      case "CarrierJumpRequest":
+        carrierStore.handleJumpRequest(data);
+        break;
+      case "CarrierJumpCancelled":
+        carrierStore.handleJumpCancelled();
+        break;
+      case "CarrierDepositFuel":
+        carrierStore.handleDepositFuel(data);
+        break;
+      case "CarrierCrewServices":
+        carrierStore.handleCrewServices(data);
+        break;
     }
   }
 
@@ -609,6 +666,9 @@
       case "FSDJump":
         lifetimeStore.addSystem();
         lifetimeStore.addDistance((data.JumpDist as number) ?? 0);
+        break;
+      case "CarrierJump":
+        lifetimeStore.addSystem();
         break;
       case "Scan": {
         const isStar = !!(data.StarType);
@@ -724,8 +784,49 @@
         fileOffset: (result.latestFileOffset as number) ?? 0,
       };
       lastDockInfo = result.lastDockTimestamp
-        ? { timestamp: result.lastDockTimestamp as string, station: (result.lastDockStation as string) ?? "" }
+        ? {
+            timestamp: result.lastDockTimestamp as string,
+            station: (result.lastDockStation as string) ?? "",
+            system: (result.lastDockSystem as string) ?? undefined,
+            systemAddress: (result.lastDockSystemAddress as number) ?? undefined,
+          }
         : null;
+
+      // Seed carrier store from history — scan backwards for latest CarrierStats,
+      // then replay carrier events from that point forward so we have current state.
+      {
+        const CARRIER_EVENTS = new Set([
+          "CarrierStats", "CarrierFinance", "CarrierBankTransfer",
+          "CarrierTradeOrder", "CarrierJumpRequest", "CarrierJumpCancelled",
+          "CarrierDepositFuel", "CarrierCrewServices",
+        ]);
+        // Find last CarrierStats index (scanning backwards is faster)
+        let lastStatsIdx = -1;
+        for (let i = allEvents.length - 1; i >= 0; i--) {
+          if (allEvents[i].event === "CarrierStats") {
+            lastStatsIdx = i;
+            break;
+          }
+        }
+        if (lastStatsIdx >= 0) {
+          // Replay from the last CarrierStats forward
+          for (let i = lastStatsIdx; i < allEvents.length; i++) {
+            const ev = allEvents[i];
+            if (CARRIER_EVENTS.has(ev.event as string)) {
+              switch (ev.event as string) {
+                case "CarrierStats": carrierStore.handleStats(ev); break;
+                case "CarrierFinance": carrierStore.handleFinance(ev); break;
+                case "CarrierBankTransfer": carrierStore.handleBankTransfer(ev); break;
+                case "CarrierTradeOrder": carrierStore.handleTradeOrder(ev); break;
+                case "CarrierJumpRequest": carrierStore.handleJumpRequest(ev); break;
+                case "CarrierJumpCancelled": carrierStore.handleJumpCancelled(); break;
+                case "CarrierDepositFuel": carrierStore.handleDepositFuel(ev); break;
+                case "CarrierCrewServices": carrierStore.handleCrewServices(ev); break;
+              }
+            }
+          }
+        }
+      }
 
       // Seed stores from cache if available
       const cachedLifetime = result.cachedLifetime as Record<string, unknown> | null;
@@ -775,6 +876,7 @@
         const cachedSystemState = result.cachedSystemState as unknown;
         const cachedExpedition = result.cachedExpedition as unknown;
         const cachedBio = result.cachedBio as unknown;
+        const cachedCarrier = result.cachedCarrier as unknown;
 
         if (cachedCommander || cachedShipName) {
           journalStore.seed(cachedCommander, cachedShipName);
@@ -787,6 +889,9 @@
         }
         if (cachedBio) {
           bioStore.seedFromCache(cachedBio);
+        }
+        if (cachedCarrier) {
+          carrierStore.seedFromCache(cachedCarrier);
         }
       }
 
@@ -819,6 +924,21 @@
         for (let i = 0; i < allEvents.length; i++) {
           handleJournalEvent(allEvents[i]);
           handleLifetimeEvent(allEvents[i]);
+        }
+
+        // If system still not set after cache + new events, recover from last dock info
+        if (!systemStore.current && lastDockInfo?.system && lastDockInfo?.systemAddress) {
+          systemStore.setSystem({
+            StarSystem: lastDockInfo.system,
+            SystemAddress: lastDockInfo.systemAddress,
+          });
+        }
+
+        // Restore docked flag from journal state.
+        // If new events were processed, handleJournalEvent already set it correctly.
+        // If no new events (common cached path), recover from lastDockInfo.
+        if (allEvents.length === 0 && lastDockInfo) {
+          statusStore.setJournalDocked(true);
         }
 
         // Trigger bio predictions and EDSM fetch for cached system
@@ -861,6 +981,7 @@
               case "FSDJump":
                 last24hStore.addSystem(ev.StarSystem as string, (ev.JumpDist as number) ?? 0);
                 break;
+              case "CarrierJump":
               case "Location":
                 last24hStore.addSystemVisit(ev.StarSystem as string);
                 break;
@@ -914,10 +1035,56 @@
         saveJournalCache();
       } else {
         // === FULL READ PATH: no cache, first run ===
-        // Phase 1: Process trip events immediately (post-dock → end)
+        // Phase 0: Set system from the Docked event and recover scan data.
+        // tripStartIdx points AFTER the last Docked event. The Docked event
+        // at tripStartIdx-1 has StarSystem/SystemAddress, and scan events
+        // before it populate the body list.
+        {
+          const dockEvent = tripStartIdx > 0 ? allEvents[tripStartIdx - 1] : null;
+          const dockAddr = dockEvent?.SystemAddress as number | undefined;
+          if (dockEvent?.StarSystem && dockAddr) {
+            // Set system from Docked event (no StarPos — will be [0,0,0])
+            systemStore.setSystem(dockEvent);
+            statusStore.setJournalDocked(true);
+
+            // Scan backwards to find when we entered this system
+            let systemEntryIdx = tripStartIdx;
+            for (let i = tripStartIdx - 2; i >= 0; i--) {
+              const ev = allEvents[i];
+              const evt = ev.event as string;
+              if (evt === "FSDJump" || evt === "Location" || evt === "CarrierJump") {
+                if ((ev.SystemAddress as number) === dockAddr) {
+                  systemEntryIdx = i;
+                } else {
+                  break; // entered a different system — stop
+                }
+              }
+            }
+            // Replay system-entry + scan events using targeted store methods
+            // (not handleJournalEvent, to avoid trip stat side effects)
+            for (let i = systemEntryIdx; i < tripStartIdx; i++) {
+              const ev = allEvents[i];
+              const evt = ev.event as string;
+              if (evt === "FSDJump" || evt === "Location" || evt === "CarrierJump") {
+                systemStore.setSystem(ev); // updates StarPos if it was [0,0,0]
+              } else if (evt === "Scan") {
+                systemStore.addOrUpdateBody(ev);
+              } else if (evt === "FSSDiscoveryScan") {
+                systemStore.updateFSSProgress(ev);
+              } else if (evt === "FSSBodySignals" || evt === "SAASignalsFound") {
+                systemStore.updateBodySignals(ev);
+              } else if (evt === "SAAScanComplete") {
+                systemStore.markBodyMapped(ev.BodyID as number);
+              }
+            }
+          }
+        }
+
+        // Phase 1: Process trip events immediately (last dock → end)
         for (let i = tripStartIdx; i < allEvents.length; i++) {
           handleJournalEvent(allEvents[i]);
         }
+
         ready = true;
         appReady = true;
 
@@ -1112,9 +1279,21 @@
     // When the overlay window finishes loading its event listeners it emits
     // "overlay-ready".  Respond by pushing the current state snapshot so the
     // overlay has data immediately without waiting for the next state change.
+    const unlistenResetExpedition = listen("reset-expedition", () => {
+      tripStore.reset();
+      expeditionStore.reset();
+      bodyDiscoveryMap.clear();
+    });
+
     const unlistenOverlayReady = listen<boolean>("overlay-ready", () => {
       emitToOverlay("overlay-viewmodel", overlayViewModelStore.current);
       emitToOverlay("overlay-opacity", configStore.current?.window?.overlay_opacity ?? 1);
+    });
+
+    // Track overlay open/close state for the header button
+    invoke<boolean>("is_overlay_open").then(v => { overlayOpen = v; }).catch(() => {});
+    const unlistenOverlayState = listen<boolean>("overlay-state", (e) => {
+      overlayOpen = e.payload;
     });
 
     // Periodic cache save every 5 minutes (protects against crash data loss)
@@ -1137,6 +1316,8 @@
       unlistenStatus.then((fn) => fn());
       unlistenNavRoute.then((fn) => fn());
       unlistenOverlayReady.then((fn) => fn());
+      unlistenOverlayState.then((fn) => fn());
+      unlistenResetExpedition.then((fn) => fn());
     };
   });
 </script>
@@ -1198,10 +1379,23 @@
             <span class="ml-1" title="Last dock: {lastDockInfo.station}">| {lastDockInfo.station}</span>
           {/if}
         </span>
-        <button class="text-ed-text-muted hover:text-ed-text transition-colors text-[10px]"
+        <button class="text-[10px] px-1.5 py-0.5 rounded transition-colors
+                       {overlayOpen ? 'bg-ed-amber text-black' : 'text-ed-text-muted hover:text-ed-text'}"
+                onclick={() => {
+                  if (overlayOpen) {
+                    invoke("close_overlay").catch(() => {});
+                  } else {
+                    invoke("create_overlay").catch(() => {});
+                  }
+                }}
+                title="Toggle overlay">
+          Overlay
+        </button>
+        <button class="text-[10px] px-1.5 py-0.5 rounded transition-colors
+                       {showHistory ? 'bg-ed-amber text-black' : 'text-ed-text-muted hover:text-ed-text'}"
                 onclick={() => { showHistory = !showHistory; if (showHistory) showSettings = false; }}
                 title="Expedition History">
-          {showHistory ? "✕ History" : "History"}
+          History
         </button>
         <button class="text-ed-text-muted hover:text-ed-text transition-colors"
                 onclick={() => { showSettings = !showSettings; if (showSettings) showHistory = false; }}
@@ -1214,7 +1408,7 @@
     {#if updateAvailable}
       <div class="flex items-center justify-center gap-2 px-4 py-1 bg-ed-surface border-b border-ed-border text-xs">
         <span class="text-ed-amber">Update available: v{updateAvailable.version}</span>
-        <button class="text-ed-orange underline hover:text-ed-amber" onclick={async () => {
+        <button class="px-2 py-0.5 bg-blue-900 hover:bg-blue-800 text-blue-200 rounded border border-blue-700" onclick={async () => {
           await updateAvailable!.downloadAndInstall();
           await invoke("clear_cache_and_restart");
         }}>Install now</button>

@@ -12,6 +12,7 @@ pub enum JournalEvent {
     Loadout(LoadoutEvent),
     Location(LocationEvent),
     FSDJump(FSDJumpEvent),
+    CarrierJump(CarrierJumpEvent),
     Scan(ScanEvent),
     FSSDiscoveryScan(FSSDiscoveryScanEvent),
     FSSBodySignals(FSSBodySignalsEvent),
@@ -25,6 +26,14 @@ pub enum JournalEvent {
     Liftoff(LiftoffEvent),
     Docked(DockedEvent),
     Undocked(UndockedEvent),
+    CarrierStats(CarrierStatsEvent),
+    CarrierFinance(CarrierFinanceEvent),
+    CarrierBankTransfer(CarrierBankTransferEvent),
+    CarrierTradeOrder(CarrierTradeOrderEvent),
+    CarrierJumpRequest(CarrierJumpRequestEvent),
+    CarrierJumpCancelled(CarrierJumpCancelledEvent),
+    CarrierDepositFuel(CarrierDepositFuelEvent),
+    CarrierCrewServices(CarrierCrewServicesEvent),
     Shutdown(ShutdownEvent),
     #[serde(other)]
     Unknown,
@@ -95,6 +104,22 @@ pub struct FSDJumpEvent {
     pub JumpDist: f64,
     pub FuelUsed: f64,
     pub FuelLevel: f64,
+    pub Population: Option<u64>,
+    #[serde(flatten)]
+    pub extra: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierJumpEvent {
+    pub timestamp: String,
+    pub StarSystem: String,
+    pub SystemAddress: u64,
+    pub StarPos: [f64; 3],
+    pub Body: Option<String>,
+    pub BodyID: Option<u32>,
+    pub BodyType: Option<String>,
+    #[serde(default)]
+    pub Docked: bool,
     pub Population: Option<u64>,
     #[serde(flatten)]
     pub extra: Value,
@@ -306,6 +331,125 @@ pub struct UndockedEvent {
     pub StationName: String,
     pub StationType: Option<String>,
     pub StarSystem: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierStatsEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+    pub Callsign: String,
+    pub Name: String,
+    pub DockingAccess: Option<String>,
+    pub AllowNotorious: Option<bool>,
+    pub FuelLevel: Option<u32>,
+    pub JumpRangeCurr: Option<f64>,
+    pub JumpRangeMax: Option<f64>,
+    pub PendingDecommission: Option<bool>,
+    pub SpaceUsage: Option<CarrierSpaceUsage>,
+    pub Finance: Option<CarrierFinanceData>,
+    pub Crew: Option<Vec<CarrierCrewMember>>,
+    #[serde(flatten)]
+    pub extra: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierSpaceUsage {
+    pub TotalCapacity: u32,
+    pub Crew: u32,
+    pub Cargo: u32,
+    pub CargoSpaceReserved: u32,
+    pub ShipPacks: u32,
+    pub ModulePacks: u32,
+    pub FreeSpace: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierFinanceData {
+    pub CarrierBalance: i64,
+    pub ReserveBalance: i64,
+    pub AvailableBalance: i64,
+    pub ReservePercent: Option<f64>,
+    pub TaxRate: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierCrewMember {
+    pub CrewRole: String,
+    pub Activated: bool,
+    pub Enabled: Option<bool>,
+    pub CrewName: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierFinanceEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+    pub TaxRate: Option<f64>,
+    pub CarrierBalance: i64,
+    pub ReserveBalance: i64,
+    pub AvailableBalance: i64,
+    pub ReservePercent: Option<f64>,
+    #[serde(flatten)]
+    pub extra: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierBankTransferEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+    pub Deposit: Option<i64>,
+    pub Withdraw: Option<i64>,
+    pub PlayerBalance: Option<i64>,
+    pub CarrierBalance: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierTradeOrderEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+    pub BlackMarket: Option<bool>,
+    pub Commodity: String,
+    pub Commodity_Localised: Option<String>,
+    pub PurchaseOrder: Option<i64>,
+    pub SaleOrder: Option<i64>,
+    pub Price: Option<i64>,
+    #[serde(flatten)]
+    pub extra: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierJumpRequestEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+    pub SystemName: String,
+    pub Body: Option<String>,
+    pub SystemAddress: Option<u64>,
+    pub DepartureTime: Option<String>,
+    #[serde(flatten)]
+    pub extra: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierJumpCancelledEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierDepositFuelEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+    pub Amount: u32,
+    pub Total: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarrierCrewServicesEvent {
+    pub timestamp: String,
+    pub CarrierID: u64,
+    pub CrewRole: String,
+    pub Operation: String,
+    pub CrewName: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
