@@ -1,5 +1,6 @@
 <script lang="ts">
   import BioTracker from "$lib/components/BioTracker/BioTracker.svelte";
+  import CarrierPanel from "$lib/components/CarrierPanel.svelte";
   import ExpeditionHistory from "$lib/components/ExpeditionHistory/ExpeditionHistory.svelte";
   import RouteView from "$lib/components/RouteView/RouteView.svelte";
   import Settings from "$lib/components/Settings/Settings.svelte";
@@ -1430,13 +1431,20 @@
     {:else}
       <main class="flex-1 overflow-y-auto p-2">
         <div class="grid grid-cols-[minmax(200px,1fr)_minmax(400px,3fr)_minmax(240px,1fr)] gap-2 h-full">
-          <!-- Left card: Route -->
+          <!-- Left card: Route + Carrier (when docked at own) -->
           <div class="bg-ed-surface/60 rounded-lg border border-ed-border/50 overflow-y-auto p-2">
             <RouteView />
+            {#if overlayViewModelStore.current.carrier}
+              <div class="mt-2">
+                <div class="ed-card">
+                  <CarrierPanel carrier={overlayViewModelStore.current.carrier} />
+                </div>
+              </div>
+            {/if}
           </div>
 
           <!-- Center card: System discovery -->
-          <div class="bg-ed-surface/60 rounded-lg border border-ed-border/50 overflow-y-auto p-3">
+          <div class="bg-ed-surface/60 rounded-lg border border-ed-border/50 overflow-y-auto p-2">
             <SystemView />
           </div>
 
@@ -1444,7 +1452,7 @@
           <div class="bg-ed-surface/60 rounded-lg border border-ed-border/50 overflow-y-auto p-2">
             <BioTracker />
             {#if !bioStore.currentPlanet || bioStore.currentPlanet.species.length === 0}
-              <div class="mt-2 pt-2 border-t border-ed-border/30">
+              <div class="mt-2">
                 <TripStats />
               </div>
               <div class="mt-2">
