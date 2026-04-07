@@ -130,6 +130,19 @@ function createCarrierStore() {
     sellOrderTonnage = [...sellOrders.values()].reduce((s, v) => s + Math.abs(v), 0);
   }
 
+  /** Auto-clear pendingJump if its departureTime has passed */
+  function effectivePendingJump() {
+    if (!pendingJump) return null;
+    if (pendingJump.departureTime) {
+      const departure = new Date(pendingJump.departureTime).getTime();
+      // Add 30 min grace for jump+cooldown — after that we assume the jump completed
+      if (!isNaN(departure) && Date.now() > departure + 30 * 60 * 1000) {
+        return null;
+      }
+    }
+    return pendingJump;
+  }
+
   return {
     get current(): CarrierState {
       const upkeep = calcUpkeep(activeServices);
@@ -153,7 +166,7 @@ function createCarrierStore() {
         jumpRangeCurr,
         jumpRangeMax,
         activeServices,
-        pendingJump,
+        pendingJump: effectivePendingJump(),
         upkeepPerWeek: upkeep,
         incomeThisSession,
         buyOrderCount,
@@ -208,6 +221,16 @@ function createCarrierStore() {
       buyOrders.clear();
       sellOrders.clear();
       recalcOrderSummary();
+
+      // Auto-clear stale pendingJump (departure time in the past)
+      // Player is viewing carrier management — if a jump were actively in progress,
+      // the carrier wouldn't be accessible. Clearing here is safe.
+      if (pendingJump?.departureTime) {
+        const departure = new Date(pendingJump.departureTime).getTime();
+        if (!isNaN(departure) && Date.now() > departure) {
+          pendingJump = null;
+        }
+      }
 
       hasData = true;
     },
